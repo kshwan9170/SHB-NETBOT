@@ -92,31 +92,10 @@ with col2:
     with st.expander("🔍 문서 업로드", expanded=True):
         st.write("참고할 내부 문서를 업로드하면 더 정확한 답변을 제공합니다.")
         
-        tabs = st.tabs(["파일 업로드", "예시 문서", "텍스트 입력"])
+        tabs = st.tabs(["예시 문서", "텍스트 입력"])
         
         with tabs[0]:
-            st.write("PDF, DOCX, PPTX, TXT 파일을 업로드하세요.")
-            uploaded_file = st.file_uploader(
-                "파일 선택",
-                type=["pdf", "docx", "pptx", "txt"],
-                help="업로드된 문서는 AI의 답변 생성에 활용됩니다"
-            )
-            
-            st.warning("""
-            ⚠️ **현재 서버에서 파일 업로드 기능에 기술적 제한이 있습니다.**
-            
-            대신 다음 방법을 사용해 주세요:
-            1. **예시 문서 사용**: 두 번째 탭에서 예시 문서를 사용하면 바로 테스트할 수 있습니다.
-            2. **텍스트 복사하기**: 문서의 내용을 복사하여 세 번째 탭의 텍스트 영역에 붙여넣기 하세요.
-            """)
-                
-            uploaded_file = st.file_uploader(
-                "파일 선택 (현재 비활성화됨)",
-                type=["pdf", "docx", "pptx", "txt"],
-                disabled=True
-            )
-        
-        with tabs[1]:
+            st.subheader("신한은행 네트워크 매뉴얼 - 예시 문서")
             sample_txt = st.checkbox("예시 문서 사용하기", help="테스트용 예시 문서를 사용합니다")
             
             if sample_txt:
@@ -170,12 +149,38 @@ with col2:
                     except Exception as e:
                         st.error(f"문서 처리 중 오류가 발생했습니다: {str(e)}")
                         print(f"문서 처리 오류: {str(e)}")
+                        
+            # 예시 문서 내용 미리보기
+            with st.expander("예시 문서 내용 미리보기"):
+                st.markdown("""
+                # 신한은행 네트워크 매뉴얼
+                
+                ## 스윙(SWING) 접속 방법
+                1. 스윙 아이콘을 더블 클릭하여 실행합니다.
+                2. 사원번호와 비밀번호를 입력합니다.
+                3. OTP 인증을 완료합니다.
+                4. 로그인 후 좌측 메뉴에서 원하는 기능을 선택합니다.
+                
+                ## IP 확인 방법
+                1. 시작 메뉴에서 'cmd'를 입력하여 명령 프롬프트를 실행합니다.
+                2. 'ipconfig'를 입력하고 Enter를 누릅니다.
+                3. 'IPv4 주소'를 확인합니다.
+                
+                ## VPN 연결 방법
+                1. VPN 클라이언트를 실행합니다.
+                2. 'shb.vpn.net' 서버 주소를 입력합니다.
+                3. 사용자 계정과 비밀번호를 입력합니다.
+                4. 연결 버튼을 클릭합니다.
+                
+                그 외 네트워크 드라이브 매핑 방법과 인터넷 사용 규정 등이 포함되어 있습니다.
+                """)
         
-        with tabs[2]:
+        with tabs[1]:
+            st.subheader("사용자 텍스트 입력")
             # 직접 텍스트 입력 옵션
             text_input = st.text_area(
                 "직접 문서 텍스트 입력",
-                height=150,
+                height=200,
                 placeholder="여기에 참고할 문서 내용을 직접 붙여넣기 하세요..."
             )
             
@@ -196,6 +201,8 @@ with col2:
                     except Exception as e:
                         st.error(f"텍스트 처리 중 오류가 발생했습니다: {str(e)}")
                         print(f"텍스트 처리 오류: {str(e)}")
+        
+
     
     with st.expander("📊 데이터베이스 현황", expanded=True):
         db_status = get_database_status()
