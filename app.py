@@ -496,6 +496,29 @@ def inquiry_view(post_id):
         
     return render_template('view_post.html', post=post, board_title='문의하기', list_route='inquiry_list', edit_route='inquiry_edit')
 
+@app.route('/inquiry/edit/<int:post_id>', methods=['GET', 'POST'])
+def inquiry_edit(post_id):
+    board = InquiryBoard()
+    post = board.get_post(post_id)
+    
+    if not post:
+        abort(404)
+    
+    if request.method == 'POST':
+        title = request.form.get('title')
+        content = request.form.get('content')
+        author = request.form.get('author')
+        
+        if not title or not content or not author:
+            return "제목, 내용, 작성자는 필수 입력 항목입니다.", 400
+            
+        board.update_post(post_id, title, content, author)
+        return redirect(url_for('inquiry_view', post_id=post_id))
+    
+    return render_template('write_post.html', post=post, board_title='문의하기', 
+                          list_route='inquiry_list', write_route='inquiry_edit', 
+                          is_edit=True)
+
 # 피드백 게시판 라우트
 @app.route('/feedback')
 def feedback_list():
@@ -553,6 +576,29 @@ def feedback_view(post_id):
         abort(404)
         
     return render_template('view_post.html', post=post, board_title='피드백', list_route='feedback_list', edit_route='feedback_edit')
+
+@app.route('/feedback/edit/<int:post_id>', methods=['GET', 'POST'])
+def feedback_edit(post_id):
+    board = FeedbackBoard()
+    post = board.get_post(post_id)
+    
+    if not post:
+        abort(404)
+    
+    if request.method == 'POST':
+        title = request.form.get('title')
+        content = request.form.get('content')
+        author = request.form.get('author')
+        
+        if not title or not content or not author:
+            return "제목, 내용, 작성자는 필수 입력 항목입니다.", 400
+            
+        board.update_post(post_id, title, content, author)
+        return redirect(url_for('feedback_view', post_id=post_id))
+    
+    return render_template('write_post.html', post=post, board_title='피드백', 
+                          list_route='feedback_list', write_route='feedback_edit', 
+                          is_edit=True)
 
 # 장애 신고 게시판 라우트
 @app.route('/report')
