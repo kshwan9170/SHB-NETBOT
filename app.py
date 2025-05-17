@@ -459,7 +459,9 @@ def inquiry_list():
             'next_num': pagination['page'] + 1,
             'iter_pages': lambda: range(1, pagination['pages'] + 1)
         },
+        'board_page_title': '문의하기',
         'board_title': '문의하기',
+        'board_description': '네트워크 관련 문의사항을 등록하고 답변을 받을 수 있는 게시판입니다.',
         'list_route': 'inquiry_list',
         'write_route': 'inquiry_write',
         'view_route': 'inquiry_view'
@@ -515,7 +517,9 @@ def feedback_list():
             'next_num': pagination['page'] + 1,
             'iter_pages': lambda: range(1, pagination['pages'] + 1)
         },
+        'board_page_title': '피드백',
         'board_title': '피드백',
+        'board_description': 'SHB-NetBot 서비스 개선을 위한 의견이나 제안을 등록해 주세요.',
         'list_route': 'feedback_list',
         'write_route': 'feedback_write',
         'view_route': 'feedback_view'
@@ -571,7 +575,9 @@ def report_list():
             'next_num': pagination['page'] + 1,
             'iter_pages': lambda: range(1, pagination['pages'] + 1)
         },
+        'board_page_title': '장애 신고',
         'board_title': '장애 신고',
+        'board_description': '네트워크 장애가 발생했을 때 신속하게 신고하여 빠른 조치를 받을 수 있습니다.',
         'list_route': 'report_list',
         'write_route': 'report_write',
         'view_route': 'report_view'
