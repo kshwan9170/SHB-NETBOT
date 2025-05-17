@@ -35,15 +35,26 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Create a Shinhan Bank logo SVG (simplified)
-def generate_shinhan_logo(color="#0046FF"):
+# Create a Shinhan Bank logo SVG (improved)
+def generate_shinhan_logo(color="#0046FF", background="white"):
     return f"""
     <svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="120" height="40" rx="4" fill="white"/>
+        <rect width="120" height="40" rx="6" fill="{background}"/>
         <path d="M20 10H100V15H20V10Z" fill="{color}"/>
         <path d="M20 17.5H100V22.5H20V17.5Z" fill="{color}"/>
         <path d="M20 25H70V30H20V25Z" fill="{color}"/>
-        <text x="25" y="37" font-family="Arial" font-size="8" fill="{color}">SHINHAN BANK</text>
+        <path d="M28 36.5L28.7 34H29.7L28.2 39H27.2L25.7 34H26.7L27.4 36.5L28 38.4L28 36.5Z" fill="{color}"/>
+        <path d="M31.2 34H32.2V39H31.2V34Z" fill="{color}"/>
+        <path d="M38.1 39H37.1V36.9H35.2V39H34.2V34H35.2V36H37.1V34H38.1V39Z" fill="{color}"/>
+        <path d="M42.1 34H43.1V39H42.1V36.9H40.2V39H39.2V34H40.2V36H42.1V34Z" fill="{color}"/>
+        <path d="M47.5 39H44.2V34H47.4V34.9H45.2V36H47.1V36.9H45.2V38.1H47.5V39Z" fill="{color}"/>
+        <path d="M52.6 39H51.6L51.2 38.1H49.3L48.9 39H47.9L49.8 34H50.8L52.6 39ZM50.9 37.2L50.3 35.4L49.6 37.2H50.9Z" fill="{color}"/>
+        <path d="M54.4 39H53.4V34H55.4C56.5 34 57.2 34.6 57.2 35.5C57.2 36.4 56.5 37 55.4 37H54.4V39ZM54.4 36.1H55.3C55.9 36.1 56.2 35.9 56.2 35.5C56.2 35.1 55.9 34.9 55.3 34.9H54.4V36.1Z" fill="{color}"/>
+        <path d="M63.8 39H62.8L60.9 35.6V39H59.9V34H60.9L62.8 37.4V34H63.8V39Z" fill="{color}"/>
+        <path d="M67.3 39H64V34H67.2V34.9H65V36H66.9V36.9H65V38.1H67.3V39Z" fill="{color}"/>
+        <path d="M72.4 39H71.4L69.5 35.6V39H68.5V34H69.5L71.4 37.4V34H72.4V39Z" fill="{color}"/>
+        <path d="M75.9 39H72.6V34H75.8V34.9H73.6V36H75.5V36.9H73.6V38.1H75.9V39Z" fill="{color}"/>
+        <path d="M80.6 34.9H79V34H83.2V34.9H81.6V39H80.6V34.9Z" fill="{color}"/>
     </svg>
     """
 
@@ -64,16 +75,18 @@ css = """
         background: white;
         z-index: 1000;
         padding: 10px 20px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 3px 15px rgba(0, 70, 255, 0.1);
         display: flex;
         justify-content: space-between;
         align-items: center;
         height: 70px;
+        border-bottom: 1px solid rgba(0, 70, 255, 0.1);
     }
     
     [data-theme="dark"] .fixed-header {
-        background: #262730;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        background: #1E1E2E;
+        box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
+        border-bottom: 1px solid rgba(75, 121, 255, 0.1);
     }
     
     .header-content {
@@ -84,28 +97,63 @@ css = """
     
     .logo-container {
         flex-shrink: 0;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        transition: transform 0.3s ease;
+    }
+    
+    .logo-container:hover {
+        transform: scale(1.05);
     }
     
     .title-container h1 {
         margin: 0;
         font-size: 1.5rem;
         color: #0046FF;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        text-shadow: 0 1px 2px rgba(0, 70, 255, 0.1);
     }
     
     [data-theme="dark"] .title-container h1 {
         color: #4B79FF;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     }
     
     .title-container p {
         margin: 0;
-        font-size: 0.8rem;
-        opacity: 0.7;
+        font-size: 0.85rem;
+        opacity: 0.8;
+        letter-spacing: 0.3px;
     }
     
     /* 메인 컨테이너 - 헤더 아래 공간 확보 */
     .main-container {
         margin-top: 80px;
-        padding: 20px;
+        padding: 20px 30px;
+    }
+    
+    /* 다크모드 토글 컨테이너 */
+    .theme-toggle-container {
+        display: flex;
+        align-items: center;
+    }
+    
+    .toggle-wrapper {
+        display: flex;
+        align-items: center;
+        background-color: rgba(0, 0, 0, 0.05);
+        padding: 5px 10px;
+        border-radius: 20px;
+    }
+    
+    [data-theme="dark"] .toggle-wrapper {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .toggle-icon {
+        font-size: 0.9rem;
+        display: inline-block;
+        padding: 0 5px;
     }
     
     /* 챗 컨테이너 */
@@ -131,83 +179,135 @@ css = """
     /* 말풍선 스타일 */
     .chat-message {
         position: relative;
-        padding: 15px;
-        border-radius: 18px;
-        line-height: 1.5;
+        padding: 16px;
+        border-radius: 20px;
+        line-height: 1.6;
         max-width: 85%;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
         animation: fadeIn 0.3s ease-in-out;
+        margin-bottom: 20px;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+    }
+    
+    .chat-message:hover {
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
     }
     
     @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
+        from { opacity: 0; transform: translateY(15px); }
         to { opacity: 1; transform: translateY(0); }
     }
     
+    /* 사용자 메시지 스타일 */
     .user-message {
         align-self: flex-end;
         background-color: #0046FF;
+        background-image: linear-gradient(135deg, #0046FF, #0057FF);
         color: white;
         margin-left: auto;
         border-bottom-right-radius: 4px;
+        box-shadow: 0 3px 12px rgba(0, 70, 255, 0.25);
     }
     
     .user-message::after {
         content: "";
         position: absolute;
         bottom: 0;
-        right: -10px;
-        width: 20px;
-        height: 20px;
+        right: -12px;
+        width: 24px;
+        height: 24px;
         background-color: #0046FF;
-        border-bottom-left-radius: 16px;
+        border-bottom-left-radius: 20px;
         z-index: -1;
     }
     
+    /* 봇 메시지 스타일 */
     .bot-message {
         align-self: flex-start;
         background-color: white;
+        background-image: linear-gradient(135deg, #FFFFFF, #F8F9FA);
         border: 1px solid #E6E6E6;
         margin-right: auto;
         border-bottom-left-radius: 4px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.07);
     }
     
     .bot-message::after {
         content: "";
         position: absolute;
         bottom: 0;
-        left: -10px;
-        width: 20px;
-        height: 20px;
+        left: -12px;
+        width: 24px;
+        height: 24px;
         background-color: white;
-        border-bottom-right-radius: 16px;
+        background-image: linear-gradient(135deg, #FFFFFF, #F8F9FA);
+        border-bottom-right-radius: 20px;
         border-left: 1px solid #E6E6E6;
         border-bottom: 1px solid #E6E6E6;
         z-index: -1;
     }
     
+    /* 다크모드 스타일 */
     [data-theme="dark"] .bot-message {
-        background-color: #3A3B45;
+        background-color: #2E303E;
+        background-image: linear-gradient(135deg, #2E303E, #3A3B45);
         border: 1px solid #4A4B55;
         color: #F1F1F1;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
     }
     
     [data-theme="dark"] .bot-message::after {
-        background-color: #3A3B45;
+        background-color: #2E303E;
+        background-image: linear-gradient(135deg, #2E303E, #3A3B45);
         border-left: 1px solid #4A4B55;
         border-bottom: 1px solid #4A4B55;
     }
     
+    [data-theme="dark"] .user-message {
+        background-color: #1847E0;
+        background-image: linear-gradient(135deg, #1847E0, #2C5DFF);
+        box-shadow: 0 3px 12px rgba(40, 93, 255, 0.3);
+    }
+    
+    [data-theme="dark"] .user-message::after {
+        background-color: #1847E0;
+        background-image: linear-gradient(135deg, #1847E0, #2C5DFF);
+    }
+    
+    /* 메시지 헤더 스타일 */
     .message-header {
-        font-size: 0.8rem;
-        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.85rem;
+        margin-bottom: 8px;
         font-weight: bold;
-        opacity: 0.7;
+        opacity: 0.85;
+    }
+    
+    .bot-message .message-header {
+        color: #0046FF;
+    }
+    
+    [data-theme="dark"] .bot-message .message-header {
+        color: #4B79FF;
     }
     
     .user-message .message-header {
         color: white;
-        opacity: 0.9;
+        opacity: 0.95;
+    }
+    
+    .message-header::before {
+        content: "";
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: currentColor;
+        margin-right: 3px;
     }
     
     /* 입력 컨테이너 - 하단 고정 */
@@ -513,35 +613,28 @@ st.markdown(theme_js, unsafe_allow_html=True)
 
 # 상단 고정 헤더
 logo_color = "#0046FF" if st.session_state.theme == 'light' else "#4B79FF"
+logo_bg = "white" if st.session_state.theme == 'light' else "#262730"
+
+# 헤더에 마크업 적용
 st.markdown(f'''
 <div class="fixed-header">
     <div class="header-content">
         <div class="logo-container logo-responsive">
-            {generate_shinhan_logo(logo_color)}
+            {generate_shinhan_logo(logo_color, logo_bg)}
         </div>
         <div class="title-container">
             <h1>SHB-NetBot</h1>
             <p>신한은행 내부 네트워크 챗봇</p>
         </div>
     </div>
-    <div class="theme-toggle">
-        <span class="toggle-label">다크모드</span>
-        <label class="theme-toggle">
-            <input type="checkbox" {'checked' if st.session_state.theme == 'dark' else ''} onclick="
-                fetch('', {{
-                    method: 'POST',
-                    headers: {{ 'Content-Type': 'application/x-www-form-urlencoded' }},
-                    body: new URLSearchParams({{
-                        'theme-toggle': '{st.session_state.theme}'
-                    }})
-                }}).then(() => {{ window.location.reload(); }});
-            ">
-            <span class="toggle-slider"></span>
-        </label>
-    </div>
 </div>
 <div class="main-container">
 ''', unsafe_allow_html=True)
+
+# 다크모드 토글 - 헤더 아래 배치
+col_theme_left, col_theme, col_theme_right = st.columns([6, 1, 1])
+with col_theme:
+    st.checkbox("다크모드", value=(st.session_state.theme == 'dark'), key="theme_toggle", on_change=toggle_theme)
 
 # 메인 레이아웃
 chat_col, info_col = st.columns([3, 1])
