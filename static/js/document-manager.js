@@ -35,13 +35,14 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (response.ok) {
                 if (data.files && Array.isArray(data.files)) {
-                    renderFileList(data.files);
-                    
                     // 파일이 있으면 빈 상태 메시지 숨기기
                     if (data.files.length > 0) {
                         if (emptyState) {
                             emptyState.style.display = 'none';
                         }
+                        
+                        // 새로운 방식: 직접 HTML 구성
+                        renderDirectFileList(data.files);
                     } else {
                         if (emptyState) {
                             emptyState.style.display = 'flex';
@@ -61,6 +62,71 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('문서 목록 API 호출 중 오류 발생:', error);
         }
+    }
+    
+    // 새로운 함수: 직접 HTML로 파일 목록 렌더링
+    function renderDirectFileList(files) {
+        const fileListContainer = document.getElementById('file-list-container');
+        if (!fileListContainer) {
+            console.error("파일 목록 컨테이너를 찾을 수 없습니다");
+            return;
+        }
+        
+        fileListContainer.innerHTML = '';
+        
+        files.forEach(file => {
+            const fileCard = document.createElement('div');
+            fileCard.className = 'document-card';
+            
+            // 파일 타입에 따른 아이콘 결정
+            let fileIconColor = '#ff5252'; // 기본 빨간색
+            
+            // 파일 크기 포맷팅
+            const fileSize = formatFileSize(file.size);
+            
+            // 파일 날짜 포맷팅
+            const fileDate = new Date(file.uploaded_at * 1000).toLocaleDateString();
+            
+            fileCard.innerHTML = `
+                <div class="document-content">
+                    <div class="document-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                    </div>
+                    <div class="document-info">
+                        <h4>${file.filename || "Unknown File"}</h4>
+                        <div class="document-meta">
+                            <span>${fileSize}</span> · 
+                            <span>${fileDate}</span> · 
+                            <span>${file.file_type ? file.file_type.toUpperCase() : "?"}</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="document-delete-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                    <span>삭제</span>
+                </button>
+            `;
+            
+            fileListContainer.appendChild(fileCard);
+            
+            // 삭제 버튼에 이벤트 리스너 추가
+            const deleteBtn = fileCard.querySelector('.document-delete-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function() {
+                    const systemFilename = this.getAttribute('data-filename');
+                    const displayFilename = this.getAttribute('data-displayname');
+                    deleteFile(systemFilename, displayFilename, fileCard);
+                });
+            }
+        });
     }
     
     /**

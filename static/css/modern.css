@@ -719,28 +719,84 @@ img {
     width: 100%;
 }
 
-.file-list li {
-    display: block;
-    margin-bottom: 1rem;
-    transition: all 0.2s ease;
-    background-color: #f6f9fc;
+/* 새로운 문서 카드 스타일 */
+.document-card {
+    background: white;
     border-radius: 10px;
-    overflow: hidden;
-}
-
-.file-card {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    margin-bottom: 16px;
+    padding: 20px;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem;
-    background-color: var(--card-bg);
+    flex-direction: column;
     position: relative;
-    border-bottom: 1px solid #eaeaea;
 }
 
-.file-list li:hover .file-card {
-    box-shadow: var(--shadow-md);
-    background-color: var(--light);
+.document-content {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.document-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background-color: #ff5252;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.document-info {
+    flex: 1;
+}
+
+.document-info h4 {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    word-break: break-word;
+}
+
+.document-meta {
+    font-size: 14px;
+    color: #666;
+}
+
+/* 삭제 버튼 스타일 */
+.document-delete-btn {
+    background-color: #ff5252;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: auto;
+}
+
+.document-delete-btn svg {
+    margin-right: 8px;
+}
+
+.document-delete-btn:hover {
+    background-color: #ff3232;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(255, 50, 50, 0.3);
+}
+
+.document-delete-btn:active {
+    transform: translateY(0);
+    box-shadow: none;
 }
 
 .file-item {
