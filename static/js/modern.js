@@ -635,10 +635,16 @@ document.addEventListener('DOMContentLoaded', function() {
         loadDocuments();
     }
     
+    // 페이지네이션 상태 관리
+    let currentDocsPage = 1;
+    const docsPerPage = 5;
+    let allDocuments = [];
+    
     // 문서 목록 로드
     async function loadDocuments() {
         const documentsList = document.getElementById('documentsList');
-        if (!documentsList) return;
+        const tbody = document.getElementById('documents-tbody');
+        if (!documentsList && !tbody) return;
         
         try {
             const response = await fetch('/api/documents');
@@ -646,12 +652,41 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (response.ok) {
                 if (data.files && data.files.length > 0) {
-                    // 문서 목록 표시
-                    documentsList.innerHTML = '';
+                    // 전체 문서 저장
+                    allDocuments = data.files;
                     
-                    data.files.forEach(file => {
-                        const fileExt = file.file_type;
-                        let iconClass = 'txt';
+                    // 페이지네이션 적용하여 문서 표시
+                    renderPaginatedDocuments();
+                } else {
+                    renderEmptyState();
+                }
+            }
+        } catch (error) {
+            console.error('문서 목록 로드 중 오류 발생:', error);
+        }
+    }
+    
+    // 페이지네이션 적용하여 문서 목록 표시
+    function renderPaginatedDocuments() {
+        const tbody = document.getElementById('documents-tbody');
+        const tableContainer = document.getElementById('dynamic-documents-table');
+        const filesContainer = document.getElementById('file-list-container');
+        
+        // 현재 페이지에 표시할 문서 계산
+        const startIndex = (currentDocsPage - 1) * docsPerPage;
+        const endIndex = Math.min(startIndex + docsPerPage, allDocuments.length);
+        const currentPageDocs = allDocuments.slice(startIndex, endIndex);
+        
+        // 테이블 형식 문서 목록 표시
+        if (tbody) {
+            tbody.innerHTML = '';
+            
+            // 페이지네이션 UI 추가
+            renderDocumentsPagination();
+            
+            currentPageDocs.forEach(file => {
+                const fileExt = file.file_type;
+                let iconClass = 'txt';
                         
                         // 파일 타입에 따른 아이콘 클래스
                         if (fileExt === 'pdf') {
