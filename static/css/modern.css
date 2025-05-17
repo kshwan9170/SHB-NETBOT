@@ -1060,12 +1060,12 @@ img {
 }
 
 [data-theme="dark"] .delete-btn {
-    background-color: #ff6b6b;
+    background: linear-gradient(135deg, #ff6b6b, #e85959);
     color: white;
 }
 
 [data-theme="dark"] .delete-btn:hover {
-    background-color: #e85959;
+    background: linear-gradient(135deg, #e85959, #ff6b6b);
 }
 
 @keyframes slideRight {
