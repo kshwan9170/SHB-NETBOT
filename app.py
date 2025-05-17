@@ -19,6 +19,9 @@ import document_processor
 
 app = Flask(__name__)
 
+# 데이터베이스 초기화
+init_db()
+
 # 데이터베이스 연결 종료
 @app.teardown_appcontext
 def close_connection(exception):
