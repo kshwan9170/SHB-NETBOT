@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}게시판 | SHB-NetBot{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 고정 내비게이션 바 -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="logo">
+                <a href="/">
+                    <img src="{{ url_for('static', filename='images/shinhan_logo_refined.svg') }}" alt="신한은행 로고">
+                    <span>SHB-NetBot</span>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="/#home" class="nav-link">Home</a>
+                <a href="/#about" class="nav-link">About</a>
+                <a href="/#chat" class="nav-link">Chat</a>
+                <a href="/#documents" class="nav-link">Documents</a>
+                <button id="theme-toggle" class="theme-toggle">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+            <button class="mobile-menu-btn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- 메인 콘텐츠 영역 -->
+    <div class="board-container">
+        <div class="board-header">
+            <h1 class="board-title">{% block board_title %}게시판{% endblock %}</h1>
+            <a href="{{ url_for(write_route) }}" class="button primary-button">글 작성하기</a>
+        </div>
+        
+        <p class="board-description">{% block board_description %}{% endblock %}</p>
+        
+        <!-- 게시글 목록 -->
+        <div class="post-list">
+            {% if posts %}
+                {% for post in posts %}
+                <div class="post-item">
+                    <a href="{{ url_for(view_route, post_id=post.id) }}" class="post-title">{{ post.title }}</a>
+                    <div class="post-meta">
+                        <span class="post-author">{{ post.author }}</span>
+                        <span class="post-date">{{ post.created_at.strftime('%Y-%m-%d') }}</span>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-posts">
+                    <p>게시글이 없습니다.</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- 페이지네이션 -->
+        {% if pagination and pagination.pages > 1 %}
+        <div class="board-pagination">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for(list_route, page=pagination.prev_num) }}" class="page-link">&laquo;</a>
+            {% endif %}
+            
+            {% for page in pagination.iter_pages() %}
+                {% if page %}
+                    {% if page != pagination.page %}
+                    <a href="{{ url_for(list_route, page=page) }}" class="page-link">{{ page }}</a>
+                    {% else %}
+                    <a class="page-link active">{{ page }}</a>
+                    {% endif %}
+                {% else %}
+                    <span class="page-ellipsis">...</span>
+                {% endif %}
+            {% endfor %}
+            
+            {% if pagination.has_next %}
+            <a href="{{ url_for(list_route, page=pagination.next_num) }}" class="page-link">&raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 푸터 섹션 -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <table class="footer-table">
+                    <tr>
+                        <th>서비스</th>
+                        <th>지원</th>
+                        <th>정책 및 약관</th>
+                    </tr>
+                    <tr>
+                        <td><a href="/#home">홈</a></td>
+                        <td><a href="/inquiry">문의하기</a></td>
+                        <td><a href="/terms">이용약관</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="/#about">소개</a></td>
+                        <td><a href="/feedback">피드백</a></td>
+                        <td><a href="/privacy">개인정보처리방침</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="/#chat">대화하기</a></td>
+                        <td><a href="/report">장애 신고</a></td>
+                        <td><a href="/copyright">저작권</a></td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td><a href="/security">보안정책</a></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 신한은행. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script src="{{ url_for('static', filename='js/modern.js') }}"></script>
+</body>
+</html>
