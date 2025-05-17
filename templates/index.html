@@ -198,39 +198,25 @@
                     </div>
                     <div class="documents-content">
                         <div class="documents-files">
-                            <!-- 정적 문서 목록 - 자바스크립트 대신 HTML로 직접 구현 -->
                             <h4 style="font-size: 1rem; color: #333; margin-bottom: 10px;">Available Documents:</h4>
                             
-                            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                <tr>
-                                    <th style="text-align: left; padding: 12px; border-bottom: 1px solid #eaeaea; background-color: #f5f8fd;">File Name</th>
-                                    <th style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea; background-color: #f5f8fd;">Size</th>
-                                    <th style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea; background-color: #f5f8fd;">Actions</th>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 12px; border-bottom: 1px solid #eaeaea;">NexG_VForce_CLI.pdf</td>
-                                    <td style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea;">12.4 MB</td>
-                                    <td style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea;">
-                                        <button onclick="deleteFile('f520ffe7-8178-493a-a67b-f591b37edbc5_NexG_VForce_CLI.pdf', 'NexG_VForce_CLI.pdf')" 
-                                                style="background-color: #ff5252; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; font-weight: bold;">
-                                            DELETE
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 12px;">cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf</td>
-                                    <td style="text-align: center; padding: 12px;">3.8 MB</td>
-                                    <td style="text-align: center; padding: 12px;">
-                                        <button onclick="deleteFile('7b054720-a171-449e-bfff-93ca21a698e4_cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf', 'cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf')" 
-                                                style="background-color: #ff5252; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; font-weight: bold;">
-                                            DELETE
-                                        </button>
-                                    </td>
-                                </tr>
-                            </table>
+                            <div id="dynamic-documents-table">
+                                <table id="documents-table" style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align: left; padding: 12px; border-bottom: 1px solid #eaeaea; background-color: #f5f8fd;">File Name</th>
+                                            <th style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea; background-color: #f5f8fd;">Size</th>
+                                            <th style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea; background-color: #f5f8fd;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="documents-tbody">
+                                        <!-- 문서 목록은 자바스크립트에 의해 동적으로 추가됩니다 -->
+                                    </tbody>
+                                </table>
+                            </div>
                             
                             <!-- 동적 파일 목록을 위한 컨테이너 추가 -->
-                            <div id="file-list-container" class="document-cards-container">
+                            <div id="file-list-container" class="document-cards-container" style="display: none;">
                                 <!-- 여기에 파일 카드들이 동적으로 추가됩니다 -->
                             </div>
                             
