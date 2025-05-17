@@ -711,6 +711,90 @@ img {
     color: #5D89FF;
 }
 
+/* 파일 목록 스타일 */
+.file-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+
+.file-item:hover {
+    background-color: var(--hover-color);
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex: 1;
+}
+
+.file-icon {
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.file-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.file-name {
+    font-weight: 500;
+    color: var(--text);
+}
+
+.file-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.file-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.delete-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: #ff3b30;
+    cursor: pointer;
+    padding: 0.3rem;
+    border-radius: 0.3rem;
+    transition: all 0.2s ease;
+}
+
+.delete-btn:hover {
+    background-color: rgba(255, 59, 48, 0.1);
+}
+
+[data-theme="dark"] .delete-btn {
+    color: #ff6b6b;
+}
+
+[data-theme="dark"] .delete-btn:hover {
+    background-color: rgba(255, 107, 107, 0.2);
+}
+
 @keyframes slideRight {
     from { opacity: 0; transform: translateX(-20px); }
     to { opacity: 1; transform: translateX(0); }

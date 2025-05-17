@@ -167,7 +167,8 @@ def get_documents():
                         'filename': original_filename,
                         'size': file_stats.st_size,
                         'uploaded_at': file_stats.st_mtime,
-                        'file_type': original_filename.split('.')[-1].lower()
+                        'file_type': original_filename.split('.')[-1].lower(),
+                        'system_filename': filename  # 시스템 내부 파일명 추가 (삭제 기능을 위해)
                     })
         
         return jsonify({
@@ -178,6 +179,41 @@ def get_documents():
     except Exception as e:
         print(f"Error getting documents: {str(e)}")
         return jsonify({'error': str(e)}), 500
+        
+@app.route('/api/delete', methods=['POST'])
+def delete_file():
+    """업로드된 파일 삭제"""
+    try:
+        data = request.get_json()
+        system_filename = data.get('system_filename')
+        
+        if not system_filename:
+            return jsonify({'success': False, 'error': '파일명이 제공되지 않았습니다.'}), 400
+            
+        # 파일 경로 확인
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], system_filename)
+        
+        # 파일 존재 확인
+        if not os.path.exists(file_path) or not os.path.isfile(file_path):
+            return jsonify({'success': False, 'error': '파일을 찾을 수 없습니다.'}), 404
+            
+        # 파일 삭제
+        os.remove(file_path)
+        
+        # 벡터 DB에서 해당 문서 관련 데이터 삭제
+        # 파일명에서 UUID 추출
+        file_uuid = system_filename.split('_')[0]
+        try:
+            database.delete_document(file_uuid)
+        except Exception as db_err:
+            print(f"DB 삭제 중 오류 발생: {str(db_err)}")
+            # DB 오류는 무시하고 파일 삭제 성공으로 처리
+            
+        return jsonify({'success': True, 'message': f'파일이 삭제되었습니다.'})
+        
+    except Exception as e:
+        print(f"Error deleting file: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Replit에서는 포트가 환경변수로 제공됩니다
