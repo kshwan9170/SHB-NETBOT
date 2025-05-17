@@ -27,8 +27,13 @@ embedding_function = embedding_functions.OpenAIEmbeddingFunction(
     model_name="text-embedding-3-small"
 )
 
+# Flag to track migration status
+MIGRATION_DONE = False
+
 def initialize_database():
     """Initialize or connect to the ChromaDB vector database"""
+    global MIGRATION_DONE
+    
     # Make sure the directory exists
     Path(CHROMA_DB_DIRECTORY).mkdir(parents=True, exist_ok=True)
     
@@ -38,7 +43,28 @@ def initialize_database():
         settings=Settings(anonymized_telemetry=False)
     )
     
-    # Create or get the collection
+    # 마이그레이션이 필요한지 확인 (이전 컬렉션 존재 여부)
+    old_collection_name = "shinhan_documents"
+    migrate_data = False
+    
+    if not MIGRATION_DONE:
+        try:
+            # 이전 컬렉션 확인
+            old_collection = chroma_client.get_collection(
+                name=old_collection_name,
+                embedding_function=embedding_function
+            )
+            
+            # 이전 컬렉션에 데이터가 있는지 확인
+            old_data = old_collection.get()
+            if old_data and 'documents' in old_data and len(old_data['documents']) > 0:
+                print(f"Found {len(old_data['documents'])} documents in old collection '{old_collection_name}'")
+                migrate_data = True
+        except Exception:
+            # 이전 컬렉션이 없으면 마이그레이션 필요 없음
+            migrate_data = False
+    
+    # 새 컬렉션 생성 또는 연결
     try:
         collection = chroma_client.get_collection(
             name=COLLECTION_NAME,
@@ -51,6 +77,38 @@ def initialize_database():
             embedding_function=embedding_function
         )
         print(f"Created new collection: {COLLECTION_NAME}")
+    
+    # 마이그레이션 실행 (필요한 경우)
+    if migrate_data and not MIGRATION_DONE:
+        try:
+            old_data = old_collection.get()
+            
+            # 문서, ID, 메타데이터가 모두 존재하는지 확인
+            if ('documents' in old_data and 'ids' in old_data and
+                'metadatas' in old_data and len(old_data['documents']) > 0):
+                
+                print(f"Migrating {len(old_data['documents'])} documents to new collection '{COLLECTION_NAME}'")
+                
+                # 메타데이터가 None인 경우 빈 딕셔너리로 대체
+                metadatas = []
+                for i, metadata in enumerate(old_data['metadatas']):
+                    if metadata is None:
+                        metadatas.append({})
+                    else:
+                        metadatas.append(metadata)
+                
+                # 새 컬렉션에 데이터 추가
+                collection.add(
+                    documents=old_data['documents'],
+                    ids=old_data['ids'],
+                    metadatas=metadatas
+                )
+                
+                print(f"Successfully migrated data to '{COLLECTION_NAME}'")
+                MIGRATION_DONE = True
+            
+        except Exception as e:
+            print(f"Migration error: {str(e)}")
     
     return collection
 
@@ -161,19 +219,34 @@ def delete_document(doc_id: str):
     try:
         collection = initialize_database()
         
-        # 문서 ID로 관련 청크 찾기
+        # 문서 ID로 관련 청크 찾기 - 메타데이터에서 doc_id 필드 검색
         results = collection.get(
             where={"doc_id": doc_id}
         )
         
-        if results and results['ids']:
+        if results and results['ids'] and len(results['ids']) > 0:
             # 해당 ID의 모든 청크 삭제
             collection.delete(ids=results['ids'])
             print(f"Deleted {len(results['ids'])} chunks for document ID: {doc_id}")
             return True
         else:
-            print(f"No chunks found for document ID: {doc_id}")
-            return False
+            # 이전 버전 호환성: chunk_id에서 doc_id 형식으로 검색
+            all_chunks = collection.get()
+            target_ids = []
+            
+            if all_chunks and 'ids' in all_chunks and all_chunks['ids']:
+                for i, chunk_id in enumerate(all_chunks['ids']):
+                    # 청크 ID가 "doc_id-번호" 형식이므로 doc_id로 시작하는지 확인
+                    if chunk_id.startswith(f"{doc_id}-"):
+                        target_ids.append(chunk_id)
+            
+            if target_ids:
+                collection.delete(ids=target_ids)
+                print(f"Deleted {len(target_ids)} chunks with IDs starting with: {doc_id}")
+                return True
+            else:
+                print(f"No chunks found for document ID: {doc_id}")
+                return False
     except Exception as e:
         print(f"Error deleting document from database: {e}")
         return False
