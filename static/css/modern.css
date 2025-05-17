@@ -2074,6 +2074,8 @@ textarea.form-control {
     font-weight: 500;
     display: inline-block;
     transition: background-color 0.3s ease;
+    min-width: 120px;
+    text-align: center;
 }
 
 .btn-primary:hover {
