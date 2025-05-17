@@ -784,6 +784,175 @@ css = """
         border: 1px dashed rgba(75, 121, 255, 0.2);
     }
     
+    /* 입력 정보 스타일 */
+    .input-info, .upload-info {
+        font-size: 0.9rem;
+        color: #555;
+        margin-bottom: 15px;
+        line-height: 1.5;
+    }
+    
+    [data-theme="dark"] .input-info, [data-theme="dark"] .upload-info {
+        color: #aaa;
+    }
+    
+    /* 파일 형식 정보 스타일 */
+    .format-info {
+        margin: 15px 0;
+        padding: 15px;
+        border-radius: 10px;
+        background-color: #F7F9FF;
+        border: 1px solid rgba(0, 70, 255, 0.05);
+    }
+    
+    .format-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #333;
+    }
+    
+    .format-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .format-item {
+        padding: 5px 12px;
+        border-radius: 15px;
+        background-color: #E6EFFF;
+        font-size: 0.9rem;
+        border: 1px solid rgba(0, 70, 255, 0.1);
+    }
+    
+    [data-theme="dark"] .format-info {
+        background-color: #232430;
+        border: 1px solid rgba(75, 121, 255, 0.05);
+    }
+    
+    [data-theme="dark"] .format-title {
+        color: #ddd;
+    }
+    
+    [data-theme="dark"] .format-item {
+        background-color: #2A2C40;
+        border: 1px solid rgba(75, 121, 255, 0.1);
+    }
+    
+    /* 업로드 컨테이너 스타일 */
+    .upload-container {
+        margin: 20px 0;
+    }
+    
+    /* 데이터베이스 상태 패널 스타일 */
+    .panel-title {
+        color: #0046FF;
+        font-size: 1.2rem;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    [data-theme="dark"] .panel-title {
+        color: #4B79FF;
+    }
+    
+    .db-status-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .status-item {
+        margin-bottom: 10px;
+    }
+    
+    .status-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+    
+    .status-label {
+        font-weight: 500;
+        color: #555;
+    }
+    
+    [data-theme="dark"] .status-label {
+        color: #BBB;
+    }
+    
+    .status-value {
+        font-weight: bold;
+        color: #0046FF;
+    }
+    
+    [data-theme="dark"] .status-value {
+        color: #4B79FF;
+    }
+    
+    .progress-bar-bg {
+        width: 100%;
+        height: 10px;
+        background-color: #E6EFFF;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .progress-bar-fill {
+        height: 100%;
+        background-color: #0046FF;
+        background-image: linear-gradient(90deg, #0046FF, #4B79FF);
+        border-radius: 10px;
+        transition: width 0.5s ease;
+    }
+    
+    [data-theme="dark"] .progress-bar-bg {
+        background-color: #252637;
+    }
+    
+    [data-theme="dark"] .progress-bar-fill {
+        background-image: linear-gradient(90deg, #1847E0, #4B79FF);
+    }
+    
+    .status-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 15px;
+        border-radius: 12px;
+        margin-top: 5px;
+    }
+    
+    .status-info.success {
+        background-color: #E6F7E6;
+        background-image: linear-gradient(135deg, #E6F7E6, #F0FFF0);
+        border-left: 3px solid #28A745;
+    }
+    
+    .status-info.warning {
+        background-color: #FFF3E0;
+        background-image: linear-gradient(135deg, #FFF3E0, #FFF8EE);
+        border-left: 3px solid #FFA726;
+    }
+    
+    [data-theme="dark"] .status-info.success {
+        background-color: #1E3B1E;
+        background-image: linear-gradient(135deg, #1E3B1E, #254525);
+        border-left: 3px solid #28A745;
+    }
+    
+    [data-theme="dark"] .status-info.warning {
+        background-color: #3B2E1E;
+        background-image: linear-gradient(135deg, #3B2E1E, #453525);
+        border-left: 3px solid #FFA726;
+    }
+    
+    .status-icon {
+        font-size: 1.2rem;
+    }
+    
     .info-box:hover {
         box-shadow: 0 3px 12px rgba(0, 70, 255, 0.15);
         transform: translateY(-1px);
@@ -1078,58 +1247,101 @@ with info_col:
             # 탭 컨텐츠 닫기
             st.markdown('</div>', unsafe_allow_html=True)
         
-        # 파일 업로드 탭
+        # 파일 업로드 탭 - 디자인 개선
         with tabs[2]:
-            st.warning("""
-            ⚠️ **알림**: 현재 서버에서 파일 업로드 기능에 기술적 제한이 있습니다.
-            대신 **예시 문서** 또는 **직접 입력** 기능을 이용해 주세요.
-            """)
+            st.markdown('<div class="tab-content">', unsafe_allow_html=True)
             
-            # 비활성화된 업로더 (UX를 위해 표시)
+            st.markdown('''
+            <div class="info-box">
+                <span class="info-icon">⚠️</span>
+                <strong>알림:</strong> 현재 서버에서 파일 업로드 기능에 기술적 제한이 있습니다.
+                대신 <strong>예시 문서</strong> 또는 <strong>직접 입력</strong> 기능을 이용해 주세요.
+            </div>
+            ''', unsafe_allow_html=True)
+            
+            # 파일 형식 안내
+            st.markdown('''
+            <div class="format-info">
+                <div class="format-title">지원 예정 파일 형식:</div>
+                <div class="format-list">
+                    <span class="format-item">📄 PDF</span>
+                    <span class="format-item">📝 Word</span>
+                    <span class="format-item">📊 PowerPoint</span>
+                    <span class="format-item">📋 Text</span>
+                </div>
+            </div>
+            ''', unsafe_allow_html=True)
+            
+            # 비활성화된 업로더 (UX를 위해 표시 - 스타일 개선)
+            st.markdown('<div class="upload-container">', unsafe_allow_html=True)
             st.file_uploader(
                 "파일 선택 (현재 비활성화됨)",
                 type=["pdf", "docx", "pptx", "txt"],
-                disabled=True
+                disabled=True,
+                help="현재는 직접 입력 탭을 사용해주세요."
             )
+            st.markdown('</div>', unsafe_allow_html=True)
+            
+            # 대체 안내
+            st.info("💡 **대안**: 문서 내용을 복사하여 '직접 입력' 탭에 붙여넣기 하실 수 있습니다.")
+            
+            # 탭 콘텐츠 닫기
+            st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
     
-    # 데이터베이스 상태 패널
+    # 데이터베이스 상태 패널 - 디자인 개선
     with st.container():
         st.markdown('<div class="document-panel" style="margin-top: 20px;">', unsafe_allow_html=True)
-        st.markdown('### 📊 데이터베이스 상태')
+        st.markdown('<h3 class="panel-title">📊 데이터베이스 상태</h3>', unsafe_allow_html=True)
         db_status = get_database_status()
         
-        # 그래픽 기반 상태 표시
+        # 그래픽 기반 상태 표시 - 개선된 디자인
         if db_status["document_count"] > 0:
             st.markdown(f'''
-            <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
-                <div style="flex-grow: 1;">
-                    <div style="font-weight: bold;">등록된 문서</div>
-                    <div style="background: #E6EFFF; border-radius: 10px; height: 8px; width: 100%; margin-top: 5px;">
-                        <div style="background: #0046FF; border-radius: 10px; height: 8px; width: {min(100, db_status["document_count"] * 20)}%;"></div>
+            <div class="db-status-container">
+                <div class="status-item">
+                    <div class="status-header">
+                        <div class="status-label">등록된 문서</div>
+                        <div class="status-value">{db_status["document_count"]}</div>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: {min(100, db_status["document_count"] * 20)}%;"></div>
                     </div>
                 </div>
-                <div style="width: 40px; text-align: right; font-weight: bold;">{db_status["document_count"]}</div>
-            </div>
-            
-            <div style="display: flex; align-items: center; gap: 10px; margin: 10px 0;">
-                <div style="flex-grow: 1;">
-                    <div style="font-weight: bold;">문장 수</div>
-                    <div style="background: #E6EFFF; border-radius: 10px; height: 8px; width: 100%; margin-top: 5px;">
-                        <div style="background: #0046FF; border-radius: 10px; height: 8px; width: {min(100, db_status["chunk_count"] * 5)}%;"></div>
+                
+                <div class="status-item">
+                    <div class="status-header">
+                        <div class="status-label">문장 수</div>
+                        <div class="status-value">{db_status["chunk_count"]}</div>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: {min(100, db_status["chunk_count"] * 5)}%;"></div>
                     </div>
                 </div>
-                <div style="width: 40px; text-align: right; font-weight: bold;">{db_status["chunk_count"]}</div>
-            </div>
-            
-            <div class="info-box" style="background-color: #E6F7E6; border-left: 4px solid #28A745;">
-                ✅ 문서가 등록되어 있어 더 정확한 답변을 제공할 수 있습니다.
+                
+                <div class="status-info success">
+                    <div class="status-icon">✅</div>
+                    <div>문서가 등록되어 있어 더 정확한 답변을 제공할 수 있습니다.</div>
+                </div>
             </div>
             ''', unsafe_allow_html=True)
         else:
             st.markdown('''
-            <div class="info-box" style="background-color: #FFF3E0; border-left: 4px solid #FFA726;">
-                📝 AI 응답 품질 향상을 위해 내부 문서를 추가해 주세요!
+            <div class="db-status-container">
+                <div class="status-item">
+                    <div class="status-header">
+                        <div class="status-label">등록된 문서</div>
+                        <div class="status-value">0</div>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: 0%;"></div>
+                    </div>
+                </div>
+                
+                <div class="status-info warning">
+                    <div class="status-icon">📝</div>
+                    <div>AI 응답 품질 향상을 위해 내부 문서를 추가해 주세요!</div>
+                </div>
             </div>
             ''', unsafe_allow_html=True)
         
