@@ -251,6 +251,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // 마크다운을 HTML로 변환하는 함수
+    function convertMarkdownToHtml(markdown) {
+        try {
+            // marked.js로 마크다운을 HTML로 변환
+            const rawHtml = marked.parse(markdown);
+            
+            // DOMPurify로 XSS 방지를 위한 HTML 정제
+            return DOMPurify.sanitize(rawHtml);
+        } catch (error) {
+            console.error('Markdown 변환 중 오류 발생:', error);
+            return markdown; // 오류 발생 시 원본 텍스트 반환
+        }
+    }
+    
     // 메시지 추가 함수
     function addMessage(content, sender) {
         const messageDiv = document.createElement('div');
@@ -258,7 +272,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const messageContent = document.createElement('div');
         messageContent.className = 'message-content';
-        messageContent.textContent = content;
+        
+        // 봇 메시지는 마크다운으로 처리, 사용자 메시지는 일반 텍스트
+        if (sender === 'bot') {
+            messageContent.innerHTML = convertMarkdownToHtml(content);
+        } else {
+            messageContent.textContent = content;
+        }
         
         messageDiv.appendChild(messageContent);
         chatContainer.appendChild(messageDiv);
@@ -267,33 +287,39 @@ document.addEventListener('DOMContentLoaded', function() {
         scrollToBottom();
     }
     
-    // 타이핑 효과를 적용한 메시지 추가 함수
+    // 봇 메시지는 마크다운으로 즉시 표시 (타이핑 효과 없음)
     function addMessageWithTypingEffect(content, sender) {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${sender}-message`;
-        
-        const messageContent = document.createElement('div');
-        messageContent.className = 'message-content';
-        messageDiv.appendChild(messageContent);
-        chatContainer.appendChild(messageDiv);
-        
-        // 타이핑 효과
-        let i = 0;
-        const typingSpeed = 20; // 타이핑 속도 조절 (ms)
-        
-        // 응답 길이가 매우 긴 경우 타이핑 속도 최적화
-        const adjustedSpeed = content.length > 300 ? 5 : typingSpeed;
-        
-        function typeNextChar() {
-            if (i < content.length) {
-                messageContent.textContent += content.charAt(i);
-                i++;
-                scrollToBottom();
-                setTimeout(typeNextChar, adjustedSpeed);
+        if (sender === 'bot') {
+            // 봇 메시지는 마크다운으로 렌더링
+            addMessage(content, sender);
+        } else {
+            // 사용자 메시지는 타이핑 효과 사용 (원래 함수)
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}-message`;
+            
+            const messageContent = document.createElement('div');
+            messageContent.className = 'message-content';
+            messageDiv.appendChild(messageContent);
+            chatContainer.appendChild(messageDiv);
+            
+            // 타이핑 효과
+            let i = 0;
+            const typingSpeed = 20; // 타이핑 속도 조절 (ms)
+            
+            // 응답 길이가 매우 긴 경우 타이핑 속도 최적화
+            const adjustedSpeed = content.length > 300 ? 5 : typingSpeed;
+            
+            function typeNextChar() {
+                if (i < content.length) {
+                    messageContent.textContent += content.charAt(i);
+                    i++;
+                    scrollToBottom();
+                    setTimeout(typeNextChar, adjustedSpeed);
+                }
             }
+            
+            setTimeout(typeNextChar, 200); // 약간의 지연 후 타이핑 시작
         }
-        
-        setTimeout(typeNextChar, 200); // 약간의 지연 후 타이핑 시작
     }
     
     // 스크롤을 최신 메시지로 이동하는 함수 (부드러운 스크롤 효과)
