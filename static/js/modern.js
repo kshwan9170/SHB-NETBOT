@@ -635,16 +635,10 @@ document.addEventListener('DOMContentLoaded', function() {
         loadDocuments();
     }
     
-    // 페이지네이션 상태 관리
-    let currentDocsPage = 1;
-    const docsPerPage = 5;
-    let allDocuments = [];
-    
     // 문서 목록 로드
     async function loadDocuments() {
         const documentsList = document.getElementById('documentsList');
-        const tbody = document.getElementById('documents-tbody');
-        if (!documentsList && !tbody) return;
+        if (!documentsList) return;
         
         try {
             const response = await fetch('/api/documents');
@@ -652,107 +646,12 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (response.ok) {
                 if (data.files && data.files.length > 0) {
-                    // 전체 문서 저장
-                    allDocuments = data.files;
+                    // 문서 목록 표시
+                    documentsList.innerHTML = '';
                     
-                    // 페이지네이션 적용하여 문서 표시
-                    renderPaginatedDocuments();
-                } else {
-                    renderEmptyState();
-                }
-            }
-        } catch (error) {
-            console.error('문서 목록 로드 중 오류 발생:', error);
-        }
-    }
-    
-    // 문서 목록 페이지네이션 UI 렌더링
-    function renderDocumentsPagination() {
-        const tableContainer = document.getElementById('dynamic-documents-table');
-        if (!tableContainer) return;
-        
-        // 기존 페이지네이션 제거
-        const existingPagination = tableContainer.querySelector('.pagination-container');
-        if (existingPagination) {
-            existingPagination.remove();
-        }
-        
-        const totalPages = Math.ceil(allDocuments.length / docsPerPage);
-        
-        // 페이지가 1개만 있으면 페이지네이션 표시하지 않음
-        if (totalPages <= 1) return;
-        
-        // 페이지네이션 컨테이너 생성
-        const paginationContainer = document.createElement('div');
-        paginationContainer.className = 'pagination-container';
-        paginationContainer.style.cssText = 'margin-top: 20px; display: flex; justify-content: center; gap: 10px;';
-        
-        // 이전 페이지 버튼
-        if (currentDocsPage > 1) {
-            const prevButton = document.createElement('button');
-            prevButton.innerHTML = '&laquo; 이전';
-            prevButton.className = 'pagination-btn';
-            prevButton.style.cssText = 'padding: 5px 10px; background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;';
-            prevButton.addEventListener('click', () => {
-                currentDocsPage--;
-                renderPaginatedDocuments();
-            });
-            paginationContainer.appendChild(prevButton);
-        }
-        
-        // 페이지 숫자 버튼
-        for (let i = 1; i <= totalPages; i++) {
-            const pageButton = document.createElement('button');
-            pageButton.innerText = i;
-            pageButton.className = 'pagination-btn' + (i === currentDocsPage ? ' active' : '');
-            
-            const buttonStyle = 'padding: 5px 10px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;';
-            const activeStyle = 'background-color: #0064E1; color: white;';
-            const inactiveStyle = 'background-color: #f5f5f5;';
-            
-            pageButton.style.cssText = buttonStyle + (i === currentDocsPage ? activeStyle : inactiveStyle);
-            
-            pageButton.addEventListener('click', () => {
-                currentDocsPage = i;
-                renderPaginatedDocuments();
-            });
-            paginationContainer.appendChild(pageButton);
-        }
-        
-        // 다음 페이지 버튼
-        if (currentDocsPage < totalPages) {
-            const nextButton = document.createElement('button');
-            nextButton.innerHTML = '다음 &raquo;';
-            nextButton.className = 'pagination-btn';
-            nextButton.style.cssText = 'padding: 5px 10px; background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;';
-            nextButton.addEventListener('click', () => {
-                currentDocsPage++;
-                renderPaginatedDocuments();
-            });
-            paginationContainer.appendChild(nextButton);
-        }
-        
-        tableContainer.appendChild(paginationContainer);
-    }
-    
-    // 페이지네이션 적용하여 문서 목록 표시
-    function renderPaginatedDocuments() {
-        const tbody = document.getElementById('documents-tbody');
-        const tableContainer = document.getElementById('dynamic-documents-table');
-        const filesContainer = document.getElementById('file-list-container');
-        
-        // 현재 페이지에 표시할 문서 계산
-        const startIndex = (currentDocsPage - 1) * docsPerPage;
-        const endIndex = Math.min(startIndex + docsPerPage, allDocuments.length);
-        const currentPageDocs = allDocuments.slice(startIndex, endIndex);
-        
-        // 테이블 형식 문서 목록 표시
-        if (tbody) {
-            tbody.innerHTML = '';
-            
-            currentPageDocs.forEach(file => {
-                const fileExt = file.file_type;
-                let iconClass = 'txt';
+                    data.files.forEach(file => {
+                        const fileExt = file.file_type;
+                        let iconClass = 'txt';
                         
                         // 파일 타입에 따른 아이콘 클래스
                         if (fileExt === 'pdf') {
