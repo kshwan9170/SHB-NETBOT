@@ -1846,6 +1846,10 @@ img {
     background-color: var(--primary-light);
 }
 
+.post-main {
+    flex: 1;
+}
+
 .post-title {
     font-weight: 500;
     color: var(--text-primary);
@@ -1869,6 +1873,38 @@ img {
 
 .post-author {
     white-space: nowrap;
+}
+
+.post-actions {
+    display: flex;
+    gap: 0.8rem;
+}
+
+.post-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 50%;
+    background-color: transparent;
+    transition: all 0.3s;
+}
+
+.edit-btn {
+    color: var(--primary);
+}
+
+.edit-btn:hover {
+    background-color: rgba(10, 116, 218, 0.1);
+}
+
+.delete-btn {
+    color: #e53935;
+}
+
+.delete-btn:hover {
+    background-color: rgba(229, 57, 53, 0.1);
 }
 
 .post-form {
