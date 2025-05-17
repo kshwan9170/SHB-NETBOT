@@ -4,16 +4,25 @@ import uuid
 import shutil
 import re
 from pathlib import Path
+from datetime import datetime
 from werkzeug.utils import secure_filename
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, abort
 import openai
 from openai import OpenAI
+
+# 게시판 모델 임포트
+from models import init_db, get_db, close_db, InquiryBoard, FeedbackBoard, ReportBoard
 
 # Custom modules
 import database
 import document_processor
 
 app = Flask(__name__)
+
+# 데이터베이스 연결 종료
+@app.teardown_appcontext
+def close_connection(exception):
+    close_db(exception)
 
 # 파일 업로드 설정
 UPLOAD_FOLDER = 'uploaded_files'
