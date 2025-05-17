@@ -98,20 +98,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else {
                 // 메인 페이지에서는 스크롤 위치에 따라 메뉴 활성화
+                // 모든 활성 클래스 초기화
+                navLinkItems.forEach(link => {
+                    link.classList.remove('active');
+                });
+                
+                // 현재 화면에 가장 많이 표시되는 섹션을 찾아 해당 메뉴만 활성화
+                let maxVisibleSection = null;
+                let maxVisibleHeight = 0;
+                
                 sections.forEach(section => {
-                    const sectionTop = section.offsetTop;
-                    const sectionHeight = section.offsetHeight;
+                    const rect = section.getBoundingClientRect();
                     const sectionId = section.getAttribute('id');
                     
-                    if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
-                        navLinkItems.forEach(link => {
-                            link.classList.remove('active');
-                            if (link.getAttribute('href') === `#${sectionId}`) {
-                                link.classList.add('active');
-                            }
-                        });
+                    // 화면에 보이는 섹션의 높이 계산
+                    const visibleHeight = Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
+                    
+                    if (visibleHeight > maxVisibleHeight && visibleHeight > 0) {
+                        maxVisibleHeight = visibleHeight;
+                        maxVisibleSection = sectionId;
                     }
                 });
+                
+                // 가장 많이 보이는 섹션의 메뉴만 활성화
+                if (maxVisibleSection) {
+                    navLinkItems.forEach(link => {
+                        if (link.getAttribute('href') === `#${maxVisibleSection}`) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
             }
         });
     }
