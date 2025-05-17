@@ -159,21 +159,69 @@ def search_similar_docs(
     # Initialize the database
     collection = initialize_database()
     
-    # Search for similar documents
-    results = collection.query(
-        query_texts=[query],
-        n_results=top_k,
-    )
+    # Check if query contains "넥스지" or "nexg" or other nexg-related terms
+    nexg_keywords = ["넥스지", "nexg", "vforce", "넥스쥐", "axgate", "엑스게이트"]
+    is_nexg_query = any(keyword.lower() in query.lower() for keyword in nexg_keywords)
     
-    # Format the results to mimic langchain Document objects for compatibility
     documents = []
-    if results and 'documents' in results and results['documents']:
-        for i, doc_text in enumerate(results['documents'][0]):
-            doc_metadata = results['metadatas'][0][i] if 'metadatas' in results and results['metadatas'] else {}
-            documents.append(type('Document', (), {
-                'page_content': doc_text,
-                'metadata': doc_metadata
-            }))
+    
+    if is_nexg_query:
+        # First attempt: Search with nexg_guide filter
+        try:
+            results = collection.query(
+                query_texts=[query],
+                n_results=top_k,
+                where={"doc_name": "nexg_guide"}
+            )
+            
+            # Process results
+            if results and 'documents' in results and results['documents'] and results['documents'][0]:
+                for i, doc_text in enumerate(results['documents'][0]):
+                    doc_metadata = results['metadatas'][0][i] if 'metadatas' in results and results['metadatas'] else {}
+                    documents.append(type('Document', (), {
+                        'page_content': doc_text,
+                        'metadata': doc_metadata
+                    }))
+        except Exception as e:
+            print(f"Error during filtered document search: {e}")
+        
+        # If no results from filtered search, try without filter (fallback)
+        if not documents:
+            print(f"No results found with nexg filter, trying unfiltered search for: {query}")
+            try:
+                results = collection.query(
+                    query_texts=[query],
+                    n_results=top_k
+                )
+                
+                # Process results
+                if results and 'documents' in results and results['documents'] and results['documents'][0]:
+                    for i, doc_text in enumerate(results['documents'][0]):
+                        doc_metadata = results['metadatas'][0][i] if 'metadatas' in results and results['metadatas'] else {}
+                        documents.append(type('Document', (), {
+                            'page_content': doc_text,
+                            'metadata': doc_metadata
+                        }))
+            except Exception as e:
+                print(f"Error during fallback document search: {e}")
+    else:
+        # Normal search without filter for non-nexg queries
+        try:
+            results = collection.query(
+                query_texts=[query],
+                n_results=top_k
+            )
+            
+            # Process results
+            if results and 'documents' in results and results['documents'] and results['documents'][0]:
+                for i, doc_text in enumerate(results['documents'][0]):
+                    doc_metadata = results['metadatas'][0][i] if 'metadatas' in results and results['metadatas'] else {}
+                    documents.append(type('Document', (), {
+                        'page_content': doc_text,
+                        'metadata': doc_metadata
+                    }))
+        except Exception as e:
+            print(f"Error during standard document search: {e}")
     
     return documents
 
