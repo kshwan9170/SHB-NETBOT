@@ -732,6 +732,58 @@ css = """
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     }
     
+    /* 탭 콘텐츠 스타일 */
+    .tab-content {
+        padding: 15px;
+        border-radius: 12px;
+        background-color: #F7F9FF;
+        border: 1px solid rgba(0, 70, 255, 0.1);
+        margin-top: 10px;
+    }
+    
+    [data-theme="dark"] .tab-content {
+        background-color: #232430;
+        border: 1px solid rgba(75, 121, 255, 0.1);
+    }
+    
+    /* 샘플 문서 정보 스타일 */
+    .sample-doc-info {
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 15px;
+        padding-left: 25px;
+        position: relative;
+    }
+    
+    .sample-doc-info::before {
+        content: '📄';
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+    
+    [data-theme="dark"] .sample-doc-info {
+        color: #AAA;
+    }
+    
+    /* 샘플 문서 미리보기 */
+    .sample-doc-preview {
+        max-height: 200px;
+        overflow-y: auto;
+        padding: 15px;
+        border-radius: 8px;
+        background-color: rgba(255, 255, 255, 0.7);
+        border: 1px dashed rgba(0, 70, 255, 0.2);
+        font-family: monospace;
+        font-size: 0.85rem;
+        margin: 10px 0;
+    }
+    
+    [data-theme="dark"] .sample-doc-preview {
+        background-color: rgba(30, 31, 40, 0.7);
+        border: 1px dashed rgba(75, 121, 255, 0.2);
+    }
+    
     .info-box:hover {
         box-shadow: 0 3px 12px rgba(0, 70, 255, 0.15);
         transform: translateY(-1px);
@@ -925,77 +977,106 @@ with info_col:
         
         tabs = st.tabs(["📋 예시 문서", "📝 직접 입력", "📤 파일 업로드"])
         
-        # 예시 문서 탭
+        # 예시 문서 탭 - 디자인 개선
         with tabs[0]:
-            sample_txt = st.checkbox("예시 문서 사용하기", help="테스트용 예시 문서를 사용합니다")
+            st.markdown('<div class="tab-content">', unsafe_allow_html=True)
+            sample_txt = st.checkbox("✓ 예시 문서 사용하기", help="테스트용 예시 문서를 사용합니다")
+            st.markdown('<div class="sample-doc-info">신한은행 네트워크 관련 기본 매뉴얼이 포함되어 있습니다.</div>', unsafe_allow_html=True)
+            
+            # 예시 문서 텍스트
+            sample_text = """
+            # 신한은행 네트워크 매뉴얼
+            
+            ## 스윙(SWING) 접속 방법
+            1. 스윙 아이콘을 더블 클릭하여 실행합니다.
+            2. 사원번호와 비밀번호를 입력합니다.
+            3. OTP 인증을 완료합니다.
+            4. 로그인 후 좌측 메뉴에서 원하는 기능을 선택합니다.
+            
+            ## IP 확인 방법
+            1. 시작 메뉴에서 'cmd'를 입력하여 명령 프롬프트를 실행합니다.
+            2. 'ipconfig'를 입력하고 Enter를 누릅니다.
+            3. 'IPv4 주소'를 확인합니다.
+            
+            ## VPN 연결 방법
+            1. VPN 클라이언트를 실행합니다.
+            2. 'shb.vpn.net' 서버 주소를 입력합니다.
+            3. 사용자 계정과 비밀번호를 입력합니다.
+            4. 연결 버튼을 클릭합니다.
+            
+            ## 네트워크 드라이브 매핑 방법
+            1. 윈도우 탐색기에서 '내 PC'를 엽니다.
+            2. '네트워크 위치 추가'를 클릭합니다.
+            3. '\\\\서버명\\공유폴더' 형식으로 주소를 입력합니다.
+            4. 드라이브 문자를 선택합니다.
+            
+            ## 인터넷 브라우저 사용 규정
+            1. 업무 용도로만 인터넷을 사용합니다.
+            2. 보안 위험이 있는 웹사이트 접속을 금지합니다.
+            3. 사내 문서는 외부로 유출하지 않습니다.
+            4. 의심스러운 이메일 첨부파일은 열지 않습니다.
+            """
+            
+            # 미리보기 표시
+            st.markdown('<div class="sample-doc-preview">', unsafe_allow_html=True)
+            st.code(sample_text, language="markdown")
+            st.markdown('</div>', unsafe_allow_html=True)
             
             if sample_txt:
-                # 예시 문서 텍스트
-                sample_text = """
-                # 신한은행 네트워크 매뉴얼
+                # 처리 버튼
+                process_btn = st.button("📥 예시 문서 추가", key="add_sample_doc", type="primary", use_container_width=True)
                 
-                ## 스윙(SWING) 접속 방법
-                1. 스윙 아이콘을 더블 클릭하여 실행합니다.
-                2. 사원번호와 비밀번호를 입력합니다.
-                3. OTP 인증을 완료합니다.
-                4. 로그인 후 좌측 메뉴에서 원하는 기능을 선택합니다.
-                
-                ## IP 확인 방법
-                1. 시작 메뉴에서 'cmd'를 입력하여 명령 프롬프트를 실행합니다.
-                2. 'ipconfig'를 입력하고 Enter를 누릅니다.
-                3. 'IPv4 주소'를 확인합니다.
-                
-                ## VPN 연결 방법
-                1. VPN 클라이언트를 실행합니다.
-                2. 'shb.vpn.net' 서버 주소를 입력합니다.
-                3. 사용자 계정과 비밀번호를 입력합니다.
-                4. 연결 버튼을 클릭합니다.
-                
-                ## 네트워크 드라이브 매핑 방법
-                1. 윈도우 탐색기에서 '내 PC'를 엽니다.
-                2. '네트워크 위치 추가'를 클릭합니다.
-                3. '\\\\서버명\\공유폴더' 형식으로 주소를 입력합니다.
-                4. 드라이브 문자를 선택합니다.
-                
-                ## 인터넷 브라우저 사용 규정
-                1. 업무 용도로만 인터넷을 사용합니다.
-                2. 보안 위험이 있는 웹사이트 접속을 금지합니다.
-                3. 사내 문서는 외부로 유출하지 않습니다.
-                4. 의심스러운 이메일 첨부파일은 열지 않습니다.
-                """
-                
-                with st.spinner("문서 처리 중..."):
-                    try:
-                        # 문서 처리
-                        texts = [sample_text]
-                        initialize_database()
-                        add_document_embeddings(texts, metadata={"source": "신한은행_네트워크_매뉴얼.txt"})
-                        
-                        st.session_state.document_uploaded = True
-                        st.success("예시 문서가 성공적으로 처리되었습니다!")
-                    except Exception as e:
-                        st.error(f"문서 처리 중 오류가 발생했습니다: {str(e)}")
+                if process_btn:
+                    with st.spinner("문서 처리 중..."):
+                        try:
+                            # 문서 처리
+                            texts = [sample_text]
+                            initialize_database()
+                            add_document_embeddings(texts, metadata={"source": "신한은행_네트워크_매뉴얼.txt"})
+                            
+                            st.session_state.document_uploaded = True
+                            st.success("✅ 예시 문서가 성공적으로 처리되었습니다!")
+                        except Exception as e:
+                            st.error(f"❌ 문서 처리 중 오류가 발생했습니다: {str(e)}")
+            
+            # 탭 컨텐츠 닫기
+            st.markdown('</div>', unsafe_allow_html=True)
         
-        # 텍스트 입력 탭
+        # 텍스트 입력 탭 - 디자인 개선
         with tabs[1]:
+            st.markdown('<div class="tab-content">', unsafe_allow_html=True)
+            st.markdown('<div class="input-info">내부 네트워크 관련 문서 내용을 붙여넣어 직접 추가할 수 있습니다.</div>', unsafe_allow_html=True)
+            
             text_input = st.text_area(
                 "직접 문서 입력",
-                height=150,
-                placeholder="여기에 참고할 문서 내용을 붙여넣기 하세요..."
+                height=180,
+                placeholder="여기에 참고할 문서 내용을 붙여넣기 하세요...",
+                help="마크다운 형식을 지원합니다. 문서의 구조를 유지하여 입력하세요."
             )
             
-            if st.button("텍스트 처리하기", use_container_width=True) and text_input:
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                text_title = st.text_input("문서 제목", placeholder="문서 이름을 입력하세요", help="문서를 식별하기 위한 제목입니다.")
+            
+            # 처리 버튼
+            if st.button("📄 텍스트 처리하기", type="primary", use_container_width=True) and text_input:
                 with st.spinner("텍스트 처리 중..."):
                     try:
                         # 텍스트 처리
                         texts = [text_input]
                         initialize_database()
-                        add_document_embeddings(texts, metadata={"source": "사용자_입력_문서.txt"})
+                        
+                        # 제목이 있으면 사용, 없으면 기본값 사용
+                        doc_title = text_title if text_title else "사용자_입력_문서"
+                        add_document_embeddings(texts, metadata={"source": f"{doc_title}.txt"})
                         
                         st.session_state.document_uploaded = True
-                        st.success("입력하신 텍스트가 성공적으로 처리되었습니다!")
+                        st.success("✅ 입력하신 텍스트가 성공적으로 처리되었습니다!")
                     except Exception as e:
-                        st.error(f"텍스트 처리 중 오류가 발생했습니다: {str(e)}")
+                        st.error(f"❌ 텍스트 처리 중 오류가 발생했습니다: {str(e)}")
+            
+            # 탭 컨텐츠 닫기
+            st.markdown('</div>', unsafe_allow_html=True)
         
         # 파일 업로드 탭
         with tabs[2]:
