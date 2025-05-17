@@ -18,16 +18,16 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "SHB Chatbot"
+args = "SHB-NetBot"
 
 [[workflows.workflow]]
-name = "SHB Chatbot"
+name = "SHB-NetBot"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "./run.sh"
-waitForPort = 8080
+waitForPort = 5000
 
 [[ports]]
 localPort = 3000
