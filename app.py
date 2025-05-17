@@ -2,6 +2,7 @@ import os
 import json
 import uuid
 import shutil
+import re
 from pathlib import Path
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, jsonify, send_from_directory
@@ -165,11 +166,23 @@ def upload_file():
                 # 파일 저장
                 file.save(file_path)
                 
-                # 문서 처리 및 청크 생성
+                # 문서 처리 및 청크 생성 (최대 500 토큰 크기 청크)
                 chunks = document_processor.process_document(file_path)
+                print(f"문서 분할 완료: {len(chunks)}개 청크")
                 
-                # 청크를 벡터 DB에 저장
-                database.add_document_embeddings(chunks)
+                # 각 청크에 필요한 메타데이터 추가 (소스 문서 정보)
+                for chunk in chunks:
+                    if 'metadata' in chunk:
+                        chunk['metadata']['source'] = filename
+                        chunk['metadata']['doc_id'] = chunk['doc_id']
+                
+                # 청크를 벡터 DB에 저장 (요구사항에 맞게 컬렉션 "uploaded_docs" 사용)
+                try:
+                    database.add_document_embeddings(chunks)
+                    print(f"벡터 DB에 {len(chunks)}개 청크 저장 완료: {filename}")
+                except Exception as db_error:
+                    print(f"ERROR: RAG pipeline failed during vector DB storage: {str(db_error)}")
+                    raise db_error
                 
                 # 성공 결과 추가
                 results.append({
