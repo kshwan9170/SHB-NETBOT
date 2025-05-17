@@ -47,10 +47,6 @@ def allowed_file(filename):
     """파일 확장자 체크"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def get_file_extension(filename):
-    """파일에서 확장자만 추출"""
-    return filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
-
 def get_clean_filename(filename):
     """보안을 위해 안전한 파일명 생성"""
     if not filename:
@@ -236,24 +232,16 @@ def get_documents():
             if not filename.startswith('.'):  # 숨김 파일 제외
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 if os.path.isfile(file_path):
-                    # 시스템 내 저장된 파일명에서 UUID와 원본 파일명 분리
-                    # UUID_원본파일명 형식
-                    parts = filename.split('_', 1)  # 첫 _ 기호에서 한번만 분리
-                    
-                    if len(parts) > 1:
-                        original_filename = parts[1]  # UUID 이후 부분이 원본 파일명
-                    else:
-                        original_filename = filename  # 분할 실패시 전체 파일명 사용
+                    # 원본 파일명 추출 (UUID 제거)
+                    original_filename = "_".join(filename.split("_")[1:])
                     
                     # 파일 통계 정보
                     file_stats = os.stat(file_path)
-                    file_type = original_filename.split('.')[-1].lower() if '.' in original_filename else ''
-                    
                     files.append({
-                        'filename': original_filename,  # 원본 파일명
+                        'filename': original_filename,
                         'size': file_stats.st_size,
                         'uploaded_at': file_stats.st_mtime,
-                        'file_type': file_type,
+                        'file_type': original_filename.split('.')[-1].lower(),
                         'system_filename': filename  # 시스템 내부 파일명 추가 (삭제 기능을 위해)
                     })
         
@@ -302,12 +290,11 @@ def upload_chunk():
             'success': False, 
             'error': '유효하지 않은 파일명입니다.'
         }), 400
-    # 파일명에서 확장자만 추출하여 허용된 확장자인지 확인
-    # secure_filename은 한글 파일명을 제대로 처리하지 못하므로, 확장자만 확인
-    file_ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
-    
+    # 문자열이 확실한 경우에만 secure_filename 사용
+    safe_filename = secure_filename(str(filename))
+        
     # 파일 확장자 확인
-    if file_ext not in ALLOWED_EXTENSIONS:
+    if not allowed_file(safe_filename):
         return jsonify({
             'success': False, 
             'error': '지원되지 않는 파일 형식입니다.'
@@ -329,24 +316,24 @@ def upload_chunk():
     
     try:
         # 청크 저장 경로
-        chunk_filename = f"{session_id}_{filename}.part{chunk_index}"
+        chunk_filename = f"{session_id}_{safe_filename}.part{chunk_index}"
         chunk_path = os.path.join(app.config['TEMP_CHUNK_FOLDER'], chunk_filename)
         
         # 청크 파일 저장
         chunk_file.save(chunk_path)
-        print(f"Saved chunk {chunk_index+1}/{total_chunks} for file {filename}")
+        print(f"Saved chunk {chunk_index+1}/{total_chunks} for file {safe_filename}")
         
         # 마지막 청크인 경우 모든 청크를 합쳐서 최종 파일 생성
         if chunk_index == total_chunks - 1:
             # 최종 파일명 및 경로
-            final_unique_filename = f"{session_id}_{filename}"
+            final_unique_filename = f"{session_id}_{safe_filename}"
             final_path = os.path.join(app.config['UPLOAD_FOLDER'], final_unique_filename)
-            print(f"Combining chunks for {filename} to {final_unique_filename}")
+            print(f"Combining chunks for {safe_filename} to {final_unique_filename}")
             
             # 청크 합치기
             with open(final_path, 'wb') as final_file:
                 for i in range(total_chunks):
-                    part_filename = f"{session_id}_{filename}.part{i}"
+                    part_filename = f"{session_id}_{safe_filename}.part{i}"
                     part_path = os.path.join(app.config['TEMP_CHUNK_FOLDER'], part_filename)
                     
                     if os.path.exists(part_path):
@@ -369,14 +356,14 @@ def upload_chunk():
                 
                 # 파일 완성 정보 추가
                 response_data['fileComplete'] = True
-                response_data['finalFilename'] = filename
+                response_data['finalFilename'] = safe_filename
                 response_data['size'] = os.path.getsize(final_path)
                 response_data['doc_id'] = chunks[0]['doc_id'] if chunks else None
                 response_data['chunk_count'] = len(chunks) if chunks else 0
-                print(f"File upload and processing complete for {filename}")
+                print(f"File upload and processing complete for {safe_filename}")
                 
             except Exception as e:
-                print(f"Error processing file {filename}: {str(e)}")
+                print(f"Error processing file {safe_filename}: {str(e)}")
                 response_data['processingError'] = str(e)
         
         return jsonify(response_data)
