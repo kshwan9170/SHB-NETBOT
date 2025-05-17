@@ -219,7 +219,9 @@ img {
 }
 
 .nav-link:hover::after,
-.nav-link.active::after {
+.nav-link.active::after,
+.dropdown-toggle:hover::after,
+.dropdown.show .dropdown-toggle::after {
     width: 100%;
 }
 
@@ -1905,24 +1907,11 @@ textarea.form-control {
 }
 
 .dropdown-toggle::after {
-    content: '';
-    position: absolute;
-    right: 4px;
-    top: 50%;
-    margin-top: -2px;
-    width: 6px;
-    height: 6px;
-    border: none;
-    border-right: 1.5px solid currentColor;
-    border-bottom: 1.5px solid currentColor;
-    transform: translateY(-30%) rotate(45deg);
-    transition: transform 0.2s;
-    opacity: 0.7;
+    content: none;
 }
 
-.dropdown:hover .dropdown-toggle::after,
-.dropdown.show .dropdown-toggle::after {
-    transform: translateY(0) rotate(225deg);
+.dropdown-toggle {
+    padding-right: 0 !important;
 }
 
 .dropdown-menu {
