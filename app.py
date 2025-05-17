@@ -582,7 +582,7 @@ def create_chat_interface():
             <div style="text-align: center; padding: 8px;">
                 <p style="margin-bottom: 16px;">네트워크 관련 문서를 추가하여 더 정확한 답변을 받을 수 있습니다.</p>
                 <button id="show-doc-upload" style="
-                    background-color: {btn_bg if st.session_state.theme == 'dark' else '#0b57d0'};
+                    background-color: #0b57d0;
                     color: white;
                     border: none;
                     padding: 8px 16px;
@@ -711,7 +711,6 @@ def main():
     st.markdown(get_css(), unsafe_allow_html=True)
     
     # 폼 데이터 처리
-    query_params = st.experimental_get_query_params()
     
     # POST 데이터 처리 (사용자 메시지)
     if "user_message" in st.query_params:
