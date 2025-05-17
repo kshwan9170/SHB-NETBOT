@@ -672,6 +672,85 @@ css = """
             display: none;
         }
     }
+    
+    /* 정보 박스 스타일 */
+    .info-box {
+        padding: 12px 15px;
+        background-color: #E6EFFF;
+        background-image: linear-gradient(135deg, #E6EFFF, #F0F5FF);
+        border-radius: 12px;
+        margin-bottom: 18px;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        border-left: 3px solid #0046FF;
+        box-shadow: 0 2px 8px rgba(0, 70, 255, 0.08);
+        transition: all 0.2s ease;
+    }
+    
+    /* Streamlit 탭 컴포넌트 스타일 개선 */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        padding: 8px 16px;
+        border-radius: 10px;
+        background-color: #F0F5FF;
+        border: 1px solid rgba(0, 70, 255, 0.1);
+        transition: all 0.2s ease;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        background-color: #E6EFFF;
+        border-color: rgba(0, 70, 255, 0.2);
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background-color: #0046FF !important;
+        color: white !important;
+        font-weight: 600;
+        border: 1px solid #0046FF !important;
+        box-shadow: 0 2px 8px rgba(0, 70, 255, 0.25);
+    }
+    
+    [data-theme="dark"] .stTabs [data-baseweb="tab"] {
+        background-color: #252637;
+        border: 1px solid rgba(75, 121, 255, 0.1);
+    }
+    
+    [data-theme="dark"] .stTabs [data-baseweb="tab"]:hover {
+        background-color: #2A2C40;
+        border-color: rgba(75, 121, 255, 0.2);
+    }
+    
+    [data-theme="dark"] .stTabs [aria-selected="true"] {
+        background-color: #1847E0 !important;
+        border: 1px solid #1847E0 !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    }
+    
+    .info-box:hover {
+        box-shadow: 0 3px 12px rgba(0, 70, 255, 0.15);
+        transform: translateY(-1px);
+    }
+    
+    .info-icon {
+        font-size: 1.2rem;
+    }
+    
+    [data-theme="dark"] .info-box {
+        background-color: #252637;
+        background-image: linear-gradient(135deg, #252637, #2A2C40);
+        border-left: 3px solid #4B79FF;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    [data-theme="dark"] .info-box:hover {
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+    }
 </style>
 """
 
@@ -838,11 +917,11 @@ with chat_col:
         st.rerun()
 
 with info_col:
-    # 문서 관리 패널
+    # 문서 관리 패널 - 디자인 개선
     with st.container():
         st.markdown('<div class="document-panel">', unsafe_allow_html=True)
         st.markdown('### 📚 문서 관리')
-        st.markdown('<div class="info-box">참고할 내부 문서를 추가하면 더 정확한 답변을 제공합니다.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="info-box"><span class="info-icon">💡</span> 내부 문서를 추가하면 더 정확한 답변을 제공합니다.</div>', unsafe_allow_html=True)
         
         tabs = st.tabs(["📋 예시 문서", "📝 직접 입력", "📤 파일 업로드"])
         
