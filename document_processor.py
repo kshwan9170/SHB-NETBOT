@@ -2,7 +2,8 @@ import os
 from pathlib import Path
 import tempfile
 import re
-from typing import List, Dict, Any, Optional
+import uuid
+from typing import List, Dict, Any, Optional, Tuple
 
 # Document processing libraries
 try:
@@ -19,29 +20,55 @@ try:
     from pptx import Presentation
 except ImportError:
     Presentation = None
+    
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 
-def process_document(file_path: str) -> List[str]:
+def process_document(file_path: str) -> List[Dict[str, Any]]:
     """
-    Process a document file and extract text chunks
+    Process a document file and extract text chunks with metadata
     
     Args:
         file_path: Path to the document file
         
     Returns:
-        List of text chunks from the document
+        List of dictionaries containing text chunks and metadata
     """
     file_extension = Path(file_path).suffix.lower()
+    filename = os.path.basename(file_path)
+    doc_id = str(uuid.uuid4())
+    
+    chunks = []
     
     if file_extension == '.pdf':
-        return extract_text_from_pdf(file_path)
+        raw_chunks = extract_text_from_pdf(file_path)
     elif file_extension == '.docx':
-        return extract_text_from_docx(file_path)
+        raw_chunks = extract_text_from_docx(file_path)
     elif file_extension == '.pptx':
-        return extract_text_from_pptx(file_path)
+        raw_chunks = extract_text_from_pptx(file_path)
+    elif file_extension == '.xlsx' or file_extension == '.xls':
+        raw_chunks = extract_text_from_excel(file_path)
     elif file_extension == '.txt':
-        return extract_text_from_txt(file_path)
+        raw_chunks = extract_text_from_txt(file_path)
     else:
         raise ValueError(f"Unsupported file extension: {file_extension}")
+    
+    # Add metadata to each chunk
+    for i, chunk in enumerate(raw_chunks):
+        chunks.append({
+            "doc_id": doc_id,
+            "chunk_id": f"{doc_id}-{i}",
+            "text": chunk,
+            "metadata": {
+                "filename": filename,
+                "file_type": file_extension[1:],  # Remove the dot
+                "chunk_index": i
+            }
+        })
+    
+    return chunks
 
 def extract_text_from_pdf(file_path: str) -> List[str]:
     """Extract text from PDF files"""
@@ -157,6 +184,48 @@ def extract_text_from_txt(file_path: str) -> List[str]:
             print(f"Error extracting text from TXT with cp949 encoding: {e}")
     except Exception as e:
         print(f"Error extracting text from TXT: {e}")
+    
+    return text_chunks
+
+def extract_text_from_excel(file_path: str) -> List[str]:
+    """Extract text from Excel files"""
+    if pd is None:
+        raise ImportError("pandas and openpyxl are required for Excel processing")
+    
+    text_chunks = []
+    
+    try:
+        # Read all sheets
+        excel_file = pd.ExcelFile(file_path)
+        
+        for sheet_name in excel_file.sheet_names:
+            df = pd.read_excel(file_path, sheet_name=sheet_name)
+            
+            # Convert DataFrame to string representations
+            sheet_text = f"--- Sheet: {sheet_name} ---\n"
+            
+            # Add header row
+            header_row = " | ".join([str(col) for col in df.columns])
+            sheet_text += header_row + "\n"
+            
+            # Add separator
+            sheet_text += "-" * len(header_row) + "\n"
+            
+            # Add data rows
+            for _, row in df.iterrows():
+                row_text = " | ".join([str(val) if not pd.isna(val) else "" for val in row])
+                sheet_text += row_text + "\n"
+            
+            # Add empty line between sheets
+            sheet_text += "\n"
+            
+            # Chunk the sheet text
+            chunks = chunk_text(sheet_text)
+            for chunk in chunks:
+                if len(chunk.strip()) > 20:
+                    text_chunks.append(chunk)
+    except Exception as e:
+        print(f"Error extracting text from Excel: {e}")
     
     return text_chunks
 
