@@ -48,10 +48,14 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def get_clean_filename(filename):
-    """보안을 위해 안전한 파일명 생성"""
+    """보안을 위해 안전한 파일명 생성 (한글 파일명 지원)"""
     if not filename:
         return ""
-    return secure_filename(filename)
+    # 위험한 문자만 제거하고 한글은 유지
+    s = str(filename).strip()
+    s = re.sub(r'[\\/*?:"<>|]', '', s)  # 윈도우에서 파일명으로 사용할 수 없는 문자 제거
+    s = s.replace('..', '')  # 상위 디렉토리 참조 방지
+    return s.strip()
 
 @app.route('/')
 def index():
@@ -164,9 +168,9 @@ def upload_file():
     results = []
     for file in files:
         if file and allowed_file(file.filename):
-            # 보안을 위한 파일명 설정
+            # 보안을 위한 파일명 설정 (한글 파일명 지원)
             if file and file.filename:
-                filename = secure_filename(str(file.filename))
+                filename = get_clean_filename(str(file.filename))
             else:
                 continue
             
