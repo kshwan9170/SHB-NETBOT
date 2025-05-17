@@ -525,6 +525,22 @@ def inquiry_edit(post_id):
                           list_route='inquiry_list', write_route='inquiry_edit', 
                           is_edit=True)
 
+# 문의하기 게시글 삭제 API
+@app.route('/inquiry/delete/<int:post_id>', methods=['POST'])
+def inquiry_delete(post_id):
+    try:
+        board = InquiryBoard()
+        # 해당 게시글이 존재하는지 확인
+        post = board.get_post(post_id)
+        if not post:
+            return jsonify({'success': False, 'error': '게시글을 찾을 수 없습니다.'}), 404
+        
+        # 게시글 삭제
+        board.delete_post(post_id)
+        return jsonify({'success': True, 'message': '게시글이 삭제되었습니다.'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # 피드백 게시판 라우트
 @app.route('/feedback')
 def feedback_list():
@@ -608,6 +624,22 @@ def feedback_edit(post_id):
                           list_route='feedback_list', write_route='feedback_edit', 
                           is_edit=True)
 
+# 피드백 게시글 삭제 API
+@app.route('/feedback/delete/<int:post_id>', methods=['POST'])
+def feedback_delete(post_id):
+    try:
+        board = FeedbackBoard()
+        # 해당 게시글이 존재하는지 확인
+        post = board.get_post(post_id)
+        if not post:
+            return jsonify({'success': False, 'error': '게시글을 찾을 수 없습니다.'}), 404
+        
+        # 게시글 삭제
+        board.delete_post(post_id)
+        return jsonify({'success': True, 'message': '게시글이 삭제되었습니다.'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # 장애 신고 게시판 라우트
 @app.route('/report')
 def report_list():
@@ -666,7 +698,7 @@ def report_view(post_id):
     if not post:
         abort(404)
         
-    return render_template('view_post.html', post=post, board_title='장애 신고', list_route='report_list', edit_route='report_edit')
+    return render_template('view_post.html', post=post, board_title='장애 신고', list_route='report_list', edit_route='report_edit', board_type='report')
 
 @app.route('/report/edit/<int:post_id>', methods=['GET', 'POST'])
 def report_edit(post_id):
@@ -690,6 +722,22 @@ def report_edit(post_id):
     return render_template('write_post.html', post=post, board_title='장애 신고', 
                           list_route='report_list', write_route='report_edit', 
                           is_edit=True)
+
+# 장애 신고 게시글 삭제 API
+@app.route('/report/delete/<int:post_id>', methods=['POST'])
+def report_delete(post_id):
+    try:
+        board = ReportBoard()
+        # 해당 게시글이 존재하는지 확인
+        post = board.get_post(post_id)
+        if not post:
+            return jsonify({'success': False, 'error': '게시글을 찾을 수 없습니다.'}), 404
+        
+        # 게시글 삭제
+        board.delete_post(post_id)
+        return jsonify({'success': True, 'message': '게시글이 삭제되었습니다.'})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # 데이터베이스 초기화 후 앱 실행
 if __name__ == '__main__':
