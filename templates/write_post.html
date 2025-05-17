@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}글 작성 | SHB-NetBot{% endblock %}</title>
+    <title>{% block title %}{{ board_title }} 글 작성 | SHB-NetBot{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/modern.css') }}">
     <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,7 +51,7 @@
     </nav>
 
     <!-- 메인 콘텐츠 영역 -->
-    <div class="board-container">
+    <div class="board-container" style="margin-top: 100px;">
         <div class="board-header">
             <h1 class="board-title">{% block board_title %}글 작성{% endblock %}</h1>
             <a href="{{ url_for(list_route) }}" class="button">목록으로</a>
