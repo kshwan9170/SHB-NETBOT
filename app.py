@@ -31,6 +31,17 @@ os.makedirs(TEMP_CHUNK_FOLDER, exist_ok=True)
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 client = OpenAI(api_key=openai_api_key)
 
+# 키워드-문서 매핑 사전: 검색어에 따라 특정 문서만 검색하도록 함
+KEYWORD_DOC_MAPPING = {
+    "nexg": "nexg_guide",
+    "vforce": "nexg_guide",
+    "cisco": "cisco_guide",
+    "aci": "cisco_guide", 
+    "alteon": "alteon_guide",
+    "스윙": "swing_guide",
+    "swing": "swing_guide"
+}
+
 def allowed_file(filename):
     """파일 확장자 체크"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -63,18 +74,65 @@ def chat():
         return jsonify({'error': '메시지가 비어 있습니다.'}), 400
     
     try:
-        # 벡터 DB에서 관련 문서 검색 (요구사항에 맞게 top_k=5로 수정)
-        relevant_docs = database.search_similar_docs(user_message, top_k=5)
+        # 사용자 질문에서 키워드 추출하여 문서 필터 적용
+        target_doc = None
+        user_message_lower = user_message.lower()
         
-        # 검색된 문서가 없는 경우 예외 처리
+        # 사용자 메시지에서 키워드 탐색
+        for keyword, doc_name in KEYWORD_DOC_MAPPING.items():
+            if keyword.lower() in user_message_lower:
+                target_doc = doc_name
+                print(f"키워드 '{keyword}' 감지됨: '{doc_name}' 문서로 검색 범위 제한")
+                break
+        
+        # 특화 문서 필터링 여부를 표시하는 플래그
+        used_filter = False
+        
+        # 1. 먼저 필터링된 검색 시도 (키워드가 있는 경우)
+        if target_doc:
+            print(f"1차 검색: {target_doc} 문서 필터 적용")
+            used_filter = True
+            relevant_docs = database.search_similar_docs(
+                query=user_message, 
+                top_k=5,
+                filter_doc=target_doc
+            )
+            
+            # 결과가 없으면 Fallback으로 전체 문서 검색
+            if not relevant_docs:
+                print(f"필터링된 검색 결과 없음. Fallback: 전체 문서 검색으로 확장")
+                # 2차 검색: 필터 없이 전체 문서 검색
+                relevant_docs = database.search_similar_docs(
+                    query=user_message, 
+                    top_k=5,
+                    filter_doc=None  # 명시적으로 필터 제거
+                )
+                
+                # Fallback 검색 결과 있으면 알림
+                if relevant_docs:
+                    print(f"Fallback 검색 성공: 전체 문서에서 {len(relevant_docs)}개 찾음")
+        else:
+            # 키워드 없는 경우: 처음부터 전체 문서 검색
+            relevant_docs = database.search_similar_docs(
+                query=user_message, 
+                top_k=5
+            )
+        
+        # 최종적으로 검색된 문서가 없는 경우 예외 처리
         if not relevant_docs:
             print(f"관련 문서를 찾지 못했습니다. 쿼리: {user_message}")
             
             # 사용자 언어에 맞게 안내 메시지 전달
             if re.search(r'[가-힣]', user_message):
-                return jsonify({'reply': "관련 문서를 찾지 못했습니다. 다른 키워드로 질문해 주세요."})
+                reply_msg = "관련 문서를 찾지 못했습니다."
+                if used_filter:
+                    reply_msg += f" '{target_doc}' 문서에서 검색했으나 결과가 없어 전체 문서도 검색했습니다."
+                return jsonify({'reply': reply_msg + " 다른 키워드로 질문해 주세요."})
             else:
-                return jsonify({'reply': "No relevant documents found. Please try asking with different keywords."})
+                reply_msg = "No relevant documents found."
+                if used_filter:
+                    reply_msg += f" Searched in '{target_doc}' and all documents."
+                return jsonify({'reply': reply_msg + " Please try asking with different keywords."})
         
         # Context 형식 요구사항대로 변경 (번호를 붙여 각 문서 표시)
         context = "Context:\n"
@@ -170,11 +228,32 @@ def upload_file():
                 chunks = document_processor.process_document(file_path)
                 print(f"문서 분할 완료: {len(chunks)}개 청크")
                 
+                # 파일명에서 문서 유형 식별하여 doc_name 지정
+                doc_name = None
+                filename_lower = filename.lower()
+                
+                # 파일명 기반 문서 유형 매핑
+                if "nexg" in filename_lower or "vforce" in filename_lower:
+                    doc_name = "nexg_guide"
+                elif "cisco" in filename_lower or "aci" in filename_lower:
+                    doc_name = "cisco_guide"
+                elif "alteon" in filename_lower:
+                    doc_name = "alteon_guide"
+                elif "swing" in filename_lower or "스윙" in filename_lower:
+                    doc_name = "swing_guide"
+                else:
+                    # 기본값 (파일 확장자 제외한 이름)
+                    base_name = filename.rsplit('.', 1)[0].lower()
+                    doc_name = f"{base_name}_guide"
+                
+                print(f"문서 '{filename}'에 doc_name='{doc_name}' 메타데이터 적용")
+                
                 # 각 청크에 필요한 메타데이터 추가 (소스 문서 정보)
                 for chunk in chunks:
                     if 'metadata' in chunk:
                         chunk['metadata']['source'] = filename
                         chunk['metadata']['doc_id'] = chunk['doc_id']
+                        chunk['metadata']['doc_name'] = doc_name  # 문서 유형 메타데이터 추가
                 
                 # 청크를 벡터 DB에 저장 (요구사항에 맞게 컬렉션 "uploaded_docs" 사용)
                 try:
