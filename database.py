@@ -151,6 +151,33 @@ def get_database_status():
             "document_count": 0
         }
 
+def delete_document(doc_id: str):
+    """
+    문서 ID에 해당하는 모든 청크를 벡터 DB에서 삭제합니다
+    
+    Args:
+        doc_id: 삭제할 문서의 ID (UUID)
+    """
+    try:
+        collection = initialize_database()
+        
+        # 문서 ID로 관련 청크 찾기
+        results = collection.get(
+            where={"doc_id": doc_id}
+        )
+        
+        if results and results['ids']:
+            # 해당 ID의 모든 청크 삭제
+            collection.delete(ids=results['ids'])
+            print(f"Deleted {len(results['ids'])} chunks for document ID: {doc_id}")
+            return True
+        else:
+            print(f"No chunks found for document ID: {doc_id}")
+            return False
+    except Exception as e:
+        print(f"Error deleting document from database: {e}")
+        return False
+
 def reset_database():
     """Reset the database by removing the directory"""
     if os.path.exists(CHROMA_DB_DIRECTORY):
