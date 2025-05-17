@@ -102,39 +102,22 @@ with col2:
                 help="업로드된 문서는 AI의 답변 생성에 활용됩니다"
             )
             
-            if uploaded_file is not None:
-                with st.spinner("문서 처리 중..."):
-                    try:
-                        # 파일 내용을 바이트로 읽기
-                        file_bytes = uploaded_file.getvalue()
-                        
-                        # 임시 파일로 저장
-                        temp_path = Path(f"./uploaded_files/{uploaded_file.name}")
-                        os.makedirs(os.path.dirname(temp_path), exist_ok=True)
-                        
-                        with open(temp_path, "wb") as f:
-                            f.write(file_bytes)
-                        
-                        # 문서 처리
-                        texts = process_document(str(temp_path))
-                        
-                        if texts:
-                            # 데이터베이스 초기화
-                            initialize_database()
-                            
-                            # 벡터 데이터베이스에 문서 내용 추가
-                            add_document_embeddings(texts, metadata={"source": uploaded_file.name})
-                            
-                            st.session_state.document_uploaded = True
-                            st.success(f"문서 '{uploaded_file.name}'이(가) 성공적으로 처리되었습니다!")
-                            
-                            # 정리
-                            os.remove(temp_path)
-                        else:
-                            st.error("문서에서 텍스트를 추출할 수 없습니다. 다른 문서를 시도해 주세요.")
-                    except Exception as e:
-                        st.error(f"파일 처리 중 오류가 발생했습니다: {str(e)}")
-                        print(f"파일 처리 오류: {str(e)}")
+            st.markdown("""
+            ⚠️ **알림**: 현재 서버에서 파일 업로드 기능에 기술적 제한이 있습니다.
+            대신 두 번째 탭의 **예시 문서**를 사용하거나 세 번째 탭의 **텍스트 입력** 기능을 이용해 주세요.
+            """)
+            
+            with st.expander("파일 업로드 문제 해결 방법"):
+                st.markdown("""
+                1. **예시 문서 사용**: 두 번째 탭에서 예시 문서를 사용하면 바로 테스트할 수 있습니다.
+                2. **텍스트 복사하기**: 문서의 내용을 복사하여 세 번째 탭의 텍스트 영역에 붙여넣기 하세요.
+                """)
+                
+            uploaded_file = st.file_uploader(
+                "파일 선택 (현재 비활성화됨)",
+                type=["pdf", "docx", "pptx", "txt"],
+                disabled=True
+            )
         
         with tabs[1]:
             sample_txt = st.checkbox("예시 문서 사용하기", help="테스트용 예시 문서를 사용합니다")
