@@ -65,21 +65,44 @@ document.addEventListener('DOMContentLoaded', function() {
             // 네비게이션 링크 활성화
             const sections = document.querySelectorAll('section');
             const scrollPosition = window.scrollY + 300;
+            const currentPath = window.location.pathname;
             
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                const sectionHeight = section.offsetHeight;
-                const sectionId = section.getAttribute('id');
-                
-                if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+            // 현재 경로가 루트가 아닌 경우 (특정 페이지인 경우)
+            if (currentPath !== '/' && currentPath !== '/index') {
+                // "/support", "/inquiry" 등의 경로인 경우 Support 메뉴를 활성화
+                if (['/support', '/inquiry', '/feedback', '/report'].includes(currentPath)) {
                     navLinkItems.forEach(link => {
                         link.classList.remove('active');
-                        if (link.getAttribute('href') === `#${sectionId}`) {
+                        if (link.getAttribute('href') === '#support') {
+                            link.classList.add('active');
+                        }
+                    });
+                } else {
+                    // 다른 페이지의 경우 해당 링크 활성화 (예: #documents)
+                    navLinkItems.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href').includes(currentPath.substring(1))) {
                             link.classList.add('active');
                         }
                     });
                 }
-            });
+            } else {
+                // 메인 페이지에서는 스크롤 위치에 따라 메뉴 활성화
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.offsetHeight;
+                    const sectionId = section.getAttribute('id');
+                    
+                    if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                        navLinkItems.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href') === `#${sectionId}`) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }
         });
     }
     
