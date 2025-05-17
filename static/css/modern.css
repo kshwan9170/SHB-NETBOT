@@ -864,6 +864,280 @@ img {
     100% { transform: rotate(360deg); }
 }
 
+/* 문서 업로드 섹션 */
+.documents-section {
+    padding: var(--section-spacing) 0;
+    background-color: var(--white);
+    position: relative;
+}
+
+[data-theme="dark"] .documents-section {
+    background-color: var(--light);
+}
+
+.documents-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    margin-top: 5rem;
+}
+
+.upload-card, .documents-list-card {
+    background: var(--card-bg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: all var(--transition-medium);
+}
+
+.upload-header, .documents-header {
+    padding: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    background: linear-gradient(90deg, #0A74DA, #1E3A8A);
+    color: var(--white);
+}
+
+.upload-title, .documents-title {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+}
+
+.upload-title h3, .documents-title h3 {
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+.upload-content, .documents-content {
+    padding: 2.4rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.upload-content p {
+    margin-bottom: 2.4rem;
+    color: var(--text-secondary);
+    font-size: 1.6rem;
+}
+
+.upload-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.upload-dropzone {
+    border: 2px dashed var(--border-color);
+    border-radius: var(--border-radius-md);
+    padding: 4rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-medium);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.6rem;
+}
+
+.upload-dropzone:hover {
+    border-color: var(--primary);
+    background-color: var(--primary-light);
+}
+
+.upload-dropzone svg {
+    color: var(--primary);
+    margin-bottom: 1.6rem;
+}
+
+.upload-dropzone p {
+    margin-bottom: 0;
+    font-size: 1.6rem;
+}
+
+.upload-browse {
+    color: var(--primary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.upload-browse:hover {
+    text-decoration: underline;
+}
+
+.upload-button {
+    background: linear-gradient(135deg, #0A74DA, #0862B8);
+    color: white;
+    border: none;
+    padding: 1.4rem 2.8rem;
+    border-radius: var(--border-radius-md);
+    font-size: 1.6rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-medium);
+    box-shadow: var(--shadow-md);
+    align-self: center;
+}
+
+.upload-button:hover {
+    background: linear-gradient(135deg, #1E3A8A, #0A74DA);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+}
+
+.upload-button:active {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.documents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+    max-height: 50rem;
+    overflow-y: auto;
+    padding-right: 1rem;
+}
+
+.document-item {
+    background-color: var(--light);
+    border-radius: var(--border-radius-md);
+    padding: 1.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all var(--transition-medium);
+    box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .document-item {
+    background-color: var(--light-medium);
+}
+
+.document-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.document-info {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+}
+
+.document-icon {
+    width: 4rem;
+    height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--border-radius-sm);
+    color: var(--white);
+}
+
+.document-icon.pdf {
+    background-color: #FF5252;
+}
+
+.document-icon.docx {
+    background-color: #2196F3;
+}
+
+.document-icon.pptx {
+    background-color: #FF9800;
+}
+
+.document-icon.xlsx {
+    background-color: #4CAF50;
+}
+
+.document-icon.txt {
+    background-color: #9E9E9E;
+}
+
+.document-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.document-name {
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    max-width: 24rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.document-status {
+    font-size: 1.4rem;
+    color: var(--text-secondary);
+}
+
+.document-status.processing {
+    color: #FF9800;
+}
+
+.document-status.completed {
+    color: #4CAF50;
+}
+
+.document-status.error {
+    color: #FF5252;
+}
+
+.document-actions {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+}
+
+.document-action {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    width: 3.6rem;
+    height: 3.6rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.document-action:hover {
+    color: var(--primary);
+    background-color: var(--primary-light);
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6rem 2rem;
+    color: var(--text-light);
+    text-align: center;
+}
+
+.empty-state p {
+    font-size: 1.8rem;
+    margin-top: 2rem;
+}
+
 /* 애니메이션 클래스들 */
 .shake {
     animation: shake 0.5s ease-in-out;
