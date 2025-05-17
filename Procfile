@@ -1,1 +1,1 @@
-web: sh replit.sh
+web: sh run.sh
