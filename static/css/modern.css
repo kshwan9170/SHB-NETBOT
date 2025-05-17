@@ -720,20 +720,25 @@ img {
 }
 
 .file-list li {
+    display: block;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+    background-color: #f6f9fc;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.file-card {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 1rem;
-    border-radius: var(--border-radius-sm);
-    margin-bottom: 0.8rem;
     background-color: var(--card-bg);
-    box-shadow: var(--shadow-sm);
-    transition: all 0.2s ease;
     position: relative;
-    padding-right: 120px; /* 삭제 버튼을 위한 공간 확보 */
+    border-bottom: 1px solid #eaeaea;
 }
 
-.file-list li:hover {
+.file-list li:hover .file-card {
     box-shadow: var(--shadow-md);
     background-color: var(--light);
 }
@@ -772,14 +777,12 @@ img {
     transition: all 0.2s ease;
     box-shadow: 0 4px 8px rgba(255, 82, 82, 0.4);
     margin-left: 12px;
-    position: absolute;
+    position: relative;
     z-index: 10;
     gap: 6px;
-    right: 16px;
-    top: 50%;
-    transform: translateY(-50%);
     font-size: 15px;
     font-weight: bold;
+    min-width: 100px;
 }
 
 .delete-btn svg {
@@ -792,14 +795,29 @@ img {
     display: inline-block;
 }
 
-.delete-btn:hover {
-    background-color: #ff3232;
-    transform: translateY(-50%) scale(1.05);
-    box-shadow: 0 4px 12px rgba(255, 82, 82, 0.5);
+.big-delete-btn {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background-color: #ff5252;
+    color: white;
+    border: none;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-.delete-btn:active {
-    transform: translateY(-50%) scale(0.95);
+.big-delete-btn:hover {
+    background-color: #ff3232;
+}
+
+.big-delete-btn:active {
+    background-color: #e03030;
+}
+
+.delete-button-container {
+    margin-top: -1px;
 }
 
 .file-actions {
