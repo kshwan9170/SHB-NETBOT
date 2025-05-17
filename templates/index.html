@@ -203,60 +203,56 @@
                                 <!-- 자바스크립트로 삽입할 파일 목록 -->
                                 
                                 <!-- 파일 카드 예시 - 직접 삭제 기능 구현 -->
-                                <div class="file-card">
-                                    <div class="file-card-content">
-                                        <div class="file-icon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                                <polyline points="14 2 14 8 20 8"></polyline>
-                                            </svg>
-                                        </div>
-                                        <div class="file-details">
-                                            <h4 class="file-name">NexG_VForce_CLI.pdf</h4>
-                                            <p class="file-meta">
-                                                <span>12.4 MB</span> · 
-                                                <span>2025.5.17</span> · 
-                                                <span>PDF</span>
-                                            </p>
-                                        </div>
-                                        <button class="file-delete-btn" onclick="deleteFile('f520ffe7-8178-493a-a67b-f591b37edbc5_NexG_VForce_CLI.pdf', 'NexG_VForce_CLI.pdf')">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                                <line x1="10" y1="11" x2="10" y2="17"></line>
-                                                <line x1="14" y1="11" x2="14" y2="17"></line>
-                                            </svg>
-                                            <span>Delete</span>
-                                        </button>
+                                <div style="background: white; border-radius: 8px; margin-bottom: 16px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; display: flex; align-items: center;">
+                                    <div style="width: 48px; height: 48px; background-color: #ff5252; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
                                     </div>
+                                    <div style="flex: 1;">
+                                        <h4 style="margin: 0 0 5px 0; font-size: 16px; font-weight: 600; color: #333;">NexG_VForce_CLI.pdf</h4>
+                                        <p style="margin: 0; font-size: 14px; color: #666;">
+                                            <span>12.4 MB</span> · 
+                                            <span>2025.5.17</span> · 
+                                            <span>PDF</span>
+                                        </p>
+                                    </div>
+                                    <button onclick="deleteFile('f520ffe7-8178-493a-a67b-f591b37edbc5_NexG_VForce_CLI.pdf', 'NexG_VForce_CLI.pdf')" style="background-color: #ff5252; color: white; border: none; border-radius: 4px; padding: 8px 12px; margin-left: 16px; cursor: pointer; display: flex; align-items: center; font-size: 14px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                                        </svg>
+                                        Delete
+                                    </button>
                                 </div>
                                 
-                                <div class="file-card">
-                                    <div class="file-card-content">
-                                        <div class="file-icon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                                <polyline points="14 2 14 8 20 8"></polyline>
-                                            </svg>
-                                        </div>
-                                        <div class="file-details">
-                                            <h4 class="file-name">cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf</h4>
-                                            <p class="file-meta">
-                                                <span>3.8 MB</span> · 
-                                                <span>2025.5.17</span> · 
-                                                <span>PDF</span>
-                                            </p>
-                                        </div>
-                                        <button class="file-delete-btn" onclick="deleteFile('7b054720-a171-449e-bfff-93ca21a698e4_cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf', 'cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf')">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <polyline points="3 6 5 6 21 6"></polyline>
-                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                                <line x1="10" y1="11" x2="10" y2="17"></line>
-                                                <line x1="14" y1="11" x2="14" y2="17"></line>
-                                            </svg>
-                                            <span>Delete</span>
-                                        </button>
+                                <div style="background: white; border-radius: 8px; margin-bottom: 16px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: relative; display: flex; align-items: center;">
+                                    <div style="width: 48px; height: 48px; background-color: #ff5252; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
                                     </div>
+                                    <div style="flex: 1;">
+                                        <h4 style="margin: 0 0 5px 0; font-size: 16px; font-weight: 600; color: #333;">cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf</h4>
+                                        <p style="margin: 0; font-size: 14px; color: #666;">
+                                            <span>3.8 MB</span> · 
+                                            <span>2025.5.17</span> · 
+                                            <span>PDF</span>
+                                        </p>
+                                    </div>
+                                    <button onclick="deleteFile('7b054720-a171-449e-bfff-93ca21a698e4_cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf', 'cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf')" style="background-color: #ff5252; color: white; border: none; border-radius: 4px; padding: 8px 12px; margin-left: 16px; cursor: pointer; display: flex; align-items: center; font-size: 14px;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                                        </svg>
+                                        Delete
+                                    </button>
                                 </div>
                             </div>
                         </div>
