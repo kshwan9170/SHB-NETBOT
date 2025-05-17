@@ -719,6 +719,23 @@ img {
     width: 100%;
 }
 
+.file-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-radius: var(--border-radius-sm);
+    margin-bottom: 0.8rem;
+    background-color: var(--card-bg);
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s ease;
+}
+
+.file-list li:hover {
+    box-shadow: var(--shadow-md);
+    background-color: var(--light);
+}
+
 .file-item {
     display: flex;
     justify-content: space-between;
@@ -737,6 +754,43 @@ img {
     align-items: center;
     gap: 0.8rem;
     flex: 1;
+}
+
+/* 삭제 버튼 스타일 */
+.delete-btn {
+    background-color: #ff5252;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.delete-btn:hover {
+    background-color: #ff3232;
+    transform: scale(1.05);
+}
+
+.file-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.file-name {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.file-meta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    display: flex;
+    gap: 12px;
 }
 
 .file-icon {
