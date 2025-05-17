@@ -468,7 +468,9 @@ def inquiry_list():
         'board_description': '네트워크 관련 문의사항을 등록하고 답변을 받을 수 있는 게시판입니다.',
         'list_route': 'inquiry_list',
         'write_route': 'inquiry_write',
-        'view_route': 'inquiry_view'
+        'view_route': 'inquiry_view',
+        'edit_route': 'inquiry_edit',
+        'board_type': 'inquiry'
     }
     
     return render_template('board_template.html', **template_args)
@@ -498,7 +500,7 @@ def inquiry_view(post_id):
     if not post:
         abort(404)
         
-    return render_template('view_post.html', post=post, board_title='문의하기', list_route='inquiry_list', edit_route='inquiry_edit')
+    return render_template('view_post.html', post=post, board_title='문의하기', list_route='inquiry_list', edit_route='inquiry_edit', board_type='inquiry')
 
 @app.route('/inquiry/edit/<int:post_id>', methods=['GET', 'POST'])
 def inquiry_edit(post_id):
@@ -549,7 +551,9 @@ def feedback_list():
         'board_description': 'SHB-NetBot 서비스 개선을 위한 의견이나 제안을 등록해 주세요.',
         'list_route': 'feedback_list',
         'write_route': 'feedback_write',
-        'view_route': 'feedback_view'
+        'view_route': 'feedback_view',
+        'edit_route': 'feedback_edit',
+        'board_type': 'feedback'
     }
     
     return render_template('board_template.html', **template_args)
@@ -579,7 +583,7 @@ def feedback_view(post_id):
     if not post:
         abort(404)
         
-    return render_template('view_post.html', post=post, board_title='피드백', list_route='feedback_list', edit_route='feedback_edit')
+    return render_template('view_post.html', post=post, board_title='피드백', list_route='feedback_list', edit_route='feedback_edit', board_type='feedback')
 
 @app.route('/feedback/edit/<int:post_id>', methods=['GET', 'POST'])
 def feedback_edit(post_id):
@@ -630,7 +634,9 @@ def report_list():
         'board_description': '네트워크 장애가 발생했을 때 신속하게 신고하여 빠른 조치를 받을 수 있습니다.',
         'list_route': 'report_list',
         'write_route': 'report_write',
-        'view_route': 'report_view'
+        'view_route': 'report_view',
+        'edit_route': 'report_edit',
+        'board_type': 'report'
     }
     
     return render_template('board_template.html', **template_args)
