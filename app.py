@@ -294,8 +294,8 @@ def upload_chunk():
             'success': False, 
             'error': '유효하지 않은 파일명입니다.'
         }), 400
-    # 문자열이 확실한 경우에만 secure_filename 사용
-    safe_filename = secure_filename(str(filename))
+    # 한글을 보존하는 파일명 생성
+    safe_filename = get_clean_filename(str(filename))
         
     # 파일 확장자 확인
     if not allowed_file(safe_filename):
