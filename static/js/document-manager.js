@@ -109,7 +109,12 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // 새로운 함수: 직접 HTML로 파일 목록 렌더링
+    // 전역 변수로 페이지네이션 상태 관리
+    let currentPage = 1;
+    const filesPerPage = 5;
+    let allFiles = [];
+    
+    // 새로운 함수: 직접 HTML로 파일 목록 렌더링 (페이지네이션 포함)
     function renderDirectFileList(files) {
         const fileListContainer = document.getElementById('file-list-container');
         if (!fileListContainer) {
@@ -117,9 +122,19 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // 전체 파일 목록 저장
+        allFiles = files;
+        
+        // 파일 목록 컨테이너 초기화
         fileListContainer.innerHTML = '';
         
-        files.forEach(file => {
+        // 현재 페이지에 표시할 파일 계산
+        const startIndex = (currentPage - 1) * filesPerPage;
+        const endIndex = Math.min(startIndex + filesPerPage, files.length);
+        const currentFiles = files.slice(startIndex, endIndex);
+        
+        // 파일 목록 렌더링
+        currentFiles.forEach(file => {
             const fileCard = document.createElement('div');
             fileCard.className = 'document-card';
             
@@ -172,6 +187,70 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
         });
+        
+        // 페이지네이션 렌더링
+        renderPagination(files.length);
+    }
+    
+    // 페이지네이션 컨트롤 렌더링 함수
+    function renderPagination(totalFiles) {
+        const fileListContainer = document.getElementById('file-list-container');
+        const totalPages = Math.ceil(totalFiles / filesPerPage);
+        
+        // 파일이 5개 이하면 페이지네이션 표시하지 않음
+        if (totalPages <= 1) return;
+        
+        // 페이지네이션 컨테이너 생성
+        const paginationContainer = document.createElement('div');
+        paginationContainer.className = 'pagination-container';
+        paginationContainer.style.cssText = 'margin-top: 20px; display: flex; justify-content: center; gap: 10px;';
+        
+        // 이전 페이지 버튼
+        if (currentPage > 1) {
+            const prevButton = document.createElement('button');
+            prevButton.innerHTML = '&laquo; 이전';
+            prevButton.className = 'pagination-btn';
+            prevButton.style.cssText = 'padding: 5px 10px; background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;';
+            prevButton.addEventListener('click', () => {
+                currentPage--;
+                renderDirectFileList(allFiles);
+            });
+            paginationContainer.appendChild(prevButton);
+        }
+        
+        // 페이지 숫자 버튼
+        for (let i = 1; i <= totalPages; i++) {
+            const pageButton = document.createElement('button');
+            pageButton.innerText = i;
+            pageButton.className = 'pagination-btn' + (i === currentPage ? ' active' : '');
+            
+            const buttonStyle = 'padding: 5px 10px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;';
+            const activeStyle = 'background-color: #0064E1; color: white;';
+            const inactiveStyle = 'background-color: #f5f5f5;';
+            
+            pageButton.style.cssText = buttonStyle + (i === currentPage ? activeStyle : inactiveStyle);
+            
+            pageButton.addEventListener('click', () => {
+                currentPage = i;
+                renderDirectFileList(allFiles);
+            });
+            paginationContainer.appendChild(pageButton);
+        }
+        
+        // 다음 페이지 버튼
+        if (currentPage < totalPages) {
+            const nextButton = document.createElement('button');
+            nextButton.innerHTML = '다음 &raquo;';
+            nextButton.className = 'pagination-btn';
+            nextButton.style.cssText = 'padding: 5px 10px; background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;';
+            nextButton.addEventListener('click', () => {
+                currentPage++;
+                renderDirectFileList(allFiles);
+            });
+            paginationContainer.appendChild(nextButton);
+        }
+        
+        fileListContainer.appendChild(paginationContainer);
     }
     
     /**
