@@ -1,5 +1,5 @@
 import os
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 import json
 from pathlib import Path
 import shutil
@@ -87,24 +87,44 @@ def initialize_database():
             if ('documents' in old_data and 'ids' in old_data and
                 'metadatas' in old_data and len(old_data['documents']) > 0):
                 
-                print(f"Migrating {len(old_data['documents'])} documents to new collection '{COLLECTION_NAME}'")
+                total_docs = len(old_data['documents'])
+                print(f"Migrating {total_docs} documents to new collection '{COLLECTION_NAME}'")
                 
-                # 메타데이터가 None인 경우 빈 딕셔너리로 대체
-                metadatas = []
-                for i, metadata in enumerate(old_data['metadatas']):
-                    if metadata is None:
-                        metadatas.append({})
-                    else:
-                        metadatas.append(metadata)
+                # 청크 단위로 마이그레이션 (OpenAI API 토큰 제한 때문에)
+                # 한 번에 최대 100개씩 처리
+                BATCH_SIZE = 100
+                batches = (total_docs + BATCH_SIZE - 1) // BATCH_SIZE  # 올림 나눗셈
                 
-                # 새 컬렉션에 데이터 추가
-                collection.add(
-                    documents=old_data['documents'],
-                    ids=old_data['ids'],
-                    metadatas=metadatas
-                )
+                # 청크별 처리
+                for batch_idx in range(batches):
+                    start_idx = batch_idx * BATCH_SIZE
+                    end_idx = min(start_idx + BATCH_SIZE, total_docs)
+                    
+                    print(f"Processing batch {batch_idx+1}/{batches} (documents {start_idx}-{end_idx-1})")
+                    
+                    # 현재 배치의 데이터 추출
+                    batch_documents = old_data['documents'][start_idx:end_idx]
+                    batch_ids = old_data['ids'][start_idx:end_idx]
+                    batch_metadatas = old_data['metadatas'][start_idx:end_idx]
+                    
+                    # 메타데이터가 None인 경우 빈 딕셔너리로 대체
+                    processed_metadatas = []
+                    for metadata in batch_metadatas:
+                        if metadata is None:
+                            processed_metadatas.append({})
+                        else:
+                            processed_metadatas.append(metadata)
+                    
+                    # 새 컬렉션에 데이터 추가
+                    collection.add(
+                        documents=batch_documents,
+                        ids=batch_ids,
+                        metadatas=processed_metadatas
+                    )
+                    
+                    print(f"Migrated batch {batch_idx+1}/{batches}")
                 
-                print(f"Successfully migrated data to '{COLLECTION_NAME}'")
+                print(f"Successfully migrated all data to '{COLLECTION_NAME}'")
                 MIGRATION_DONE = True
             
         except Exception as e:
@@ -144,7 +164,8 @@ def add_document_embeddings(
 
 def search_similar_docs(
     query: str, 
-    top_k: int = 3
+    top_k: int = 5,
+    filter_doc: Optional[str] = None
 ) -> List[Any]:
     """
     Search for similar documents in the vector database
@@ -152,6 +173,7 @@ def search_similar_docs(
     Args:
         query: The query to search for
         top_k: Number of results to return
+        filter_doc: Optional document name to filter results (e.g., "cisco_guide")
         
     Returns:
         List of document objects with page_content and metadata
@@ -159,21 +181,34 @@ def search_similar_docs(
     # Initialize the database
     collection = initialize_database()
     
+    # 필터링 조건 설정 (특정 문서 유형만 검색)
+    where_filter = None
+    if filter_doc:
+        where_filter = {"doc_name": filter_doc}
+        print(f"문서 필터링 적용: {filter_doc}")
+    
     # Search for similar documents
     results = collection.query(
         query_texts=[query],
         n_results=top_k,
+        where=where_filter
     )
     
     # Format the results to mimic langchain Document objects for compatibility
     documents = []
-    if results and 'documents' in results and results['documents']:
+    if results and 'documents' in results and results['documents'] and len(results['documents'][0]) > 0:
         for i, doc_text in enumerate(results['documents'][0]):
             doc_metadata = results['metadatas'][0][i] if 'metadatas' in results and results['metadatas'] else {}
             documents.append(type('Document', (), {
                 'page_content': doc_text,
                 'metadata': doc_metadata
             }))
+        
+        # 결과를 찾았을 때 로그
+        print(f"검색 성공: {len(documents)}개 문서 찾음")
+    else:
+        # 결과가 없을 때 로그
+        print(f"필터 '{filter_doc}'로 검색 결과 없음")
     
     return documents
 
