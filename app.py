@@ -435,7 +435,179 @@ def delete_file():
         print(f"Error deleting file: {error_msg}")
         return jsonify({'success': False, 'error': error_msg}), 500
 
+# 문의하기 게시판 라우트
+@app.route('/inquiry')
+def inquiry_list():
+    page = request.args.get('page', 1, type=int)
+    board = InquiryBoard()
+    pagination = board.get_posts(page=page, per_page=10)
+    
+    # 템플릿 변수 설정
+    template_args = {
+        'posts': pagination['posts'],
+        'pagination': {
+            'page': pagination['page'],
+            'per_page': pagination['per_page'],
+            'pages': pagination['pages'],
+            'total': pagination['total'],
+            'has_prev': pagination['page'] > 1,
+            'has_next': pagination['page'] < pagination['pages'],
+            'prev_num': pagination['page'] - 1,
+            'next_num': pagination['page'] + 1,
+            'iter_pages': lambda: range(1, pagination['pages'] + 1)
+        },
+        'board_title': '문의하기',
+        'list_route': 'inquiry_list',
+        'write_route': 'inquiry_write',
+        'view_route': 'inquiry_view'
+    }
+    
+    return render_template('board_template.html', **template_args)
+
+@app.route('/inquiry/write', methods=['GET', 'POST'])
+def inquiry_write():
+    if request.method == 'POST':
+        title = request.form.get('title')
+        content = request.form.get('content')
+        author = request.form.get('author')
+        
+        if not title or not content or not author:
+            return "제목, 내용, 작성자는 필수 입력 항목입니다.", 400
+            
+        board = InquiryBoard()
+        post_id = board.create_post(title, content, author)
+        
+        return redirect(url_for('inquiry_view', post_id=post_id))
+    
+    return render_template('write_post.html', board_title='문의하기', list_route='inquiry_list', write_route='inquiry_write')
+
+@app.route('/inquiry/view/<int:post_id>')
+def inquiry_view(post_id):
+    board = InquiryBoard()
+    post = board.get_post(post_id)
+    
+    if not post:
+        abort(404)
+        
+    return render_template('view_post.html', post=post, board_title='문의하기', list_route='inquiry_list', edit_route='inquiry_edit')
+
+# 피드백 게시판 라우트
+@app.route('/feedback')
+def feedback_list():
+    page = request.args.get('page', 1, type=int)
+    board = FeedbackBoard()
+    pagination = board.get_posts(page=page, per_page=10)
+    
+    # 템플릿 변수 설정
+    template_args = {
+        'posts': pagination['posts'],
+        'pagination': {
+            'page': pagination['page'],
+            'per_page': pagination['per_page'],
+            'pages': pagination['pages'],
+            'total': pagination['total'],
+            'has_prev': pagination['page'] > 1,
+            'has_next': pagination['page'] < pagination['pages'],
+            'prev_num': pagination['page'] - 1,
+            'next_num': pagination['page'] + 1,
+            'iter_pages': lambda: range(1, pagination['pages'] + 1)
+        },
+        'board_title': '피드백',
+        'list_route': 'feedback_list',
+        'write_route': 'feedback_write',
+        'view_route': 'feedback_view'
+    }
+    
+    return render_template('board_template.html', **template_args)
+
+@app.route('/feedback/write', methods=['GET', 'POST'])
+def feedback_write():
+    if request.method == 'POST':
+        title = request.form.get('title')
+        content = request.form.get('content')
+        author = request.form.get('author')
+        
+        if not title or not content or not author:
+            return "제목, 내용, 작성자는 필수 입력 항목입니다.", 400
+            
+        board = FeedbackBoard()
+        post_id = board.create_post(title, content, author)
+        
+        return redirect(url_for('feedback_view', post_id=post_id))
+    
+    return render_template('write_post.html', board_title='피드백', list_route='feedback_list', write_route='feedback_write')
+
+@app.route('/feedback/view/<int:post_id>')
+def feedback_view(post_id):
+    board = FeedbackBoard()
+    post = board.get_post(post_id)
+    
+    if not post:
+        abort(404)
+        
+    return render_template('view_post.html', post=post, board_title='피드백', list_route='feedback_list', edit_route='feedback_edit')
+
+# 장애 신고 게시판 라우트
+@app.route('/report')
+def report_list():
+    page = request.args.get('page', 1, type=int)
+    board = ReportBoard()
+    pagination = board.get_posts(page=page, per_page=10)
+    
+    # 템플릿 변수 설정
+    template_args = {
+        'posts': pagination['posts'],
+        'pagination': {
+            'page': pagination['page'],
+            'per_page': pagination['per_page'],
+            'pages': pagination['pages'],
+            'total': pagination['total'],
+            'has_prev': pagination['page'] > 1,
+            'has_next': pagination['page'] < pagination['pages'],
+            'prev_num': pagination['page'] - 1,
+            'next_num': pagination['page'] + 1,
+            'iter_pages': lambda: range(1, pagination['pages'] + 1)
+        },
+        'board_title': '장애 신고',
+        'list_route': 'report_list',
+        'write_route': 'report_write',
+        'view_route': 'report_view'
+    }
+    
+    return render_template('board_template.html', **template_args)
+
+@app.route('/report/write', methods=['GET', 'POST'])
+def report_write():
+    if request.method == 'POST':
+        title = request.form.get('title')
+        content = request.form.get('content')
+        author = request.form.get('author')
+        
+        if not title or not content or not author:
+            return "제목, 내용, 작성자는 필수 입력 항목입니다.", 400
+            
+        board = ReportBoard()
+        post_id = board.create_post(title, content, author)
+        
+        return redirect(url_for('report_view', post_id=post_id))
+    
+    return render_template('write_post.html', board_title='장애 신고', list_route='report_list', write_route='report_write')
+
+@app.route('/report/view/<int:post_id>')
+def report_view(post_id):
+    board = ReportBoard()
+    post = board.get_post(post_id)
+    
+    if not post:
+        abort(404)
+        
+    return render_template('view_post.html', post=post, board_title='장애 신고', list_route='report_list', edit_route='report_edit')
+
+# 데이터베이스 초기화 후 앱 실행
 if __name__ == '__main__':
+    # 데이터베이스 초기화
+    init_db()
+    
     # Replit에서는 포트가 환경변수로 제공됩니다
     port = int(os.environ.get("PORT", 8080))
     app.run(host='0.0.0.0', port=port, debug=False)

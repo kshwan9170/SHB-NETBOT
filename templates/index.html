@@ -247,32 +247,35 @@
 
     <!-- 푸터 섹션 -->
     <footer class="footer">
-        <div class="container">
+        <div class="footer-container">
             <div class="footer-content">
-                <div class="footer-logo">
-                    <img src="{{ url_for('static', filename='images/shinhan_logo_refined.svg') }}" alt="신한은행 로고">
-                    <span>SHB-NetBot</span>
-                </div>
-                <div class="footer-links">
-                    <div class="footer-links-column">
-                        <h4>서비스</h4>
-                        <a href="#home">홈</a>
-                        <a href="#about">소개</a>
-                        <a href="#chat">대화하기</a>
-                    </div>
-                    <div class="footer-links-column">
-                        <h4>지원</h4>
-                        <a href="#">FAQ</a>
-                        <a href="#">문의하기</a>
-                        <a href="#">피드백</a>
-                    </div>
-                    <div class="footer-links-column">
-                        <h4>법적 고지</h4>
-                        <a href="#">이용약관</a>
-                        <a href="#">개인정보처리방침</a>
-                        <a href="#">저작권</a>
-                    </div>
-                </div>
+                <table class="footer-table">
+                    <tr>
+                        <th>서비스</th>
+                        <th>지원</th>
+                        <th>정책 및 약관</th>
+                    </tr>
+                    <tr>
+                        <td><a href="#home">홈</a></td>
+                        <td><a href="/inquiry">문의하기</a></td>
+                        <td><a href="/terms">이용약관</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="#about">소개</a></td>
+                        <td><a href="/feedback">피드백</a></td>
+                        <td><a href="/privacy">개인정보처리방침</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="#chat">대화하기</a></td>
+                        <td><a href="/report">장애 신고</a></td>
+                        <td><a href="/copyright">저작권</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="#documents">문서</a></td>
+                        <td></td>
+                        <td><a href="/security">보안정책</a></td>
+                    </tr>
+                </table>
             </div>
             <div class="footer-bottom">
                 <p>&copy; 2025 신한은행. All rights reserved.</p>
@@ -360,43 +363,5 @@
             });
         }
     </script>
-    
-    <!-- 푸터 섹션 -->
-    <footer class="footer">
-        <div class="footer-container">
-            <div class="footer-content">
-                <table class="footer-table">
-                    <tr>
-                        <th>서비스</th>
-                        <th>지원</th>
-                        <th>정책 및 약관</th>
-                    </tr>
-                    <tr>
-                        <td><a href="#home">홈</a></td>
-                        <td><a href="/inquiry">문의하기</a></td>
-                        <td><a href="/terms">이용약관</a></td>
-                    </tr>
-                    <tr>
-                        <td><a href="#about">소개</a></td>
-                        <td><a href="/feedback">피드백</a></td>
-                        <td><a href="/privacy">개인정보처리방침</a></td>
-                    </tr>
-                    <tr>
-                        <td><a href="#chat">대화하기</a></td>
-                        <td><a href="/report">장애 신고</a></td>
-                        <td><a href="/copyright">저작권</a></td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td></td>
-                        <td><a href="/security">보안정책</a></td>
-                    </tr>
-                </table>
-            </div>
-            <div class="footer-bottom">
-                <p>&copy; 2025 신한은행. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
 </body>
 </html>
