@@ -159,71 +159,90 @@ def search_similar_docs(
     # Initialize the database
     collection = initialize_database()
     
-    # Check if query contains "넥스지" or "nexg" or other nexg-related terms
-    nexg_keywords = ["넥스지", "nexg", "vforce", "넥스쥐", "axgate", "엑스게이트"]
-    is_nexg_query = any(keyword.lower() in query.lower() for keyword in nexg_keywords)
+    # 키워드 필터링을 위한 정의
+    keyword_filters = {
+        "nexg": ["넥스지", "nexg", "vforce", "넥스쥐", "axgate", "엑스게이트", "브이포스", "v-force", "vforceㅡ", "브이포스-utm"],
+        "cisco": ["시스코", "cisco", "nexus", "넥서스", "aci", "스위치", "라우터", "switch", "router"],
+        "alteon": ["알티온", "alteon", "radware", "라드웨어", "로드밸런서", "load balancer", "lb"],
+    }
+    
+    # 사용자 질문에서 장비 유형 키워드 감지
+    detected_vendors = []
+    for vendor, keywords in keyword_filters.items():
+        if any(keyword.lower() in query.lower() for keyword in keywords):
+            detected_vendors.append(vendor)
     
     documents = []
     
-    if is_nexg_query:
-        # First attempt: Search with nexg_guide filter
-        try:
-            results = collection.query(
-                query_texts=[query],
-                n_results=top_k,
-                where={"doc_name": "nexg_guide"}
-            )
-            
-            # Process results
-            if results and 'documents' in results and results['documents'] and results['documents'][0]:
-                for i, doc_text in enumerate(results['documents'][0]):
-                    doc_metadata = results['metadatas'][0][i] if 'metadatas' in results and results['metadatas'] else {}
-                    documents.append(type('Document', (), {
-                        'page_content': doc_text,
-                        'metadata': doc_metadata
-                    }))
-        except Exception as e:
-            print(f"Error during filtered document search: {e}")
+    # 1단계: 검색 전략 - 특정 파일명/메타데이터 우선 필터링
+    if detected_vendors:
+        print(f"메타데이터 필터링 검색 시도: {', '.join(detected_vendors)}")
         
-        # If no results from filtered search, try without filter (fallback)
-        if not documents:
-            print(f"No results found with nexg filter, trying unfiltered search for: {query}")
+        # 각 벤더별로 필터링 시도
+        for vendor in detected_vendors:
+            # 필터링 조건 정의
             try:
+                # 1. 파일명에 키워드가 포함된 문서 필터링 (doc_name 또는 source 필드)
+                filter_conditions = {
+                    "$or": [
+                        {"doc_name": {"$contains": vendor}},
+                        {"source": {"$contains": vendor}}
+                    ]
+                }
+                
                 results = collection.query(
                     query_texts=[query],
-                    n_results=top_k
+                    n_results=top_k,
+                    where=filter_conditions
                 )
                 
-                # Process results
+                # 결과 처리
                 if results and 'documents' in results and results['documents'] and results['documents'][0]:
+                    print(f"{vendor} 관련 문서에서 {len(results['documents'][0])} 개의 결과를 찾았습니다.")
                     for i, doc_text in enumerate(results['documents'][0]):
                         doc_metadata = results['metadatas'][0][i] if 'metadatas' in results and results['metadatas'] else {}
                         documents.append(type('Document', (), {
                             'page_content': doc_text,
                             'metadata': doc_metadata
                         }))
+                    
+                    # 충분한 결과를 찾았으면 더 이상 검색하지 않음
+                    if len(documents) >= top_k:
+                        return documents[:top_k]
+                        
             except Exception as e:
-                print(f"Error during fallback document search: {e}")
-    else:
-        # Normal search without filter for non-nexg queries
+                print(f"{vendor} 문서 필터링 검색 중 오류 발생: {str(e)}")
+    
+    # 2단계: Fallback - 필터링 결과가 없거나 충분하지 않은 경우 전체 검색
+    if not documents or len(documents) < top_k:
+        print(f"벤더 필터링 검색 결과가 없어 전체 문서 검색을 시도합니다: {query}")
         try:
             results = collection.query(
                 query_texts=[query],
                 n_results=top_k
             )
             
-            # Process results
+            # 결과 처리
             if results and 'documents' in results and results['documents'] and results['documents'][0]:
+                print(f"전체 문서 검색에서 {len(results['documents'][0])} 개의 결과를 찾았습니다.")
+                
+                # 기존 결과에 추가 (중복 제거)
+                existing_texts = set(doc.page_content for doc in documents)
+                
                 for i, doc_text in enumerate(results['documents'][0]):
-                    doc_metadata = results['metadatas'][0][i] if 'metadatas' in results and results['metadatas'] else {}
-                    documents.append(type('Document', (), {
-                        'page_content': doc_text,
-                        'metadata': doc_metadata
-                    }))
+                    # 중복 검사
+                    if doc_text not in existing_texts:
+                        doc_metadata = results['metadatas'][0][i] if 'metadatas' in results and results['metadatas'] else {}
+                        documents.append(type('Document', (), {
+                            'page_content': doc_text,
+                            'metadata': doc_metadata
+                        }))
+                        existing_texts.add(doc_text)
         except Exception as e:
-            print(f"Error during standard document search: {e}")
+            print(f"전체 문서 검색 중 오류 발생: {str(e)}")
     
-    return documents
+    # 최종 결과는 최대 top_k 개수로 제한
+    return documents[:top_k]
 
 def get_database_status():
     """
