@@ -69,11 +69,21 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 현재 경로가 루트가 아닌 경우 (특정 페이지인 경우)
             if (currentPath !== '/' && currentPath !== '/index') {
-                // "/support", "/inquiry" 등의 경로인 경우 Support 메뉴를 활성화
-                if (['/support', '/inquiry', '/feedback', '/report'].includes(currentPath)) {
+                // "/inquiry", "/feedback", "/report" 등의 게시판 경로인 경우 Support 메뉴를 활성화
+                if (['/inquiry', '/feedback', '/report', '/inquiry/write', '/feedback/write', '/report/write', 
+                     '/inquiry/view', '/feedback/view', '/report/view',
+                     '/inquiry/edit', '/feedback/edit', '/report/edit'].some(path => currentPath.startsWith(path))) {
                     navLinkItems.forEach(link => {
                         link.classList.remove('active');
-                        if (link.getAttribute('href') === '#support') {
+                        if (link.getAttribute('href') === '/#support') {
+                            link.classList.add('active');
+                        }
+                    });
+                // "/file-manager" 경로인 경우 Documents 메뉴를 활성화
+                } else if (currentPath === '/file-manager') {
+                    navLinkItems.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === '/#documents') {
                             link.classList.add('active');
                         }
                     });
