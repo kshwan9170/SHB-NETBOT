@@ -44,11 +44,14 @@
         table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed; /* 고정 너비 테이블 레이아웃 적용 */
         }
         th, td {
             padding: 12px 15px;
             text-align: left;
             border-bottom: 1px solid #eaeaea;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         th {
             background-color: #f7f9fc;
@@ -58,17 +61,32 @@
         .actions {
             text-align: center;
         }
+        /* 테이블 열 너비 명시적 지정 */
+        th:first-child, td:first-child {
+            width: 60%;
+        }
+        
+        th:nth-child(2), td:nth-child(2) {
+            width: 15%;
+            text-align: center;
+        }
+        
+        th:last-child, td:last-child {
+            width: 25%;
+            text-align: center;
+        }
+        
         .delete-btn {
             background-color: #ff3b30;
             color: white;
             border: none;
             border-radius: 4px;
-            padding: 8px 16px;
+            padding: 10px 20px;
             cursor: pointer;
             font-weight: 600;
             transition: all 0.2s;
             font-size: 14px;
-            min-width: 120px;
+            min-width: 100px;
             text-align: center;
             white-space: nowrap;
             display: inline-block;
@@ -107,11 +125,6 @@
         <h2>업로드된 문서 목록</h2>
         
         <table id="file-table">
-            <colgroup>
-                <col style="width: 50%">
-                <col style="width: 15%">
-                <col style="width: 35%">
-            </colgroup>
             <thead>
                 <tr>
                     <th>파일 이름</th>
@@ -176,11 +189,11 @@
                 // 파일 크기 포맷팅
                 const size = formatFileSize(file.size);
                 
-                // 열 너비를 고정합니다
+                // 파일 행 생성
                 row.innerHTML = `
-                    <td style="max-width: 50%; word-break: break-all; padding-right: 15px;">${file.filename}</td>
-                    <td style="width: 15%; text-align: center;">${size}</td>
-                    <td style="width: 35%; text-align: center; padding: 15px;">
+                    <td>${file.filename}</td>
+                    <td>${size}</td>
+                    <td>
                         <div style="display: flex; justify-content: center;">
                             <button class="delete-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}">
                                 DELETE
