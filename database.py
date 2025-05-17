@@ -55,25 +55,25 @@ def initialize_database():
     return collection
 
 def add_document_embeddings(
-    texts: List[str], 
-    metadata: Optional[Dict[str, Any]] = None
+    chunks: List[Dict[str, Any]]
 ):
     """
     Add document chunks to the vector database
     
     Args:
-        texts: List of text chunks to add
-        metadata: Optional metadata to associate with all chunks
+        chunks: List of dictionaries containing text chunks and metadata
+               Each dict should have: {"text": str, "doc_id": str, "chunk_id": str, "metadata": dict}
     """
-    if not texts:
+    if not chunks:
         return
     
     # Initialize the database
     collection = initialize_database()
     
-    # Prepare the documents for addition
-    ids = [f"doc_{i}_{hash(text)}" for i, text in enumerate(texts)]
-    metadatas = [metadata or {} for _ in texts]
+    # Extract data from chunks
+    texts = [chunk["text"] for chunk in chunks]
+    ids = [chunk["chunk_id"] for chunk in chunks]
+    metadatas = [chunk["metadata"] for chunk in chunks]
     
     # Add documents to the collection
     collection.add(
@@ -82,7 +82,7 @@ def add_document_embeddings(
         metadatas=metadatas
     )
     
-    print(f"Added {len(texts)} document chunks to the database")
+    print(f"Added {len(chunks)} document chunks to the database")
 
 def search_similar_docs(
     query: str, 
