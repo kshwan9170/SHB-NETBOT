@@ -376,6 +376,38 @@ def theme_selector():
         st.markdown("<script>document.body.classList.remove('dark-mode');</script>", unsafe_allow_html=True)
         st.rerun()
 
+def display_footer():
+    """Display the app footer with links and copyright information"""
+    st.markdown("""
+    <div style="background-color: #1E2D3B; padding: 20px; border-radius: 10px; margin-top: 20px;">
+        <div style="display: flex; justify-content: space-around; margin-bottom: 20px;">
+            <div>
+                <h3 style="color: #4A89DC; border-bottom: 2px solid #4A89DC; padding-bottom: 5px; margin-bottom: 10px;">서비스</h3>
+                <p><a href="#" style="color: white; text-decoration: none;">🏠 홈</a></p>
+                <p><a href="#" style="color: white; text-decoration: none;">📊 소개</a></p>
+                <p><a href="#" style="color: white; text-decoration: none;">💬 대화하기</a></p>
+                <p><a href="#" style="color: white; text-decoration: none;">📄 문서</a></p>
+            </div>
+            <div>
+                <h3 style="color: #4A89DC; border-bottom: 2px solid #4A89DC; padding-bottom: 5px; margin-bottom: 10px;">고객지원</h3>
+                <p><a href="#" style="color: white; text-decoration: none;">🔍 문의하기</a></p>
+                <p><a href="#" style="color: white; text-decoration: none;">📋 피드백</a></p>
+                <p><a href="#" style="color: white; text-decoration: none;">📣 자주 묻는 질문</a></p>
+            </div>
+            <div>
+                <h3 style="color: #4A89DC; border-bottom: 2px solid #4A89DC; padding-bottom: 5px; margin-bottom: 10px;">정책 및 약관</h3>
+                <p><a href="#" style="color: white; text-decoration: none;">📜 이용약관</a></p>
+                <p><a href="#" style="color: white; text-decoration: none;">🔒 개인정보처리방침</a></p>
+                <p><a href="#" style="color: white; text-decoration: none;">🛡️ 저작권</a></p>
+                <p><a href="#" style="color: white; text-decoration: none;">📝 보안정책</a></p>
+            </div>
+        </div>
+        <div style="text-align: center; color: white; margin-top: 20px;">
+            <p>© 2025 신한은행. All rights reserved.</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
 def main():
     """Main function to run the Streamlit app"""
     # Load CSS
@@ -405,6 +437,9 @@ def main():
     
     with tab2:
         document_management()
+    
+    # Display footer
+    display_footer()
 
 if __name__ == "__main__":
     main()
