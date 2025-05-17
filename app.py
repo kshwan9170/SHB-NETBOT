@@ -84,9 +84,9 @@ def chat():
             
             # 사용자 언어에 맞게 안내 메시지 전달
             if re.search(r'[가-힣]', user_message):
-                return jsonify({'reply': "현재 관련된 문서를 찾을 수 없습니다.\n추가 지원이 필요하실 경우, **네트워크 운영 담당자(XX-XXX-XXXX)**로 연락해 주시면 신속히 도와드리겠습니다."})
+                return jsonify({'reply': "현재 관련된 문서를 찾을 수 없습니다.\n\n추가 지원이 필요하실 경우,\n**네트워크 운영 담당자(XX-XXX-XXXX)**로 연락해 주시면 신속히 도와드리겠습니다."})
             else:
-                return jsonify({'reply': "Currently, we cannot find any related documents.\nFor additional support, please contact the **Network Operations Team (XX-XXX-XXXX)** for prompt assistance."})
+                return jsonify({'reply': "Currently, we cannot find any related documents.\n\nFor additional support,\nPlease contact the **Network Operations Team (XX-XXX-XXXX)** for prompt assistance."})
         
         # Context 형식 요구사항대로 변경 (번호를 붙여 각 문서 표시)
         context = "Context:\n"

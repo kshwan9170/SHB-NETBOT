@@ -88,9 +88,9 @@ def get_chatbot_response(
             retrieved_docs, context = retrieve_relevant_documents(query, top_k=5)
             if not context:
                 if language == 'ko':
-                    no_docs_message = "현재 관련된 문서를 찾을 수 없습니다.\n추가 지원이 필요하실 경우, **네트워크 운영 담당자(XX-XXX-XXXX)**로 연락해 주시면 신속히 도와드리겠습니다."
+                    no_docs_message = "현재 관련된 문서를 찾을 수 없습니다.\n\n추가 지원이 필요하실 경우,\n**네트워크 운영 담당자(XX-XXX-XXXX)**로 연락해 주시면 신속히 도와드리겠습니다."
                 else:
-                    no_docs_message = "Currently, we cannot find any related documents.\nFor additional support, please contact the **Network Operations Team (XX-XXX-XXXX)** for prompt assistance."
+                    no_docs_message = "Currently, we cannot find any related documents.\n\nFor additional support,\nPlease contact the **Network Operations Team (XX-XXX-XXXX)** for prompt assistance."
                 print(f"No relevant documents found for query: {query}")
                 return no_docs_message
                 
