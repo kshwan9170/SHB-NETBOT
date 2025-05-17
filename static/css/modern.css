@@ -1898,13 +1898,14 @@ textarea.form-control {
 
 .dropdown-toggle {
     position: relative;
-    padding-right: 24px !important;
+    padding-right: 18px !important;
+    display: inline-block;
 }
 
 .dropdown-toggle::after {
     content: '';
     position: absolute;
-    right: 8px;
+    right: 2px;
     top: 50%;
     margin-top: -2px;
     width: 0;
@@ -1913,6 +1914,7 @@ textarea.form-control {
     border-right: 5px solid transparent;
     border-top: 5px solid currentColor;
     transition: transform 0.2s;
+    opacity: 0.8;
 }
 
 .dropdown:hover .dropdown-toggle::after {
