@@ -160,6 +160,14 @@ def get_chatbot_response(
                 신한은행의 내부 문서에서 다음 정보를 사용하여 응답에 활용하세요.
                 정보가 질문에 완전히 답변하지 않으면, 당신의 전문 지식을 활용하여 보충하세요.
                 
+                문서를 단순히 복붙하지 말고, 다음 지침을 따라 처리하세요:
+                1. 질문 의도 파악: 사용자가 구체적으로 무엇을 알고 싶어하는지 이해합니다.
+                2. 관련 내용 추출: 문맥 정보에서 관련 부분만 추출하고 중요하지 않은 세부 사항은 생략합니다.
+                3. 단계별 정리: 과정이나 설정 방법은 명확한 단계로 재구성합니다.
+                4. 자연어로 설명: 기술적인 내용도 대화하듯 설명합니다.
+                5. 구체적인 예시 제공: 가능한 경우 CLI 명령어나 UI 경로를 포함합니다.
+                6. 도입·마무리 추가: 간결한 도입 문장과 유용한 마무리로 응답을 완성합니다.
+                
                 문맥 정보:
                 """
                 system_message += context
@@ -227,6 +235,14 @@ def get_chatbot_response(
                 system_message += """
                 Use the following information from Shinhan Bank's internal documents to inform your response.
                 If the information doesn't fully answer the query, use your expert knowledge to supplement it.
+                
+                Instead of simply copying from documents, follow these guidelines:
+                1. Understand the question: Identify exactly what the user wants to know
+                2. Extract relevant content: Focus on relevant parts from the context and omit unimportant details
+                3. Organize into steps: Restructure processes or configurations into clear steps
+                4. Use natural language: Explain technical content conversationally
+                5. Include specific examples: Provide CLI commands or UI paths when possible
+                6. Add introduction and conclusion: Start with a brief introduction and end with a helpful conclusion
                 
                 CONTEXT INFORMATION:
                 """

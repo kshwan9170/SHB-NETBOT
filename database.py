@@ -182,19 +182,44 @@ def search_similar_docs(
         for vendor in detected_vendors:
             # 필터링 조건 정의
             try:
-                # 1. 파일명에 키워드가 포함된 문서 필터링 (doc_name 또는 source 필드)
-                filter_conditions = {
-                    "$or": [
-                        {"doc_name": {"$contains": vendor}},
-                        {"source": {"$contains": vendor}}
-                    ]
-                }
+                # 파일명에 키워드가 포함된 문서 필터링
+                # ChromaDB는 $contains 연산자를 지원하지 않으므로 
+                # 키워드 기반 매칭은 후처리 로직으로 처리
+                print(f"{vendor} 키워드로 검색을 시도합니다")
                 
+                # 일단 전체 검색 실행
                 results = collection.query(
                     query_texts=[query],
-                    n_results=top_k,
-                    where=filter_conditions
+                    n_results=top_k
                 )
+                
+                # 검색 결과가 있으면 벤더 키워드 포함 여부를 확인하여 필터링
+                if results and 'documents' in results and results['documents'] and results['documents'][0]:
+                    filtered_indices = []
+                    
+                    # 메타데이터와 내용에서 키워드 필터링
+                    for i, doc_text in enumerate(results['documents'][0]):
+                        meta = results['metadatas'][0][i] if 'metadatas' in results and results['metadatas'] and i < len(results['metadatas'][0]) else {}
+                        source = meta.get('source', '')
+                        doc_name = meta.get('doc_name', '')
+                        
+                        # 메타데이터나 내용에 벤더 키워드가 포함된 경우 필터링
+                        # 문자열 체크 전 타입 확인 및 안전한 소문자 변환
+                        if (source and isinstance(source, str) and vendor.lower() in source.lower()) or \
+                           (doc_name and isinstance(doc_name, str) and vendor.lower() in doc_name.lower()) or \
+                           (doc_text and isinstance(doc_text, str) and vendor.lower() in doc_text.lower()):
+                            filtered_indices.append(i)
+                    
+                    if filtered_indices:
+                        print(f"{vendor} 관련 문서에서 {len(filtered_indices)} 개의 결과를 찾았습니다")
+                        # 필터링된 결과만 사용
+                        filtered_docs = [results['documents'][0][i] for i in filtered_indices]
+                        filtered_meta = [results['metadatas'][0][i] for i in filtered_indices] if 'metadatas' in results and results['metadatas'] else []
+                        
+                        # results 객체 업데이트
+                        results['documents'][0] = filtered_docs
+                        if 'metadatas' in results and results['metadatas']:
+                            results['metadatas'][0] = filtered_meta
                 
                 # 결과 처리
                 if results and 'documents' in results and results['documents'] and results['documents'][0]:
@@ -208,10 +233,11 @@ def search_similar_docs(
                     
                     # 충분한 결과를 찾았으면 더 이상 검색하지 않음
                     if len(documents) >= top_k:
+                        print(f"{len(documents)} 개의 결과를 찾아 검색 완료")
                         return documents[:top_k]
                         
             except Exception as e:
-                print(f"{vendor} 문서 필터링 검색 중 오류 발생: {str(e)}")
+                print(f"{vendor} 문서 검색 중 오류 발생: {str(e)}")
     
     # 2단계: Fallback - 필터링 결과가 없거나 충분하지 않은 경우 전체 검색
     if not documents or len(documents) < top_k:
