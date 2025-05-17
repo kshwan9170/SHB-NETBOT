@@ -22,5 +22,5 @@ enableXsrfProtection = false
 address = "0.0.0.0"
 EOL
 
-# Streamlit 앱 실행 (간단한 데모 앱)
-streamlit run hello_world.py --server.port=$PORT --server.address=0.0.0.0
+# Streamlit 앱 실행 (실제 애플리케이션)
+streamlit run streamlit_app.py --server.port=$PORT --server.address=0.0.0.0
