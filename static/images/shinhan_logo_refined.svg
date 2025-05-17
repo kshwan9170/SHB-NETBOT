@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>SHB-NetBot Logo</title>
+    <defs>
+        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#0A74DA"/>
+            <stop offset="100%" stop-color="#1E3A8A"/>
+        </linearGradient>
+    </defs>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g fill="url(#logoGradient)" fill-rule="nonzero">
+            <path d="M20,0 C31.0457,0 40,8.9543 40,20 C40,31.0457 31.0457,40 20,40 C8.9543,40 0,31.0457 0,20 C0,8.9543 8.9543,0 20,0 Z M20,6 C12.268,6 6,12.268 6,20 C6,27.732 12.268,34 20,34 C27.732,34 34,27.732 34,20 C34,12.268 27.732,6 20,6 Z M20,12 C24.4183,12 28,15.5817 28,20 C28,24.4183 24.4183,28 20,28 C15.5817,28 12,24.4183 12,20 C12,15.5817 15.5817,12 20,12 Z" opacity="0.9"></path>
+        </g>
+    </g>
+</svg>
