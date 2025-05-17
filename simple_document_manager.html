@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>간단한 파일 관리자</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .delete-btn {
+            background-color: #ff5252;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .delete-btn:hover {
+            background-color: #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <h1>파일 관리자</h1>
+    <p>아래에서 업로드된 파일을 관리할 수 있습니다.</p>
+    
+    <table>
+        <tr>
+            <th>파일 이름</th>
+            <th>크기</th>
+            <th>작업</th>
+        </tr>
+        <tr>
+            <td>NexG_VForce_CLI.pdf</td>
+            <td>12.4 MB</td>
+            <td>
+                <button class="delete-btn" onclick="deleteFile('f520ffe7-8178-493a-a67b-f591b37edbc5_NexG_VForce_CLI.pdf', 'NexG_VForce_CLI.pdf')">삭제</button>
+            </td>
+        </tr>
+        <tr>
+            <td>cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf</td>
+            <td>3.8 MB</td>
+            <td>
+                <button class="delete-btn" onclick="deleteFile('7b054720-a171-449e-bfff-93ca21a698e4_cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf', 'cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf')">삭제</button>
+            </td>
+        </tr>
+    </table>
+
+    <script>
+        function deleteFile(systemFilename, displayFilename) {
+            if (confirm("정말 " + displayFilename + " 파일을 삭제하시겠습니까?")) {
+                fetch('/api/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        system_filename: systemFilename
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(displayFilename + ' 파일이 삭제되었습니다.');
+                        // 삭제 후 페이지 새로고침
+                        window.location.reload();
+                    } else {
+                        alert('삭제 실패: ' + (data.error || '알 수 없는 오류가 발생했습니다.'));
+                    }
+                })
+                .catch(error => {
+                    console.error('API 호출 중 오류 발생:', error);
+                    alert('서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
+                });
+            }
+        }
+    </script>
+</body>
+</html>

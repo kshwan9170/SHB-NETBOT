@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>파일 관리자 - SHB-NetBot</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .header img {
+            height: 40px;
+            margin-right: 15px;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            margin-top: 0;
+            color: #0064E1;
+            font-weight: 600;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eaeaea;
+        }
+        th {
+            background-color: #f7f9fc;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .actions {
+            text-align: center;
+        }
+        .delete-btn {
+            background-color: #ff3b30;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .delete-btn:hover {
+            background-color: #e02e24;
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(224, 46, 36, 0.3);
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #0064E1;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="{{ url_for('static', filename='images/shinhan_logo_refined.svg') }}" alt="신한은행 로고">
+        <h1>SHB-NetBot 파일 관리자</h1>
+    </div>
+    
+    <div class="card">
+        <h2>업로드된 문서 목록</h2>
+        
+        <table id="file-table">
+            <thead>
+                <tr>
+                    <th style="width: 60%;">파일 이름</th>
+                    <th>크기</th>
+                    <th>작업</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>NexG_VForce_CLI.pdf</td>
+                    <td>12.4 MB</td>
+                    <td class="actions">
+                        <button class="delete-btn" onclick="deleteFile('f520ffe7-8178-493a-a67b-f591b37edbc5_NexG_VForce_CLI.pdf', 'NexG_VForce_CLI.pdf')">
+                            삭제
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf</td>
+                    <td>3.8 MB</td>
+                    <td class="actions">
+                        <button class="delete-btn" onclick="deleteFile('7b054720-a171-449e-bfff-93ca21a698e4_cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf', 'cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf')">
+                            삭제
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div id="empty-state" class="empty-state" style="display: none;">
+            <p>업로드된 문서가 없습니다.</p>
+        </div>
+    </div>
+    
+    <a href="/" class="back-link">← 메인 페이지로 돌아가기</a>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileRows = document.querySelectorAll('#file-table tbody tr');
+            if (fileRows.length === 0) {
+                document.getElementById('file-table').style.display = 'none';
+                document.getElementById('empty-state').style.display = 'block';
+            }
+        });
+        
+        function deleteFile(systemFilename, displayFilename) {
+            if (confirm("정말 파일을 삭제하시겠습니까?")) {
+                fetch('/api/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        system_filename: systemFilename
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 현재 행 찾기 및 제거
+                        const fileRows = document.querySelectorAll('#file-table tbody tr');
+                        for (let i = 0; i < fileRows.length; i++) {
+                            if (fileRows[i].textContent.includes(displayFilename)) {
+                                fileRows[i].remove();
+                                break;
+                            }
+                        }
+                        
+                        // 테이블에 행이 남아있는지 확인
+                        const remainingRows = document.querySelectorAll('#file-table tbody tr');
+                        if (remainingRows.length === 0) {
+                            document.getElementById('file-table').style.display = 'none';
+                            document.getElementById('empty-state').style.display = 'block';
+                        }
+                        
+                        alert(`"${displayFilename}" 파일이 삭제되었습니다.`);
+                    } else {
+                        alert(`삭제 실패: ${data.error || '알 수 없는 오류가 발생했습니다.'}`);
+                    }
+                })
+                .catch(error => {
+                    console.error('API 호출 중 오류 발생:', error);
+                    alert('서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
+                });
+            }
+        }
+    </script>
+</body>
+</html>
