@@ -1,11 +1,11 @@
 /* 기본 스타일 */
 :root {
-    /* 컬러 팔레트 */
-    --primary: #3EB489;
-    --primary-hover: #35A07A;
-    --primary-light: rgba(62, 180, 137, 0.1);
-    --secondary: #1E90FF;
-    --accent: #FF6B6B;
+    /* 컬러 팔레트 - 코발트 블루 계열 */
+    --primary: #0A74DA;
+    --primary-hover: #0862B8;
+    --primary-light: rgba(10, 116, 218, 0.1);
+    --secondary: #1E3A8A;
+    --accent: #3B82F6;
     
     /* 중립 컬러 */
     --dark: #2C3E50;
@@ -53,11 +53,11 @@
 
 /* 다크 모드 */
 [data-theme="dark"] {
-    --primary: #4CD6B9;
-    --primary-hover: #5DDFC5;
-    --primary-light: rgba(76, 214, 185, 0.15);
-    --secondary: #4DA3FF;
-    --accent: #FF8F8F;
+    --primary: #2D8AE5;
+    --primary-hover: #3B93F0;
+    --primary-light: rgba(45, 138, 229, 0.15);
+    --secondary: #3B82F6;
+    --accent: #60A5FA;
     
     --dark: #ECF0F1;
     --dark-medium: #BDC3C7;
@@ -306,9 +306,9 @@ img {
     left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle at 80% 20%, var(--primary-light) 0%, transparent 25%),
-                radial-gradient(circle at 20% 80%, var(--primary-light) 0%, transparent 20%);
-    opacity: 0.8;
+    background: radial-gradient(circle at 80% 20%, rgba(10, 116, 218, 0.15) 0%, transparent 30%),
+                radial-gradient(circle at 20% 80%, rgba(30, 58, 138, 0.12) 0%, transparent 25%);
+    opacity: 0.9;
     z-index: 0;
 }
 
@@ -326,7 +326,7 @@ img {
     font-weight: 800;
     margin-bottom: 2rem;
     letter-spacing: -1px;
-    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    background: linear-gradient(135deg, #0A74DA, #1E3A8A);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -351,7 +351,7 @@ img {
 .cta-button {
     display: inline-block;
     padding: 1.6rem 3.2rem;
-    background: var(--primary);
+    background: linear-gradient(135deg, #0A74DA, #0862B8);
     color: var(--white);
     font-weight: 600;
     border-radius: var(--border-radius-md);
@@ -362,7 +362,7 @@ img {
 }
 
 .cta-button:hover {
-    background: var(--primary-hover);
+    background: linear-gradient(135deg, #1E3A8A, #0A74DA);
     color: var(--white);
     transform: translateY(-3px);
     box-shadow: var(--shadow-lg);
@@ -432,7 +432,7 @@ img {
     transform: translateX(-50%);
     width: 6rem;
     height: 4px;
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    background: linear-gradient(90deg, #0A74DA, #1E3A8A);
     border-radius: 4px;
 }
 
@@ -543,7 +543,7 @@ img {
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--border-color);
-    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    background: linear-gradient(90deg, #0A74DA, #1E3A8A);
     color: var(--white);
 }
 
@@ -602,7 +602,7 @@ img {
 }
 
 .user-message {
-    background-color: var(--primary);
+    background: linear-gradient(135deg, #0A74DA, #0862B8);
     color: var(--text-on-primary);
     align-self: flex-end;
     border-bottom-right-radius: 0.6rem;
@@ -691,7 +691,7 @@ img {
 }
 
 #sendButton {
-    background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+    background: linear-gradient(135deg, #0A74DA, #0862B8);
     color: white;
     border: none;
     width: 5.4rem;
@@ -726,7 +726,7 @@ img {
 }
 
 #sendButton:hover {
-    background: linear-gradient(135deg, var(--primary-hover), var(--primary));
+    background: linear-gradient(135deg, #1E3A8A, #0A74DA);
     transform: translateY(-3px);
     box-shadow: var(--shadow-lg);
 }
