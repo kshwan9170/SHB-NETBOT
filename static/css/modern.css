@@ -845,21 +845,22 @@ img {
     background-color: #ff5252;
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 8px 16px;
+    border-radius: 6px;
+    padding: 6px 12px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
-    position: absolute;
-    top: 15px;
-    right: 15px;
+    position: relative;
+    margin-left: 10px;
     box-shadow: 0 2px 5px rgba(255, 82, 82, 0.3);
     z-index: 10;
     overflow: hidden;
+    min-width: 70px;
+    max-width: 90px;
 }
 
 .document-delete-btn::before {
