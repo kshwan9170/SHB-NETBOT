@@ -59,20 +59,20 @@
         </div>
         
         <div class="post-form">
-            <form method="post" action="{{ url_for(write_route) }}">
+            <form method="post" action="{% if is_edit %}{{ url_for(write_route, post_id=post.id) }}{% else %}{{ url_for(write_route) }}{% endif %}">
                 <div class="form-group">
                     <label for="title">제목</label>
-                    <input type="text" class="form-control" id="title" name="title" required>
+                    <input type="text" class="form-control" id="title" name="title" value="{% if post %}{{ post.title }}{% endif %}" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="author">작성자</label>
-                    <input type="text" class="form-control" id="author" name="author" required>
+                    <input type="text" class="form-control" id="author" name="author" value="{% if post %}{{ post.author }}{% endif %}" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="content">내용</label>
-                    <textarea class="form-control" id="content" name="content" rows="10" required></textarea>
+                    <textarea class="form-control" id="content" name="content" rows="10" required>{% if post %}{{ post.content }}{% endif %}</textarea>
                 </div>
                 
                 <div class="form-buttons">
