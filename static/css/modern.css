@@ -1936,12 +1936,16 @@ textarea.form-control {
     opacity: 0;
     transform: translateY(10px);
     transition: opacity 0.3s, transform 0.3s;
+    pointer-events: none;
 }
 
-.dropdown:hover .dropdown-menu {
+.dropdown:hover .dropdown-menu,
+.dropdown.show .dropdown-menu,
+.dropdown-menu.show {
     display: block;
     opacity: 1;
     transform: translateY(0);
+    pointer-events: auto;
 }
 
 .dropdown-item {
