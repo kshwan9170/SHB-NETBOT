@@ -1633,9 +1633,21 @@ img {
 /* 푸터 스타일 */
 .footer {
     margin-top: 60px;
-    padding: 40px 0;
+    padding: 50px 0 30px;
     background-color: var(--dark);
     color: var(--white);
+    position: relative;
+    overflow: hidden;
+}
+
+.footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
 }
 
 .footer-container {
@@ -1650,44 +1662,91 @@ img {
     margin-bottom: 30px;
 }
 
-.footer-table {
+.footer-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
     width: 100%;
-    max-width: 800px;
-    border-collapse: collapse;
+    max-width: 900px;
 }
 
-.footer-table th {
-    text-align: left;
-    padding: 10px 15px;
-    font-weight: 600;
+.footer-col h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
     color: var(--accent);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    padding-bottom: 10px;
 }
 
-.footer-table td {
-    padding: 8px 15px;
-    vertical-align: top;
+.footer-col h3::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 30px;
+    height: 2px;
+    background-color: var(--accent);
 }
 
-.footer-table a {
+.footer-links {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.footer-link {
     color: var(--light);
     text-decoration: none;
-    transition: color 0.3s;
-    display: block;
-    padding: 4px 0;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    font-size: 15px;
 }
 
-.footer-table a:hover {
+.footer-link:hover {
     color: var(--white);
-    text-decoration: underline;
+    transform: translateX(5px);
+}
+
+.footer-link svg {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+    opacity: 0.7;
+}
+
+.footer-link:hover svg {
+    opacity: 1;
 }
 
 .footer-bottom {
     text-align: center;
-    padding-top: 20px;
+    padding-top: 25px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     font-size: 14px;
     color: var(--text-light);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.footer-bottom img {
+    height: 24px;
+    margin-right: 10px;
+    opacity: 0.7;
+}
+
+@media (max-width: 768px) {
+    .footer-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 576px) {
+    .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
 }
 
 /* 게시판 스타일 */
