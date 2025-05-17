@@ -175,6 +175,19 @@
                                 <p>Drag and drop files here or <span class="upload-browse">browse</span></p>
                                 <input type="file" id="fileInput" accept=".pdf,.docx,.pptx,.xlsx,.txt" multiple style="display: none">
                             </div>
+                            
+                            <!-- 업로드 진행률 표시 -->
+                            <div id="uploadProgressContainer" style="display: none; margin: 15px 0;">
+                                <div class="progress-info" style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span id="uploadProgressText">0%</span>
+                                    <span id="uploadProgressChunks">0/0 청크</span>
+                                </div>
+                                <div class="progress-bar-container" style="background-color: #f0f0f0; border-radius: 4px; height: 8px; overflow: hidden;">
+                                    <div id="uploadProgressBar" style="background-color: #0064E1; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                                </div>
+                                <div id="uploadFileName" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
+                            </div>
+                            
                             <button type="submit" id="uploadButton" class="upload-button">Upload Files</button>
                         </form>
                     </div>

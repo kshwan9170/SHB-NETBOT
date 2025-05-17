@@ -1,6 +1,7 @@
 import os
 import json
 import uuid
+import shutil
 from pathlib import Path
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, jsonify, send_from_directory
@@ -15,12 +16,15 @@ app = Flask(__name__)
 
 # 파일 업로드 설정
 UPLOAD_FOLDER = 'uploaded_files'
+TEMP_CHUNK_FOLDER = 'temp_chunks'  # 청크 파일 임시 저장 폴더
 ALLOWED_EXTENSIONS = {'pdf', 'docx', 'pptx', 'xlsx', 'xls', 'txt'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload size
+app.config['TEMP_CHUNK_FOLDER'] = TEMP_CHUNK_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max upload size (for chunks)
 
 # 업로드 폴더 생성
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(TEMP_CHUNK_FOLDER, exist_ok=True)
 
 # OpenAI API 키 설정
 openai_api_key = os.environ.get("OPENAI_API_KEY")
@@ -29,6 +33,12 @@ client = OpenAI(api_key=openai_api_key)
 def allowed_file(filename):
     """파일 확장자 체크"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def get_clean_filename(filename):
+    """보안을 위해 안전한 파일명 생성"""
+    if not filename:
+        return None
+    return secure_filename(filename)
 
 @app.route('/')
 def index():
