@@ -48,9 +48,10 @@ st.markdown("""
         font-size: 16px;
     }
     .user-message {
-        background-color: #E6EFFF;
+        background-color: #f0f2f6;
         text-align: right;
         margin-left: 20%;
+        border: 1px solid #e0e0e0;
     }
     .bot-message {
         background-color: #0046FF;
