@@ -634,6 +634,83 @@ img {
     z-index: 1;
 }
 
+/* Markdown 스타일 */
+.message-content h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0.8rem 0;
+    color: inherit;
+}
+
+.message-content h3 {
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin: 0.6rem 0;
+    color: inherit;
+}
+
+.message-content p {
+    margin: 0.5rem 0;
+}
+
+.message-content ul, .message-content ol {
+    margin: 0.5rem 0;
+    padding-left: 2rem;
+}
+
+.message-content li {
+    margin: 0.3rem 0;
+}
+
+.message-content code {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.85em;
+    background-color: rgba(0, 0, 0, 0.1);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+}
+
+.message-content pre {
+    margin: 0.6rem 0;
+    overflow-x: auto;
+}
+
+.message-content pre code {
+    display: block;
+    padding: 0.8rem;
+    background-color: rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    white-space: pre;
+}
+
+.bot-message .message-content pre code {
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.message-content strong {
+    font-weight: 700;
+}
+
+.message-content em {
+    font-style: italic;
+}
+
+.message-content blockquote {
+    border-left: 3px solid currentColor;
+    margin: 0.5rem 0;
+    padding-left: 1rem;
+    opacity: 0.8;
+}
+
+.message-content a {
+    color: #0A74DA;
+    text-decoration: underline;
+}
+
+[data-theme="dark"] .message-content a {
+    color: #5D89FF;
+}
+
 @keyframes slideRight {
     from { opacity: 0; transform: translateX(-20px); }
     to { opacity: 1; transform: translateX(0); }

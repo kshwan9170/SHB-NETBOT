@@ -64,7 +64,14 @@ def get_chatbot_response(
             - 내부 시스템 접근 절차
             
             항상 공손하고, 직접적이며, 도움이 되도록 답변해주세요. 답을 모른다면, 명확하게 말해주세요.
-            답변을 적절한 간격과 구조로 명확하게 포맷팅해 주세요.
+            
+            중요: 응답을 마크다운 형식으로 구조화하여 제공해주세요.
+            - 주요 제목은 ## 수준 제목(Heading 2)로 시작해주세요
+            - 설명이 필요한 경우 본문을 사용해주세요
+            - 단계별 설명은 번호 목록(1. 2. 3.)을 사용해주세요
+            - 중요 정보는 **굵은 글씨**로 강조해주세요
+            - 명령어나 코드 블록은 ```로 감싸진 코드 블록을 사용해주세요
+            - 부가 정보나 참고 사항은 > 인용구를 사용해주세요
             """
             
             if context:
@@ -87,7 +94,14 @@ def get_chatbot_response(
             - Internal system access procedures
             
             Always be polite, direct, and helpful. If you don't know the answer, say so clearly.
-            Format your responses clearly with proper spacing and structure.
+            
+            Important: Structure your responses in Markdown format:
+            - Start with level-2 headings (## Heading)
+            - Use paragraphs for explanations
+            - Use numbered lists (1. 2. 3.) for step-by-step instructions
+            - Highlight important information with **bold text**
+            - Use ```code blocks``` for commands or code
+            - Use > blockquotes for additional notes or references
             """
             
             if context:
