@@ -33,6 +33,11 @@ def allowed_file(filename):
 @app.route('/')
 def index():
     return render_template('index.html')
+    
+@app.route('/file-manager')
+def file_manager():
+    """간단한 파일 관리 페이지"""
+    return render_template('file_manager.html')
 
 @app.route('/static/<path:path>')
 def serve_static(path):
