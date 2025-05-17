@@ -63,19 +63,23 @@
             color: white;
             border: none;
             border-radius: 4px;
-            padding: 6px 12px;
+            padding: 8px 16px;
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
             transition: all 0.2s;
             font-size: 14px;
-            width: 80px;
+            min-width: 120px;
             text-align: center;
             white-space: nowrap;
+            display: inline-block;
+            box-shadow: 0 2px 4px rgba(224, 46, 36, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .delete-btn:hover {
             background-color: #e02e24;
             transform: translateY(-2px);
-            box-shadow: 0 2px 5px rgba(224, 46, 36, 0.3);
+            box-shadow: 0 4px 8px rgba(224, 46, 36, 0.4);
         }
         .back-link {
             display: inline-block;
@@ -104,9 +108,9 @@
         
         <table id="file-table">
             <colgroup>
-                <col style="width: 30%">
+                <col style="width: 50%">
                 <col style="width: 15%">
-                <col style="width: 55%">
+                <col style="width: 35%">
             </colgroup>
             <thead>
                 <tr>
@@ -174,12 +178,14 @@
                 
                 // 열 너비를 고정합니다
                 row.innerHTML = `
-                    <td style="max-width: 30%; word-break: break-all;">${file.filename}</td>
+                    <td style="max-width: 50%; word-break: break-all; padding-right: 15px;">${file.filename}</td>
                     <td style="width: 15%; text-align: center;">${size}</td>
-                    <td style="width: 55%; text-align: center;">
-                        <button class="delete-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}">
-                            DELETE
-                        </button>
+                    <td style="width: 35%; text-align: center; padding: 15px;">
+                        <div style="display: flex; justify-content: center;">
+                            <button class="delete-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}">
+                                DELETE
+                            </button>
+                        </div>
                     </td>
                 `;
                 
