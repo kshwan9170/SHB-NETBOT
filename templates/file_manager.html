@@ -106,25 +106,8 @@
                     <th>작업</th>
                 </tr>
             </thead>
-            <tbody>
-                <tr>
-                    <td>NexG_VForce_CLI.pdf</td>
-                    <td>12.4 MB</td>
-                    <td class="actions">
-                        <button class="delete-btn" onclick="deleteFile('f520ffe7-8178-493a-a67b-f591b37edbc5_NexG_VForce_CLI.pdf', 'NexG_VForce_CLI.pdf')">
-                            삭제
-                        </button>
-                    </td>
-                </tr>
-                <tr>
-                    <td>cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf</td>
-                    <td>3.8 MB</td>
-                    <td class="actions">
-                        <button class="delete-btn" onclick="deleteFile('7b054720-a171-449e-bfff-93ca21a698e4_cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf', 'cisco-nexus-9000-series-nx-os-ip-fabric-for-media-solution-guide-release-105x.pdf')">
-                            삭제
-                        </button>
-                    </td>
-                </tr>
+            <tbody id="dynamic-file-list">
+                <!-- 파일 목록은 JavaScript에 의해 동적으로 추가됩니다 -->
             </tbody>
         </table>
         
@@ -137,15 +120,74 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const fileRows = document.querySelectorAll('#file-table tbody tr');
-            if (fileRows.length === 0) {
-                document.getElementById('file-table').style.display = 'none';
-                document.getElementById('empty-state').style.display = 'block';
-            }
+            // 페이지 로드시 파일 목록 가져오기
+            fetchFileList();
         });
         
+        // 서버에서 파일 목록 조회
+        function fetchFileList() {
+            fetch('/api/documents')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.files && Array.isArray(data.files)) {
+                        renderFileList(data.files);
+                    } else {
+                        // 파일 목록이 없을 경우 빈 상태 표시
+                        document.getElementById('file-table').style.display = 'none';
+                        document.getElementById('empty-state').style.display = 'block';
+                    }
+                })
+                .catch(error => {
+                    console.error('파일 목록 조회 중 오류 발생:', error);
+                    alert('파일 목록을 불러오는 중 오류가 발생했습니다.');
+                });
+        }
+        
+        // 파일 목록 화면에 표시
+        function renderFileList(files) {
+            const tableBody = document.getElementById('dynamic-file-list');
+            tableBody.innerHTML = ''; // 기존 내용 초기화
+            
+            if (files.length === 0) {
+                document.getElementById('file-table').style.display = 'none';
+                document.getElementById('empty-state').style.display = 'block';
+                return;
+            }
+            
+            document.getElementById('file-table').style.display = 'table';
+            document.getElementById('empty-state').style.display = 'none';
+            
+            files.forEach(file => {
+                const row = document.createElement('tr');
+                
+                // 파일 크기 포맷팅
+                const size = formatFileSize(file.size);
+                
+                row.innerHTML = `
+                    <td>${file.filename}</td>
+                    <td>${size}</td>
+                    <td class="actions">
+                        <button class="delete-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}">
+                            삭제
+                        </button>
+                    </td>
+                `;
+                
+                tableBody.appendChild(row);
+                
+                // 삭제 버튼에 이벤트 리스너 추가
+                const deleteBtn = row.querySelector('.delete-btn');
+                deleteBtn.addEventListener('click', function() {
+                    const systemFilename = this.getAttribute('data-filename');
+                    const displayFilename = this.getAttribute('data-displayname');
+                    deleteFile(systemFilename, displayFilename);
+                });
+            });
+        }
+        
+        // 파일 삭제 요청
         function deleteFile(systemFilename, displayFilename) {
-            if (confirm("정말 파일을 삭제하시겠습니까?")) {
+            if (confirm(`정말 "${displayFilename}" 파일을 삭제하시겠습니까?`)) {
                 console.log(`Sending delete request with filename: ${systemFilename}`);
                 fetch('/api/delete', {
                     method: 'POST',
@@ -159,23 +201,9 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // 현재 행 찾기 및 제거
-                        const fileRows = document.querySelectorAll('#file-table tbody tr');
-                        for (let i = 0; i < fileRows.length; i++) {
-                            if (fileRows[i].textContent.includes(displayFilename)) {
-                                fileRows[i].remove();
-                                break;
-                            }
-                        }
-                        
-                        // 테이블에 행이 남아있는지 확인
-                        const remainingRows = document.querySelectorAll('#file-table tbody tr');
-                        if (remainingRows.length === 0) {
-                            document.getElementById('file-table').style.display = 'none';
-                            document.getElementById('empty-state').style.display = 'block';
-                        }
-                        
                         alert(`"${displayFilename}" 파일이 삭제되었습니다.`);
+                        // 삭제 후 파일 목록 다시 조회
+                        fetchFileList();
                     } else {
                         alert(`삭제 실패: ${data.error || '알 수 없는 오류가 발생했습니다.'}`);
                     }
@@ -185,6 +213,16 @@
                     alert('서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
                 });
             }
+        }
+        
+        // 파일 크기 포맷팅
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(1024));
+            
+            return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + sizes[i];
         }
     </script>
 </body>
