@@ -666,6 +666,75 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // 문서 목록 페이지네이션 UI 렌더링
+    function renderDocumentsPagination() {
+        const tableContainer = document.getElementById('dynamic-documents-table');
+        if (!tableContainer) return;
+        
+        // 기존 페이지네이션 제거
+        const existingPagination = tableContainer.querySelector('.pagination-container');
+        if (existingPagination) {
+            existingPagination.remove();
+        }
+        
+        const totalPages = Math.ceil(allDocuments.length / docsPerPage);
+        
+        // 페이지가 1개만 있으면 페이지네이션 표시하지 않음
+        if (totalPages <= 1) return;
+        
+        // 페이지네이션 컨테이너 생성
+        const paginationContainer = document.createElement('div');
+        paginationContainer.className = 'pagination-container';
+        paginationContainer.style.cssText = 'margin-top: 20px; display: flex; justify-content: center; gap: 10px;';
+        
+        // 이전 페이지 버튼
+        if (currentDocsPage > 1) {
+            const prevButton = document.createElement('button');
+            prevButton.innerHTML = '&laquo; 이전';
+            prevButton.className = 'pagination-btn';
+            prevButton.style.cssText = 'padding: 5px 10px; background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;';
+            prevButton.addEventListener('click', () => {
+                currentDocsPage--;
+                renderPaginatedDocuments();
+            });
+            paginationContainer.appendChild(prevButton);
+        }
+        
+        // 페이지 숫자 버튼
+        for (let i = 1; i <= totalPages; i++) {
+            const pageButton = document.createElement('button');
+            pageButton.innerText = i;
+            pageButton.className = 'pagination-btn' + (i === currentDocsPage ? ' active' : '');
+            
+            const buttonStyle = 'padding: 5px 10px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;';
+            const activeStyle = 'background-color: #0064E1; color: white;';
+            const inactiveStyle = 'background-color: #f5f5f5;';
+            
+            pageButton.style.cssText = buttonStyle + (i === currentDocsPage ? activeStyle : inactiveStyle);
+            
+            pageButton.addEventListener('click', () => {
+                currentDocsPage = i;
+                renderPaginatedDocuments();
+            });
+            paginationContainer.appendChild(pageButton);
+        }
+        
+        // 다음 페이지 버튼
+        if (currentDocsPage < totalPages) {
+            const nextButton = document.createElement('button');
+            nextButton.innerHTML = '다음 &raquo;';
+            nextButton.className = 'pagination-btn';
+            nextButton.style.cssText = 'padding: 5px 10px; background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;';
+            nextButton.addEventListener('click', () => {
+                currentDocsPage++;
+                renderPaginatedDocuments();
+            });
+            paginationContainer.appendChild(nextButton);
+        }
+        
+        tableContainer.appendChild(paginationContainer);
+    }
+    
     // 페이지네이션 적용하여 문서 목록 표시
     function renderPaginatedDocuments() {
         const tbody = document.getElementById('documents-tbody');
@@ -680,9 +749,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // 테이블 형식 문서 목록 표시
         if (tbody) {
             tbody.innerHTML = '';
-            
-            // 페이지네이션 UI 추가
-            renderDocumentsPagination();
             
             currentPageDocs.forEach(file => {
                 const fileExt = file.file_type;
