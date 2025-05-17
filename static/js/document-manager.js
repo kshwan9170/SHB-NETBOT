@@ -17,6 +17,50 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(loadDocuments, 2000);
     });
     
+    // 정적으로 생성된 삭제 버튼에 이벤트 리스너 추가
+    const staticDeleteButtons = document.querySelectorAll('.document-delete-btn');
+    console.log("Found static delete buttons:", staticDeleteButtons.length);
+    
+    staticDeleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // 이 예제에서는 데이터 속성을 사용하지 않고 직접 파일 이름을 가져옵니다
+            const card = button.closest('.document-card');
+            const fileNameElement = card.querySelector('.document-info h4');
+            
+            if (fileNameElement) {
+                const fileName = fileNameElement.textContent;
+                console.log("Static delete button clicked for file:", fileName);
+                
+                if (confirm(`"${fileName}" 파일을 삭제하시겠습니까?`)) {
+                    // 여기서 파일 삭제 API 호출
+                    fetch('/api/delete', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            filename: fileName  // 파일명으로 삭제 요청
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(`"${fileName}" 파일이 삭제되었습니다.`);
+                            // 페이지 새로고침
+                            window.location.reload();
+                        } else {
+                            alert(`삭제 실패: ${data.error || '알 수 없는 오류가 발생했습니다.'}`);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('파일 삭제 API 호출 중 오류 발생:', error);
+                        alert('서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
+                    });
+                }
+            }
+        });
+    });
+    
     // 파일 목록 초기 로드
     if (fileList) {
         loadDocuments();
