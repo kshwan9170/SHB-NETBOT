@@ -1,5 +1,5 @@
 import os
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 import json
 import openai
 import re
@@ -26,11 +26,41 @@ def detect_language(text: str) -> str:
     else:
         return 'en'
 
+def retrieve_relevant_documents(query: str, top_k: int = 5) -> Tuple[List[Any], str]:
+    """
+    질문과 관련된 문서를 검색하고 컨텍스트 문자열로 포맷팅합니다.
+    
+    Args:
+        query: 사용자 질문
+        top_k: 검색할 상위 문서 수
+        
+    Returns:
+        (문서 리스트, 컨텍스트 문자열) 튜플
+    """
+    try:
+        # 관련 문서 검색
+        docs = search_similar_docs(query, top_k=top_k)
+        
+        # 문서가 없으면 빈 컨텍스트 반환
+        if not docs or len(docs) == 0:
+            return [], ""
+        
+        # 검색된 문서를 컨텍스트 문자열로 포맷팅
+        context_str = "Context:\n"
+        for i, doc in enumerate(docs):
+            context_str += f"- ({i+1}) \"{doc.page_content}\"\n\n"
+        
+        return docs, context_str
+    except Exception as e:
+        print(f"ERROR: RAG pipeline failed during document retrieval: {str(e)}")
+        return [], ""
+
 def get_chatbot_response(
     query: str, 
     context: Optional[str] = None, 
     chat_history: Optional[List[Dict[str, str]]] = None,
-    model: str = "gpt-3.5-turbo"
+    model: str = "gpt-3.5-turbo",
+    use_rag: bool = True
 ) -> str:
     """
     Get a response from the chatbot for the given query
@@ -40,6 +70,7 @@ def get_chatbot_response(
         context: Optional context from retrieved documents
         chat_history: Optional chat history
         model: OpenAI model to use
+        use_rag: Whether to use RAG pipeline
         
     Returns:
         Response from the chatbot
@@ -51,6 +82,17 @@ def get_chatbot_response(
         # 사용자 질문의 언어 감지
         language = detect_language(query)
         
+        # RAG 파이프라인 적용 (필요시)
+        retrieved_docs = []
+        if use_rag and not context:
+            retrieved_docs, context = retrieve_relevant_documents(query, top_k=5)
+            if not context:
+                if language == 'ko':
+                    no_docs_message = "관련 문서를 찾지 못했습니다. 다른 키워드로 질문해 주세요."
+                else:
+                    no_docs_message = "No relevant documents found. Please try asking with different keywords."
+                print(f"No relevant documents found for query: {query}")
+                
         # Prepare the system message based on language
         if language == 'ko':
             system_message = """

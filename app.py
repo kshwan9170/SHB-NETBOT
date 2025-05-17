@@ -62,12 +62,28 @@ def chat():
         return jsonify({'error': '메시지가 비어 있습니다.'}), 400
     
     try:
-        # 벡터 DB에서 관련 문서 검색
-        relevant_docs = database.search_similar_docs(user_message, top_k=3)
+        # 벡터 DB에서 관련 문서 검색 (요구사항에 맞게 top_k=5로 수정)
+        relevant_docs = database.search_similar_docs(user_message, top_k=5)
         
-        # 스타일 가이드 및 시스템 프롬프트 구성
-        system_prompt = """너는 신한은행 네트워크 전문가로서 정확하고 친절하게 답변해줘. 
+        # 검색된 문서가 없는 경우 예외 처리
+        if not relevant_docs:
+            print(f"관련 문서를 찾지 못했습니다. 쿼리: {user_message}")
+            
+            # 사용자 언어에 맞게 안내 메시지 전달
+            if re.search(r'[가-힣]', user_message):
+                return jsonify({'reply': "관련 문서를 찾지 못했습니다. 다른 키워드로 질문해 주세요."})
+            else:
+                return jsonify({'reply': "No relevant documents found. Please try asking with different keywords."})
         
+        # Context 형식 요구사항대로 변경 (번호를 붙여 각 문서 표시)
+        context = "Context:\n"
+        for i, doc in enumerate(relevant_docs):
+            context += f"- ({i+1}) \"{doc.page_content}\"\n\n"
+        
+        # 시스템 프롬프트 구성
+        system_prompt = """[SYSTEM]
+You are SHB-NetBot. Use the Context to answer precisely.
+
 모든 응답은 다음 Markdown 형식 규칙을 따라야 해:
 
 1. 주요 주제는 ## 또는 ### 헤딩으로 구분하기
@@ -78,26 +94,41 @@ def chat():
 6. 순서 없는 목록은 - 또는 * 사용하기
 7. 각 주요 섹션 사이에 한 줄 이상의 빈 줄 삽입하기
 
-응답은 항상 구조화되고 깔끔하게 작성해야 해."""
+[CONTEXT]
+"""
         
-        # 관련 문서가 있다면 시스템 프롬프트에 추가
-        if relevant_docs:
-            context = "\n\n".join([doc.page_content for doc in relevant_docs])
-            system_prompt += f"\n\n다음 문서를 참고하여 답변해줘:\n{context}"
+        # Context 추가
+        system_prompt += context
+        
+        # 사용자 질문을 프롬프트에 추가
+        user_prompt = f"[USER]\n{user_message}"
         
         # OpenAI API를 호출하여 응답 생성
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message}
-            ],
-            max_tokens=500,
-            temperature=0.7,
-        )
-        
-        # API 응답에서 텍스트 추출
-        reply = response.choices[0].message.content
+        try:
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                max_tokens=800,  # 응답 길이 늘림
+                temperature=0.7,
+            )
+            
+            # API 응답에서 텍스트 추출
+            reply = response.choices[0].message.content
+            
+            # 로그 기록 (디버깅용)
+            print(f"RAG 검색 성공: {len(relevant_docs)}개 문서 검색됨")
+            
+        except Exception as api_error:
+            print(f"ERROR: RAG pipeline failed during OpenAI API call: {str(api_error)}")
+            
+            # 사용자 언어에 맞게 오류 메시지
+            if re.search(r'[가-힣]', user_message):
+                reply = "죄송합니다. 답변 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+            else:
+                reply = "Sorry, an error occurred while generating a response. Please try again later."
         
         return jsonify({'reply': reply})
     

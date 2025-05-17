@@ -19,7 +19,7 @@ openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
 # ChromaDB configuration
 CHROMA_DB_DIRECTORY = "./chroma_db"
-COLLECTION_NAME = "shinhan_documents"
+COLLECTION_NAME = "uploaded_docs"  # 요구사항에 맞게 컬렉션명 변경
 
 # Create embedding function
 embedding_function = embedding_functions.OpenAIEmbeddingFunction(
