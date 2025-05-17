@@ -62,7 +62,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // 파일 목록 초기 로드
-    if (fileList) {
+    const fileListContainer = document.getElementById('file-list-container');
+    if (fileListContainer) {
         loadDocuments();
     }
     
