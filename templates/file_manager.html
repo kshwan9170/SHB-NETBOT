@@ -103,11 +103,16 @@
         <h2>업로드된 문서 목록</h2>
         
         <table id="file-table">
+            <colgroup>
+                <col style="width: 30%">
+                <col style="width: 15%">
+                <col style="width: 55%">
+            </colgroup>
             <thead>
                 <tr>
-                    <th style="width: 30%;">파일 이름</th>
-                    <th style="width: 15%;">크기</th>
-                    <th style="width: 55%;">작업</th>
+                    <th>파일 이름</th>
+                    <th>크기</th>
+                    <th>작업</th>
                 </tr>
             </thead>
             <tbody id="dynamic-file-list">
@@ -167,12 +172,13 @@
                 // 파일 크기 포맷팅
                 const size = formatFileSize(file.size);
                 
+                // 열 너비를 고정합니다
                 row.innerHTML = `
-                    <td>${file.filename}</td>
-                    <td>${size}</td>
-                    <td class="actions">
+                    <td style="max-width: 30%; word-break: break-all;">${file.filename}</td>
+                    <td style="width: 15%; text-align: center;">${size}</td>
+                    <td style="width: 55%; text-align: center;">
                         <button class="delete-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}">
-                            삭제
+                            DELETE
                         </button>
                     </td>
                 `;
