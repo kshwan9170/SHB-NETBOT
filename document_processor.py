@@ -229,13 +229,13 @@ def extract_text_from_excel(file_path: str) -> List[str]:
     
     return text_chunks
 
-def chunk_text(text: str, chunk_size: int = 1000, overlap: int = 200) -> List[str]:
+def chunk_text(text: str, chunk_size: int = 500, overlap: int = 100) -> List[str]:
     """
     Split text into overlapping chunks of approximately chunk_size characters
     
     Args:
         text: The text to split into chunks
-        chunk_size: Target size of each chunk
+        chunk_size: Target size of each chunk (500 tokens/characters by default)
         overlap: Number of characters to overlap between chunks
         
     Returns:
