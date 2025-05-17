@@ -765,11 +765,60 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // 드롭다운 메뉴 초기화
+    function initDropdowns() {
+        const dropdowns = document.querySelectorAll('.dropdown');
+        
+        dropdowns.forEach(dropdown => {
+            const toggle = dropdown.querySelector('.dropdown-toggle');
+            const menu = dropdown.querySelector('.dropdown-menu');
+            
+            // 클릭 이벤트 처리
+            if (toggle && menu) {
+                toggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // 다른 열린 드롭다운 메뉴 닫기
+                    dropdowns.forEach(other => {
+                        if (other !== dropdown && other.classList.contains('show')) {
+                            other.classList.remove('show');
+                            other.querySelector('.dropdown-menu').classList.remove('show');
+                        }
+                    });
+                    
+                    // 현재 드롭다운 토글
+                    dropdown.classList.toggle('show');
+                    menu.classList.toggle('show');
+                });
+                
+                // 드롭다운 메뉴 항목 클릭 시 메뉴 닫기
+                menu.querySelectorAll('.dropdown-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        dropdown.classList.remove('show');
+                        menu.classList.remove('show');
+                    });
+                });
+            }
+        });
+        
+        // 드롭다운 외부 클릭 시 닫기
+        document.addEventListener('click', function(e) {
+            dropdowns.forEach(dropdown => {
+                if (!dropdown.contains(e.target) && dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                    dropdown.querySelector('.dropdown-menu').classList.remove('show');
+                }
+            });
+        });
+    }
+    
     // 초기화 함수
     function init() {
         initTheme();
         initScrollEffects();
         initMobileMenu();
+        initDropdowns(); // 드롭다운 메뉴 초기화 추가
         initChat();
         initSmoothScroll();
         initDocumentUpload();
