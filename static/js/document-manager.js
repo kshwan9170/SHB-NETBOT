@@ -6,9 +6,19 @@ document.addEventListener('DOMContentLoaded', function() {
     // 파일 목록 컨테이너
     const fileList = document.getElementById('file-list');
     const emptyState = document.querySelector('.empty-state');
+    const documentsList = document.getElementById('documentsList');
     
+    console.log("Document manager initialized");
+    console.log("File list element exists:", fileList !== null);
+    
+    // 문서 업로드 후 이벤트 감지
+    document.getElementById('uploadForm')?.addEventListener('submit', function() {
+        // 업로드 완료 후 파일 목록 갱신
+        setTimeout(loadDocuments, 2000);
+    });
+    
+    // 파일 목록 초기 로드
     if (fileList) {
-        // 파일 목록 초기 로드
         loadDocuments();
     }
     
@@ -17,18 +27,30 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     async function loadDocuments() {
         try {
+            console.log("Fetching document list...");
             const response = await fetch('/api/documents');
             const data = await response.json();
             
+            console.log("Document list data:", data);
+            
             if (response.ok) {
-                renderFileList(data.files);
-                
-                // 파일이 있으면 빈 상태 메시지 숨기기
-                if (data.files && data.files.length > 0) {
-                    if (emptyState) {
-                        emptyState.style.display = 'none';
+                if (data.files && Array.isArray(data.files)) {
+                    renderFileList(data.files);
+                    
+                    // 파일이 있으면 빈 상태 메시지 숨기기
+                    if (data.files.length > 0) {
+                        if (emptyState) {
+                            emptyState.style.display = 'none';
+                        }
+                    } else {
+                        if (emptyState) {
+                            emptyState.style.display = 'flex';
+                        }
                     }
+                    
+                    console.log(`Loaded ${data.files.length} files`);
                 } else {
+                    console.error('유효한 파일 목록이 없습니다:', data);
                     if (emptyState) {
                         emptyState.style.display = 'flex';
                     }
@@ -46,12 +68,18 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {Array} files - 파일 목록 배열
      */
     function renderFileList(files) {
-        if (!fileList) return;
+        if (!fileList) {
+            console.error("File list element not found in DOM");
+            return;
+        }
+        
+        console.log("Rendering file list:", files);
         
         // 기존 목록 비우기
         fileList.innerHTML = '';
         
         if (!files || files.length === 0) {
+            console.log("No files to display");
             return;
         }
         
@@ -86,21 +114,23 @@ document.addEventListener('DOMContentLoaded', function() {
             // 파일 날짜 포맷팅
             const fileDate = new Date(file.uploaded_at * 1000).toLocaleDateString();
             
+            console.log("Creating list item for file:", file);
+            
             // 항목 내용 생성
             listItem.innerHTML = `
                 <div class="file-info">
                     <div class="file-icon">${fileIcon}</div>
                     <div class="file-details">
-                        <div class="file-name">${file.filename}</div>
+                        <div class="file-name">${file.filename || "Unknown File"}</div>
                         <div class="file-meta">
                             <span>${fileSize}</span>
                             <span>${fileDate}</span>
-                            <span>${file.file_type.toUpperCase()}</span>
+                            <span>${file.file_type ? file.file_type.toUpperCase() : "?"}</span>
                         </div>
                     </div>
                 </div>
                 <div class="file-actions">
-                    <button class="delete-btn" title="Delete file">
+                    <button class="delete-btn" title="파일 삭제">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -131,12 +161,16 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {HTMLElement} listItem - 삭제할 파일의 리스트 항목 요소
      */
     async function deleteFile(systemFilename, displayFilename, listItem) {
+        console.log(`Attempting to delete file: ${displayFilename} (${systemFilename})`);
+        
         // 사용자 확인
         if (!confirm(`파일 "${displayFilename}"을(를) 삭제하시겠습니까?`)) {
+            console.log("Deletion cancelled by user");
             return;
         }
         
         try {
+            console.log("Sending delete request to server...");
             const response = await fetch('/api/delete', {
                 method: 'POST',
                 headers: {
@@ -145,14 +179,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({ system_filename: systemFilename })
             });
             
+            console.log("Delete response status:", response.status);
             const data = await response.json();
+            console.log("Delete response data:", data);
             
             if (response.ok && data.success) {
+                console.log("File deleted successfully");
                 // 성공적으로 삭제된 경우 UI에서 요소 제거
                 listItem.remove();
                 
                 // 파일 목록이 비어있는지 확인
                 if (fileList.children.length === 0 && emptyState) {
+                    console.log("No files left, showing empty state");
                     emptyState.style.display = 'flex';
                 }
             } else {
