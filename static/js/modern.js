@@ -558,6 +558,91 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // 문서 목록 로드 함수
+    async function loadDocuments() {
+        const documentsTable = document.getElementById('documents-table');
+        const documentsTableBody = document.getElementById('documents-tbody');
+        
+        if (!documentsTable || !documentsTableBody) return;
+        
+        try {
+            const response = await fetch('/api/documents');
+            const data = await response.json();
+            
+            if (data.files && Array.isArray(data.files)) {
+                documentsTableBody.innerHTML = ''; // 기존 목록 초기화
+                
+                if (data.files.length === 0) {
+                    // 파일이 없는 경우
+                    documentsTable.style.display = 'none';
+                    return;
+                }
+                
+                // 파일이 있는 경우
+                documentsTable.style.display = 'table';
+                
+                // 파일 목록 생성
+                data.files.forEach(file => {
+                    const row = document.createElement('tr');
+                    const fileSize = formatFileSize(file.size);
+                    
+                    row.innerHTML = `
+                        <td style="padding: 12px; border-bottom: 1px solid #eaeaea;">${file.filename}</td>
+                        <td style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea;">${fileSize}</td>
+                        <td style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea;">
+                            <button class="delete-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}"
+                                    style="background-color: #ff5252; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; font-weight: bold;">
+                                DELETE
+                            </button>
+                        </td>
+                    `;
+                    
+                    documentsTableBody.appendChild(row);
+                    
+                    // 삭제 버튼에 이벤트 리스너 추가
+                    row.querySelector('.delete-btn').addEventListener('click', function() {
+                        const systemFilename = this.getAttribute('data-filename');
+                        const displayFilename = this.getAttribute('data-displayname');
+                        deleteDocument(systemFilename, displayFilename);
+                    });
+                });
+            }
+        } catch (error) {
+            console.error('문서 목록 조회 중 오류:', error);
+        }
+    }
+    
+    // 문서 삭제 함수
+    function deleteDocument(systemFilename, displayFilename) {
+        if (confirm(`정말 "${displayFilename}" 파일을 삭제하시겠습니까?`)) {
+            console.log(`Deleting document: ${displayFilename} (${systemFilename})`);
+            
+            fetch('/api/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    system_filename: systemFilename
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`"${displayFilename}" 파일이 삭제되었습니다.`);
+                    // 문서 목록 다시 로드
+                    loadDocuments();
+                } else {
+                    alert(`삭제 실패: ${data.error || '알 수 없는 오류가 발생했습니다.'}`);
+                }
+            })
+            .catch(error => {
+                console.error('파일 삭제 API 호출 중 오류 발생:', error);
+                alert('서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
+            });
+        }
+    }
+    
     // 초기화 함수
     function init() {
         initTheme();
@@ -566,6 +651,9 @@ document.addEventListener('DOMContentLoaded', function() {
         initChat();
         initSmoothScroll();
         initDocumentUpload();
+        
+        // 문서 목록 초기 로드
+        loadDocuments();
     }
     
     // 초기화 실행
