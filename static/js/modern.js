@@ -729,6 +729,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // 페이지네이션 관련 변수
+    let currentPage = 1;
+    const filesPerPage = 5;
+    let allDocuments = [];
+    
     // 문서 목록 로드 함수
     async function loadDocuments() {
         const documentsTable = document.getElementById('documents-table');
@@ -746,14 +751,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.files.length === 0) {
                     // 파일이 없는 경우
                     documentsTable.style.display = 'none';
+                    // 페이지네이션 컨테이너가 있으면 제거
+                    const paginationContainer = document.getElementById('pagination-container');
+                    if (paginationContainer) {
+                        paginationContainer.remove();
+                    }
                     return;
                 }
+                
+                // 모든 문서 저장
+                allDocuments = data.files;
                 
                 // 파일이 있는 경우
                 documentsTable.style.display = 'table';
                 
-                // 파일 목록 생성
-                data.files.forEach(file => {
+                // 현재 페이지에 표시할 파일 계산
+                const startIndex = (currentPage - 1) * filesPerPage;
+                const endIndex = Math.min(startIndex + filesPerPage, allDocuments.length);
+                const currentPageFiles = allDocuments.slice(startIndex, endIndex);
+                
+                // 현재 페이지의 파일 목록 생성
+                currentPageFiles.forEach(file => {
                     const row = document.createElement('tr');
                     const fileSize = formatFileSize(file.size);
                     
@@ -777,10 +795,83 @@ document.addEventListener('DOMContentLoaded', function() {
                         deleteDocument(systemFilename, displayFilename);
                     });
                 });
+                
+                // 페이지네이션 생성
+                createPagination(allDocuments.length);
             }
         } catch (error) {
             console.error('문서 목록 조회 중 오류:', error);
         }
+    }
+    
+    // 페이지네이션 UI 생성 함수
+    function createPagination(totalFiles) {
+        // 이전 페이지네이션 요소가 있으면 제거
+        const existingPagination = document.getElementById('pagination-container');
+        if (existingPagination) {
+            existingPagination.remove();
+        }
+        
+        // 총 파일 수가 5개 이하면 페이지네이션을 표시하지 않음
+        const totalPages = Math.ceil(totalFiles / filesPerPage);
+        if (totalPages <= 1) return;
+        
+        // 페이지네이션 컨테이너 생성
+        const documentsContent = document.querySelector('.documents-content');
+        const paginationContainer = document.createElement('div');
+        paginationContainer.id = 'pagination-container';
+        paginationContainer.style.cssText = 'display: flex; justify-content: center; margin-top: 20px; gap: 8px;';
+        
+        // 이전 버튼
+        if (currentPage > 1) {
+            const prevButton = document.createElement('button');
+            prevButton.innerHTML = '이전';
+            prevButton.className = 'pagination-btn';
+            prevButton.style.cssText = 'padding: 6px 12px; background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 14px;';
+            prevButton.addEventListener('click', () => {
+                currentPage--;
+                loadDocuments();
+            });
+            paginationContainer.appendChild(prevButton);
+        }
+        
+        // 페이지 번호 버튼
+        for (let i = 1; i <= totalPages; i++) {
+            const pageButton = document.createElement('button');
+            pageButton.innerText = i;
+            pageButton.className = i === currentPage ? 'pagination-btn active' : 'pagination-btn';
+            
+            // 활성 페이지와 비활성 페이지 스타일 구분
+            const baseStyle = 'padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 14px;';
+            const activeStyle = 'background-color: #0064E1; color: white; font-weight: bold;';
+            const inactiveStyle = 'background-color: #f5f5f5; color: #333;';
+            
+            pageButton.style.cssText = baseStyle + (i === currentPage ? activeStyle : inactiveStyle);
+            
+            pageButton.addEventListener('click', () => {
+                if (i !== currentPage) {
+                    currentPage = i;
+                    loadDocuments();
+                }
+            });
+            paginationContainer.appendChild(pageButton);
+        }
+        
+        // 다음 버튼
+        if (currentPage < totalPages) {
+            const nextButton = document.createElement('button');
+            nextButton.innerHTML = '다음';
+            nextButton.className = 'pagination-btn';
+            nextButton.style.cssText = 'padding: 6px 12px; background-color: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 14px;';
+            nextButton.addEventListener('click', () => {
+                currentPage++;
+                loadDocuments();
+            });
+            paginationContainer.appendChild(nextButton);
+        }
+        
+        // 페이지네이션을 문서 목록 아래에 추가
+        documentsContent.appendChild(paginationContainer);
     }
     
     // 문서 삭제 함수
