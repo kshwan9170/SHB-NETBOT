@@ -658,29 +658,6 @@ def report_view(post_id):
         
     return render_template('view_post.html', post=post, board_title='장애 신고', list_route='report_list', edit_route='report_edit')
 
-@app.route('/report/edit/<int:post_id>', methods=['GET', 'POST'])
-def report_edit(post_id):
-    board = ReportBoard()
-    post = board.get_post(post_id)
-    
-    if not post:
-        abort(404)
-    
-    if request.method == 'POST':
-        title = request.form.get('title')
-        content = request.form.get('content')
-        author = request.form.get('author')
-        
-        if not title or not content or not author:
-            return "제목, 내용, 작성자는 필수 입력 항목입니다.", 400
-            
-        board.update_post(post_id, title, content, author)
-        return redirect(url_for('report_view', post_id=post_id))
-    
-    return render_template('write_post.html', post=post, board_title='장애 신고', 
-                          list_route='report_list', write_route='report_edit', 
-                          is_edit=True)
-
 # 데이터베이스 초기화 후 앱 실행
 if __name__ == '__main__':
     # 데이터베이스 초기화
