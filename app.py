@@ -329,24 +329,24 @@ def upload_chunk():
     
     try:
         # 청크 저장 경로
-        chunk_filename = f"{session_id}_{safe_filename}.part{chunk_index}"
+        chunk_filename = f"{session_id}_{filename}.part{chunk_index}"
         chunk_path = os.path.join(app.config['TEMP_CHUNK_FOLDER'], chunk_filename)
         
         # 청크 파일 저장
         chunk_file.save(chunk_path)
-        print(f"Saved chunk {chunk_index+1}/{total_chunks} for file {safe_filename}")
+        print(f"Saved chunk {chunk_index+1}/{total_chunks} for file {filename}")
         
         # 마지막 청크인 경우 모든 청크를 합쳐서 최종 파일 생성
         if chunk_index == total_chunks - 1:
             # 최종 파일명 및 경로
-            final_unique_filename = f"{session_id}_{safe_filename}"
+            final_unique_filename = f"{session_id}_{filename}"
             final_path = os.path.join(app.config['UPLOAD_FOLDER'], final_unique_filename)
-            print(f"Combining chunks for {safe_filename} to {final_unique_filename}")
+            print(f"Combining chunks for {filename} to {final_unique_filename}")
             
             # 청크 합치기
             with open(final_path, 'wb') as final_file:
                 for i in range(total_chunks):
-                    part_filename = f"{session_id}_{safe_filename}.part{i}"
+                    part_filename = f"{session_id}_{filename}.part{i}"
                     part_path = os.path.join(app.config['TEMP_CHUNK_FOLDER'], part_filename)
                     
                     if os.path.exists(part_path):
@@ -369,14 +369,14 @@ def upload_chunk():
                 
                 # 파일 완성 정보 추가
                 response_data['fileComplete'] = True
-                response_data['finalFilename'] = safe_filename
+                response_data['finalFilename'] = filename
                 response_data['size'] = os.path.getsize(final_path)
                 response_data['doc_id'] = chunks[0]['doc_id'] if chunks else None
                 response_data['chunk_count'] = len(chunks) if chunks else 0
-                print(f"File upload and processing complete for {safe_filename}")
+                print(f"File upload and processing complete for {filename}")
                 
             except Exception as e:
-                print(f"Error processing file {safe_filename}: {str(e)}")
+                print(f"Error processing file {filename}: {str(e)}")
                 response_data['processingError'] = str(e)
         
         return jsonify(response_data)
