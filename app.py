@@ -122,7 +122,7 @@ def upload_file():
         if file and allowed_file(file.filename):
             # 보안을 위한 파일명 설정
             if file and file.filename:
-                filename = secure_filename(file.filename)
+                filename = secure_filename(str(file.filename))
             else:
                 continue
             
@@ -234,7 +234,8 @@ def upload_chunk():
             'success': False, 
             'error': '유효하지 않은 파일명입니다.'
         }), 400
-    safe_filename = secure_filename(filename)
+    # 문자열이 확실한 경우에만 secure_filename 사용
+    safe_filename = secure_filename(str(filename))
         
     # 파일 확장자 확인
     if not allowed_file(safe_filename):
