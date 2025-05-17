@@ -161,19 +161,42 @@ css = """
         display: flex;
         flex-direction: column;
         gap: 15px;
-        padding: 20px;
-        border-radius: 12px;
+        padding: 25px;
+        border-radius: 16px;
         background-color: rgba(240, 242, 246, 0.5);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        min-height: 70vh;
-        max-height: 75vh;
+        background-image: linear-gradient(135deg, rgba(240, 242, 246, 0.9), rgba(250, 252, 255, 0.8));
+        box-shadow: 0 4px 20px rgba(0, 70, 255, 0.08);
+        border: 1px solid rgba(0, 70, 255, 0.05);
+        min-height: 75vh;
+        max-height: 78vh;
         overflow-y: auto;
         margin-bottom: 20px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 70, 255, 0.2) transparent;
+    }
+    
+    .chat-container::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .chat-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .chat-container::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 70, 255, 0.2);
+        border-radius: 10px;
     }
     
     [data-theme="dark"] .chat-container {
-        background-color: rgba(40, 42, 54, 0.5);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        background-color: rgba(32, 33, 42, 0.7);
+        background-image: linear-gradient(135deg, rgba(32, 33, 42, 0.7), rgba(46, 48, 62, 0.8));
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(75, 121, 255, 0.1);
+    }
+    
+    [data-theme="dark"] .chat-container::-webkit-scrollbar-thumb {
+        background-color: rgba(75, 121, 255, 0.3);
     }
     
     /* 말풍선 스타일 */
@@ -502,14 +525,50 @@ css = """
     /* 문서 관리 패널 스타일 */
     .document-panel {
         background-color: white;
-        border-radius: 10px;
-        padding: 15px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+        border: 1px solid rgba(0, 70, 255, 0.06);
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+    }
+    
+    .document-panel:hover {
+        box-shadow: 0 6px 20px rgba(0, 70, 255, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .document-panel h3 {
+        color: #0046FF;
+        font-size: 1.2rem;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .document-panel h3::before {
+        content: '';
+        display: inline-block;
+        width: 5px;
+        height: 18px;
+        background-color: #0046FF;
+        border-radius: 3px;
     }
     
     [data-theme="dark"] .document-panel {
-        background-color: #3A3B45;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        background-color: #2E303E;
+        background-image: linear-gradient(135deg, #2E303E, #363845);
+        border: 1px solid rgba(75, 121, 255, 0.1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+    
+    [data-theme="dark"] .document-panel h3 {
+        color: #4B79FF;
+    }
+    
+    [data-theme="dark"] .document-panel h3::before {
+        background-color: #4B79FF;
     }
     
     /* 로딩 스피너 스타일 */
@@ -558,6 +617,49 @@ css = """
     
     [data-theme="dark"] .typing-indicator span {
         background-color: rgba(255, 255, 255, 0.5);
+    }
+    
+    /* 입력 영역 스타일 */
+    .input-area-shadow {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 80px;
+        background: linear-gradient(to top, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+        z-index: 990;
+        pointer-events: none;
+    }
+    
+    [data-theme="dark"] .input-area-shadow {
+        background: linear-gradient(to top, rgba(25, 26, 33, 0.95), rgba(25, 26, 33, 0));
+    }
+    
+    /* 스트림릿 기본 요소 스타일 오버라이드 */
+    .stChatInput div.stChatInputContainer {
+        border-radius: 18px !important;
+        border: 1px solid rgba(0, 70, 255, 0.2) !important;
+        background-color: rgba(255, 255, 255, 0.9) !important;
+        box-shadow: 0 4px 15px rgba(0, 70, 255, 0.08) !important;
+        padding: 6px 12px !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stChatInput div.stChatInputContainer:focus-within {
+        border: 1px solid rgba(0, 70, 255, 0.6) !important;
+        box-shadow: 0 4px 20px rgba(0, 70, 255, 0.15) !important;
+        transform: translateY(-2px);
+    }
+    
+    [data-theme="dark"] .stChatInput div.stChatInputContainer {
+        border: 1px solid rgba(75, 121, 255, 0.2) !important;
+        background-color: rgba(40, 42, 54, 0.8) !important;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
+    }
+    
+    [data-theme="dark"] .stChatInput div.stChatInputContainer:focus-within {
+        border: 1px solid rgba(75, 121, 255, 0.6) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
     }
     
     /* 로고 반응형 스타일 */
@@ -636,8 +738,8 @@ col_theme_left, col_theme, col_theme_right = st.columns([6, 1, 1])
 with col_theme:
     st.checkbox("다크모드", value=(st.session_state.theme == 'dark'), key="theme_toggle", on_change=toggle_theme)
 
-# 메인 레이아웃
-chat_col, info_col = st.columns([3, 1])
+# 메인 레이아웃 - 채팅 영역 더 넓게
+chat_col, info_col = st.columns([3.5, 1])
 
 with chat_col:
     # 채팅 컨테이너
@@ -690,13 +792,16 @@ with chat_col:
     
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # 하단 입력 컨테이너
+    # 하단 입력 컨테이너 (모던하게 스타일 적용)
     st.markdown('''
-    <div style="height: 70px;"></div>
+    <div style="height: 80px;"></div>
+    <div class="input-area-shadow"></div>
     ''', unsafe_allow_html=True)
     
-    # 채팅 입력
-    prompt = st.chat_input("질문을 입력하세요...")
+    # 채팅 입력 - 커스텀 스타일 적용
+    col_input, col_upload = st.columns([9, 1])
+    with col_input:
+        prompt = st.chat_input("질문을 입력하세요... (내부 네트워크 관련 문의)")
     if prompt:
         # 사용자 메시지 채팅 기록에 추가
         st.session_state.chat_history.append({"role": "user", "content": prompt})
