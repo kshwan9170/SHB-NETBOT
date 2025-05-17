@@ -15,6 +15,10 @@ from database import (
 )
 from utils import format_chat_message, get_chat_history
 
+# 업로드 파일을 위한 디렉토리 생성
+UPLOAD_DIR = Path("./uploaded_files")
+UPLOAD_DIR.mkdir(exist_ok=True)
+
 # Page configuration
 st.set_page_config(
     page_title="SHB-NetBot - 신한은행 내부 네트워크 챗봇",
@@ -96,30 +100,31 @@ with col2:
         
         if uploaded_file is not None:
             with st.spinner("문서 처리 중..."):
-                # Save uploaded file to temp file
-                temp_dir = tempfile.TemporaryDirectory()
-                temp_path = Path(temp_dir.name) / uploaded_file.name
+                # Save uploaded file to permanent location
+                file_path = UPLOAD_DIR / uploaded_file.name
                 
-                with open(temp_path, "wb") as f:
-                    f.write(uploaded_file.getbuffer())
-                
-                # Process document
-                texts = process_document(str(temp_path))
-                
-                if texts:
-                    # Initialize database if not already done
-                    initialize_database()
+                try:
+                    # 파일 저장
+                    with open(file_path, "wb") as f:
+                        f.write(uploaded_file.getbuffer())
                     
-                    # Add document contents to the vector database
-                    add_document_embeddings(texts, metadata={"source": uploaded_file.name})
+                    # Process document
+                    texts = process_document(str(file_path))
                     
-                    st.session_state.document_uploaded = True
-                    st.success(f"문서 '{uploaded_file.name}'이(가) 성공적으로 처리되었습니다!")
-                else:
-                    st.error("문서에서 텍스트를 추출할 수 없습니다. 다른 문서를 시도해 주세요.")
-                
-                # Clean up
-                temp_dir.cleanup()
+                    if texts:
+                        # Initialize database if not already done
+                        initialize_database()
+                        
+                        # Add document contents to the vector database
+                        add_document_embeddings(texts, metadata={"source": uploaded_file.name})
+                        
+                        st.session_state.document_uploaded = True
+                        st.success(f"문서 '{uploaded_file.name}'이(가) 성공적으로 처리되었습니다!")
+                    else:
+                        st.error("문서에서 텍스트를 추출할 수 없습니다. 다른 문서를 시도해 주세요.")
+                except Exception as e:
+                    st.error(f"파일 처리 중 오류가 발생했습니다: {str(e)}")
+                    print(f"파일 처리 오류: {str(e)}")
     
     with st.expander("📊 데이터베이스 현황", expanded=True):
         db_status = get_database_status()
