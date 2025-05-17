@@ -189,27 +189,44 @@ def get_documents():
 def delete_file():
     """업로드된 파일 삭제"""
     try:
+        # 요청 데이터 로깅
         data = request.get_json()
+        print(f"Delete request received with data: {data}")
+        
+        # 시스템 파일명 가져오기
         system_filename = data.get('system_filename')
         
         if not system_filename:
+            print("Error: No system_filename provided in request")
             return jsonify({'success': False, 'error': '파일명이 제공되지 않았습니다.'}), 400
+            
+        print(f"Processing delete request for file: {system_filename}")
             
         # 파일 경로 확인
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], system_filename)
+        print(f"File path to delete: {file_path}")
         
         # 파일 존재 확인
         if not os.path.exists(file_path) or not os.path.isfile(file_path):
+            print(f"File not found: {file_path}")
             return jsonify({'success': False, 'error': '파일을 찾을 수 없습니다.'}), 404
+        
+        # 업로드 폴더 상태 확인
+        print("Current files in upload folder:")
+        for f in os.listdir(app.config['UPLOAD_FOLDER']):
+            print(f" - {f}")
             
         # 파일 삭제
         os.remove(file_path)
+        print(f"File removed: {file_path}")
         
         # 벡터 DB에서 해당 문서 관련 데이터 삭제
         # 파일명에서 UUID 추출
-        file_uuid = system_filename.split('_')[0]
         try:
+            file_uuid = system_filename.split('_')[0]
+            print(f"Extracted UUID: {file_uuid}")
             database.delete_document(file_uuid)
+            print(f"Document deleted from vector database with ID: {file_uuid}")
         except Exception as db_err:
             print(f"DB 삭제 중 오류 발생: {str(db_err)}")
             # DB 오류는 무시하고 파일 삭제 성공으로 처리
@@ -217,8 +234,9 @@ def delete_file():
         return jsonify({'success': True, 'message': f'파일이 삭제되었습니다.'})
         
     except Exception as e:
-        print(f"Error deleting file: {str(e)}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        error_msg = str(e)
+        print(f"Error deleting file: {error_msg}")
+        return jsonify({'success': False, 'error': error_msg}), 500
 
 if __name__ == '__main__':
     # Replit에서는 포트가 환경변수로 제공됩니다

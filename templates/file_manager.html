@@ -146,6 +146,7 @@
         
         function deleteFile(systemFilename, displayFilename) {
             if (confirm("정말 파일을 삭제하시겠습니까?")) {
+                console.log(`Sending delete request with filename: ${systemFilename}`);
                 fetch('/api/delete', {
                     method: 'POST',
                     headers: {
