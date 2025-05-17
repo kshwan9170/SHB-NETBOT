@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHB-NetBot</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 헤더 섹션 -->
+        <header class="header">
+            <div class="header-content">
+                <h1>SHB-NetBot</h1>
+                <p class="subtitle">신한은행 사용자 내부 통신 관련 문의 FAQ 챗봇</p>
+            </div>
+        </header>
+
+        <!-- 메인 섹션 -->
+        <main class="main-content">
+            <!-- 채팅 컨테이너 -->
+            <div class="chat-container" id="chatContainer">
+                <!-- 기본 환영 메시지 -->
+                <div class="message bot-message">
+                    <div class="message-content">
+                        안녕하세요! 신한은행 네트워크 챗봇입니다. 네트워크 관련 질문이 있으시면 언제든지 물어보세요.
+                    </div>
+                </div>
+                <!-- 여기에 새로운 메시지가 추가됩니다 -->
+            </div>
+
+            <!-- 메시지 입력 영역 -->
+            <div class="input-container">
+                <form id="chatForm">
+                    <input type="text" id="userInput" placeholder="질문을 입력하세요..." autocomplete="off">
+                    <button type="submit" id="sendButton">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </main>
+
+        <!-- 하단 정보 섹션 -->
+        <footer class="footer">
+            <div class="info-card">
+                <div class="info-card-header">
+                    <i class="fas fa-info-circle"></i>
+                    <span>챗봇 정보</span>
+                </div>
+                <div class="info-card-content">
+                    <p>이 챗봇은 신한은행 네트워크 담당자들을 지원하기 위해 만들어졌습니다.</p>
+                    <p>사용 가능한 질문 주제:</p>
+                    <ul>
+                        <li>네트워크 접속 문제</li>
+                        <li>VPN 설정</li>
+                        <li>IP 확인 및 설정</li>
+                        <li>내부 시스템 연결</li>
+                    </ul>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- 로딩 인디케이터 -->
+    <div class="loading-indicator" id="loadingIndicator">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="/static/js/script.js"></script>
+</body>
+</html>
