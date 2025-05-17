@@ -37,7 +37,7 @@ def allowed_file(filename):
 def get_clean_filename(filename):
     """보안을 위해 안전한 파일명 생성"""
     if not filename:
-        return None
+        return ""
     return secure_filename(filename)
 
 @app.route('/')
@@ -121,7 +121,10 @@ def upload_file():
     for file in files:
         if file and allowed_file(file.filename):
             # 보안을 위한 파일명 설정
-            filename = secure_filename(file.filename)
+            if file and file.filename:
+                filename = secure_filename(file.filename)
+            else:
+                continue
             
             # 고유한 파일명 생성
             unique_filename = f"{uuid.uuid4()}_{filename}"
@@ -195,6 +198,136 @@ def get_documents():
         print(f"Error getting documents: {str(e)}")
         return jsonify({'error': str(e)}), 500
         
+@app.route('/api/upload-chunk', methods=['POST'])
+def upload_chunk():
+    """
+    청크 단위 파일 업로드 처리 API
+    전송 데이터 형식: 
+    - filename: 원본 파일명
+    - chunkIndex: 현재 청크 인덱스 (0부터 시작)
+    - totalChunks: 전체 청크 수
+    - chunkData: 청크 데이터 (파일)
+    - sessionId: 세션 ID (첫 번째 청크 이후부터 사용)
+    """
+    # 파라미터 검증
+    if 'chunkData' not in request.files:
+        return jsonify({
+            'success': False, 
+            'error': '청크 데이터가 없습니다.'
+        }), 400
+        
+    if not request.form.get('filename'):
+        return jsonify({
+            'success': False, 
+            'error': '파일명이 제공되지 않았습니다.'
+        }), 400
+    
+    # 매개변수 추출
+    filename = request.form.get('filename')
+    chunk_index = int(request.form.get('chunkIndex', 0))
+    total_chunks = int(request.form.get('totalChunks', 1))
+    chunk_file = request.files['chunkData']
+    
+    # 파일명 보안 처리
+    if not filename:
+        return jsonify({
+            'success': False, 
+            'error': '유효하지 않은 파일명입니다.'
+        }), 400
+    safe_filename = secure_filename(filename)
+        
+    # 파일 확장자 확인
+    if not allowed_file(safe_filename):
+        return jsonify({
+            'success': False, 
+            'error': '지원되지 않는 파일 형식입니다.'
+        }), 400
+    
+    # 세션 ID 처리
+    session_id = request.form.get('sessionId')
+    if chunk_index == 0 and not session_id:
+        session_id = str(uuid.uuid4())
+    
+    # 응답 데이터 준비
+    response_data = {
+        'success': True,
+        'sessionId': session_id,
+        'chunkIndex': chunk_index,
+        'totalChunks': total_chunks,
+        'received': True
+    }
+    
+    try:
+        # 청크 저장 경로
+        chunk_filename = f"{session_id}_{safe_filename}.part{chunk_index}"
+        chunk_path = os.path.join(app.config['TEMP_CHUNK_FOLDER'], chunk_filename)
+        
+        # 청크 파일 저장
+        chunk_file.save(chunk_path)
+        print(f"Saved chunk {chunk_index+1}/{total_chunks} for file {safe_filename}")
+        
+        # 마지막 청크인 경우 모든 청크를 합쳐서 최종 파일 생성
+        if chunk_index == total_chunks - 1:
+            # 최종 파일명 및 경로
+            final_unique_filename = f"{session_id}_{safe_filename}"
+            final_path = os.path.join(app.config['UPLOAD_FOLDER'], final_unique_filename)
+            print(f"Combining chunks for {safe_filename} to {final_unique_filename}")
+            
+            # 청크 합치기
+            with open(final_path, 'wb') as final_file:
+                for i in range(total_chunks):
+                    part_filename = f"{session_id}_{safe_filename}.part{i}"
+                    part_path = os.path.join(app.config['TEMP_CHUNK_FOLDER'], part_filename)
+                    
+                    if os.path.exists(part_path):
+                        with open(part_path, 'rb') as part_file:
+                            final_file.write(part_file.read())
+                        
+                        # 청크 파일 삭제
+                        os.remove(part_path)
+                        print(f"Removed temporary chunk file: {part_filename}")
+            
+            # 문서 처리 및 벡터 DB에 추가
+            try:
+                print(f"Processing document: {final_path}")
+                chunks = document_processor.process_document(final_path)
+                
+                # 벡터 DB에 청크 추가
+                if chunks:
+                    print(f"Adding {len(chunks)} chunks to vector database")
+                    database.add_document_embeddings(chunks)
+                
+                # 파일 완성 정보 추가
+                response_data['fileComplete'] = True
+                response_data['finalFilename'] = safe_filename
+                response_data['size'] = os.path.getsize(final_path)
+                response_data['doc_id'] = chunks[0]['doc_id'] if chunks else None
+                response_data['chunk_count'] = len(chunks) if chunks else 0
+                print(f"File upload and processing complete for {safe_filename}")
+                
+            except Exception as e:
+                print(f"Error processing file {safe_filename}: {str(e)}")
+                response_data['processingError'] = str(e)
+        
+        return jsonify(response_data)
+    
+    except Exception as e:
+        print(f"Error in chunk upload: {str(e)}")
+        # 임시 청크 파일 정리 시도
+        try:
+            for i in range(total_chunks):
+                part_filename = f"{session_id}_{safe_filename}.part{i}"
+                part_path = os.path.join(app.config['TEMP_CHUNK_FOLDER'], part_filename)
+                if os.path.exists(part_path):
+                    os.remove(part_path)
+        except:
+            pass
+            
+        return jsonify({
+            'success': False,
+            'error': f'청크 업로드 처리 중 오류: {str(e)}'
+        }), 500
+
 @app.route('/api/delete', methods=['POST'])
 def delete_file():
     """업로드된 파일 삭제"""

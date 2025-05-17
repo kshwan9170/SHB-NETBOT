@@ -360,6 +360,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const uploadBrowse = document.querySelector('.upload-browse');
         const documentsList = document.getElementById('documentsList');
         
+        // 진행률 표시 관련 요소
+        const progressContainer = document.getElementById('uploadProgressContainer');
+        const progressBar = document.getElementById('uploadProgressBar');
+        const progressText = document.getElementById('uploadProgressText');
+        const progressChunks = document.getElementById('uploadProgressChunks');
+        const progressFilename = document.getElementById('uploadFileName');
+        
+        // 청크 크기 (5MB)
+        const CHUNK_SIZE = 5 * 1024 * 1024;
+        
         if (!uploadForm || !fileInput || !uploadDropzone || !documentsList) return;
         
         // 드래그 앤 드롭 기능
@@ -407,6 +417,99 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
+        // 파일을 청크로 분할하는 함수
+        function sliceFile(file, chunkSize) {
+            const chunks = [];
+            let startByte = 0;
+            
+            while (startByte < file.size) {
+                const endByte = Math.min(startByte + chunkSize, file.size);
+                const chunk = file.slice(startByte, endByte);
+                chunks.push(chunk);
+                startByte = endByte;
+            }
+            
+            return chunks;
+        }
+        
+        // 청크 업로드 함수
+        async function uploadChunks(file) {
+            // 진행 상태 초기화
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressText.textContent = '0%';
+            progressFilename.textContent = file.name;
+            
+            // 파일을 청크로 분할
+            const chunks = sliceFile(file, CHUNK_SIZE);
+            progressChunks.textContent = `0/${chunks.length} 청크`;
+            console.log(`Uploading ${file.name} in ${chunks.length} chunks`);
+            
+            let sessionId = null;
+            let uploadedChunks = 0;
+            
+            // 각 청크 업로드
+            for (let i = 0; i < chunks.length; i++) {
+                const chunk = chunks[i];
+                const formData = new FormData();
+                
+                // 청크 데이터 설정
+                formData.append('chunkData', chunk, file.name);
+                formData.append('filename', file.name);
+                formData.append('chunkIndex', i);
+                formData.append('totalChunks', chunks.length);
+                
+                // 세션 ID가 있으면 포함
+                if (sessionId) {
+                    formData.append('sessionId', sessionId);
+                }
+                
+                try {
+                    console.log(`Uploading chunk ${i+1}/${chunks.length}`);
+                    
+                    // 청크 업로드 요청
+                    const response = await fetch('/api/upload-chunk', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`Server responded with ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (!data.success) {
+                        throw new Error(data.error || 'Unknown error');
+                    }
+                    
+                    // 첫 번째 청크 응답에서 세션 ID 저장
+                    if (i === 0) {
+                        sessionId = data.sessionId;
+                        console.log(`Session ID: ${sessionId}`);
+                    }
+                    
+                    // 업로드 진행률 업데이트
+                    uploadedChunks++;
+                    const progress = Math.round((uploadedChunks / chunks.length) * 100);
+                    progressBar.style.width = `${progress}%`;
+                    progressText.textContent = `${progress}%`;
+                    progressChunks.textContent = `${uploadedChunks}/${chunks.length} 청크`;
+                    
+                } catch (error) {
+                    console.error(`Error uploading chunk ${i}:`, error);
+                    progressContainer.style.display = 'none';
+                    alert(`Error uploading file: ${error.message}`);
+                    return false;
+                }
+            }
+            
+            // 모든 청크 업로드 완료
+            console.log(`File ${file.name} upload complete`);
+            progressContainer.style.display = 'none';
+            return true;
+        }
+        
         // 폼 제출
         uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -416,27 +519,49 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            const formData = new FormData();
-            Array.from(fileInput.files).forEach(file => {
-                formData.append('file', file);
-            });
-            
             try {
                 // 업로드 버튼 비활성화
                 const uploadButton = document.getElementById('uploadButton');
                 uploadButton.disabled = true;
                 uploadButton.textContent = 'Uploading...';
                 
-                // 파일 업로드 요청
-                const response = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData
-                });
+                let allUploadsSuccessful = true;
+                const files = Array.from(fileInput.files);
                 
-                const data = await response.json();
+                for (const file of files) {
+                    console.log(`Processing file: ${file.name}, size: ${file.size} bytes`);
+                    
+                    // 크기가 5MB 이상인 파일은 청크 업로드 사용
+                    if (file.size > CHUNK_SIZE) {
+                        console.log(`Using chunked upload for ${file.name}`);
+                        // 청크 업로드 실행
+                        const success = await uploadChunks(file);
+                        if (!success) {
+                            allUploadsSuccessful = false;
+                        }
+                    } else {
+                        console.log(`Using regular upload for ${file.name}`);
+                        // 작은 파일은 기존 방식으로 업로드
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        
+                        const response = await fetch('/api/upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (!response.ok) {
+                            console.error('Upload error:', data);
+                            alert(`Upload failed: ${data.error || 'Unknown error'}`);
+                            allUploadsSuccessful = false;
+                        }
+                    }
+                }
                 
-                if (response.ok) {
-                    // 파일 업로드 성공
+                if (allUploadsSuccessful) {
+                    // 업로드 성공
                     uploadDropzone.querySelector('p').textContent = 'Drag and drop files here or browse';
                     fileInput.value = '';
                     
@@ -445,15 +570,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // 성공 메시지
                     alert('Files uploaded successfully');
-                } else {
-                    // 업로드 실패
-                    alert(`Upload failed: ${data.error || 'Unknown error'}`);
                 }
             } catch (error) {
                 console.error('Upload error:', error);
-                alert('Upload failed: Network error');
+                alert('An error occurred during the upload');
             } finally {
-                // 버튼 상태 복원
+                // 업로드 버튼 다시 활성화
                 const uploadButton = document.getElementById('uploadButton');
                 uploadButton.disabled = false;
                 uploadButton.textContent = 'Upload Files';
