@@ -326,6 +326,212 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // 문서 업로드 기능 초기화
+    function initDocumentUpload() {
+        const uploadForm = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('fileInput');
+        const uploadDropzone = document.getElementById('uploadDropzone');
+        const uploadBrowse = document.querySelector('.upload-browse');
+        const documentsList = document.getElementById('documentsList');
+        
+        if (!uploadForm || !fileInput || !uploadDropzone || !documentsList) return;
+        
+        // 드래그 앤 드롭 기능
+        uploadDropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadDropzone.style.borderColor = '#4CD6B9';
+            uploadDropzone.style.backgroundColor = 'var(--primary-light)';
+        });
+        
+        uploadDropzone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadDropzone.style.borderColor = 'var(--border-color)';
+            uploadDropzone.style.backgroundColor = '';
+        });
+        
+        uploadDropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadDropzone.style.borderColor = 'var(--border-color)';
+            uploadDropzone.style.backgroundColor = '';
+            
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                // 파일 이름 표시
+                const fileNames = Array.from(fileInput.files).map(file => file.name).join(', ');
+                uploadDropzone.querySelector('p').textContent = fileNames;
+            }
+        });
+        
+        // 클릭으로 파일 선택
+        uploadDropzone.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        uploadBrowse.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                const fileNames = Array.from(fileInput.files).map(file => file.name).join(', ');
+                uploadDropzone.querySelector('p').textContent = fileNames;
+            } else {
+                uploadDropzone.querySelector('p').textContent = 'Drag and drop files here or browse';
+            }
+        });
+        
+        // 폼 제출
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (fileInput.files.length === 0) {
+                alert('Please select a file to upload');
+                return;
+            }
+            
+            const formData = new FormData();
+            Array.from(fileInput.files).forEach(file => {
+                formData.append('file', file);
+            });
+            
+            try {
+                // 업로드 버튼 비활성화
+                const uploadButton = document.getElementById('uploadButton');
+                uploadButton.disabled = true;
+                uploadButton.textContent = 'Uploading...';
+                
+                // 파일 업로드 요청
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // 파일 업로드 성공
+                    uploadDropzone.querySelector('p').textContent = 'Drag and drop files here or browse';
+                    fileInput.value = '';
+                    
+                    // 문서 목록 업데이트
+                    loadDocuments();
+                    
+                    // 성공 메시지
+                    alert('Files uploaded successfully');
+                } else {
+                    // 업로드 실패
+                    alert(`Upload failed: ${data.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('Upload failed: Network error');
+            } finally {
+                // 버튼 상태 복원
+                const uploadButton = document.getElementById('uploadButton');
+                uploadButton.disabled = false;
+                uploadButton.textContent = 'Upload Files';
+            }
+        });
+        
+        // 초기 문서 목록 로드
+        loadDocuments();
+    }
+    
+    // 문서 목록 로드
+    async function loadDocuments() {
+        const documentsList = document.getElementById('documentsList');
+        if (!documentsList) return;
+        
+        try {
+            const response = await fetch('/api/documents');
+            const data = await response.json();
+            
+            if (response.ok) {
+                if (data.files && data.files.length > 0) {
+                    // 문서 목록 표시
+                    documentsList.innerHTML = '';
+                    
+                    data.files.forEach(file => {
+                        const fileExt = file.file_type;
+                        let iconClass = 'txt';
+                        
+                        // 파일 타입에 따른 아이콘 클래스
+                        if (fileExt === 'pdf') {
+                            iconClass = 'pdf';
+                        } else if (fileExt === 'docx' || fileExt === 'doc') {
+                            iconClass = 'docx';
+                        } else if (fileExt === 'pptx' || fileExt === 'ppt') {
+                            iconClass = 'pptx';
+                        } else if (fileExt === 'xlsx' || fileExt === 'xls') {
+                            iconClass = 'xlsx';
+                        }
+                        
+                        // 파일 크기 형식화
+                        const fileSize = formatFileSize(file.size);
+                        
+                        // 날짜 형식화
+                        const uploadDate = new Date(file.uploaded_at * 1000).toLocaleString();
+                        
+                        // 문서 항목 생성
+                        const docItem = document.createElement('div');
+                        docItem.className = 'document-item';
+                        docItem.innerHTML = `
+                            <div class="document-info">
+                                <div class="document-icon ${iconClass}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="document-details">
+                                    <div class="document-name">${file.filename}</div>
+                                    <div class="document-status">
+                                        Size: ${fileSize} | Uploaded: ${uploadDate}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        documentsList.appendChild(docItem);
+                    });
+                } else {
+                    // 문서가 없음
+                    documentsList.innerHTML = `
+                        <div class="empty-state">
+                            <p>No documents uploaded yet</p>
+                        </div>
+                    `;
+                }
+            } else {
+                console.error('Error loading documents:', data.error);
+                documentsList.innerHTML = `
+                    <div class="empty-state">
+                        <p>Error loading documents</p>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Network error loading documents:', error);
+            documentsList.innerHTML = `
+                <div class="empty-state">
+                    <p>Error loading documents</p>
+                </div>
+            `;
+        }
+    }
+    
+    // 파일 크기 형식화 (바이트 → KB, MB)
+    function formatFileSize(bytes) {
+        if (bytes < 1024) {
+            return bytes + ' bytes';
+        } else if (bytes < 1024 * 1024) {
+            return (bytes / 1024).toFixed(1) + ' KB';
+        } else {
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+    }
+    
     // 초기화 함수
     function init() {
         initTheme();
@@ -333,6 +539,7 @@ document.addEventListener('DOMContentLoaded', function() {
         initMobileMenu();
         initChat();
         initSmoothScroll();
+        initDocumentUpload();
     }
     
     // 초기화 실행
