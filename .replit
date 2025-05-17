@@ -17,15 +17,15 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Simple Chatbot UI"
+args = "Simple Chatbot"
 
 [[workflows.workflow]]
-name = "Simple Chatbot UI"
+name = "Simple Chatbot"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "streamlit run app.py --server.port 5000"
+args = "streamlit run app_simple.py --server.port 5000"
 waitForPort = 5000
 
 [[ports]]
