@@ -18,15 +18,15 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "SHB-NetBot"
+args = "SHB-NetBot-Streamlit"
 
 [[workflows.workflow]]
-name = "SHB-NetBot"
+name = "SHB-NetBot-Streamlit"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "./run.sh"
+args = "streamlit run streamlit_app.py --server.port 5000"
 waitForPort = 5000
 
 [[ports]]
