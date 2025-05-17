@@ -67,7 +67,7 @@ st.markdown("""
 
 # 제목과 설명
 st.title("SHB-NetBot")
-st.markdown("<p class='subheader'>신한은행 내부 네트워크 챗봇</p>", unsafe_allow_html=True)
+st.markdown("<p class='subheader'>신한은행 사용자 내부 통신 관련 문의 FAQ 챗봇</p>", unsafe_allow_html=True)
 
 # 메인 레이아웃
 col_left, col_right = st.columns([1, 2])
