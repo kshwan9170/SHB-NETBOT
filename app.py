@@ -47,6 +47,10 @@ def allowed_file(filename):
     """파일 확장자 체크"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def get_file_extension(filename):
+    """파일에서 확장자만 추출"""
+    return filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+
 def get_clean_filename(filename):
     """보안을 위해 안전한 파일명 생성"""
     if not filename:
@@ -232,16 +236,24 @@ def get_documents():
             if not filename.startswith('.'):  # 숨김 파일 제외
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 if os.path.isfile(file_path):
-                    # 원본 파일명 추출 (UUID 제거)
-                    original_filename = "_".join(filename.split("_")[1:])
+                    # 시스템 내 저장된 파일명에서 UUID와 원본 파일명 분리
+                    # UUID_원본파일명 형식
+                    parts = filename.split('_', 1)  # 첫 _ 기호에서 한번만 분리
+                    
+                    if len(parts) > 1:
+                        original_filename = parts[1]  # UUID 이후 부분이 원본 파일명
+                    else:
+                        original_filename = filename  # 분할 실패시 전체 파일명 사용
                     
                     # 파일 통계 정보
                     file_stats = os.stat(file_path)
+                    file_type = original_filename.split('.')[-1].lower() if '.' in original_filename else ''
+                    
                     files.append({
-                        'filename': original_filename,
+                        'filename': original_filename,  # 원본 파일명
                         'size': file_stats.st_size,
                         'uploaded_at': file_stats.st_mtime,
-                        'file_type': original_filename.split('.')[-1].lower(),
+                        'file_type': file_type,
                         'system_filename': filename  # 시스템 내부 파일명 추가 (삭제 기능을 위해)
                     })
         
@@ -290,11 +302,12 @@ def upload_chunk():
             'success': False, 
             'error': '유효하지 않은 파일명입니다.'
         }), 400
-    # 문자열이 확실한 경우에만 secure_filename 사용
-    safe_filename = secure_filename(str(filename))
-        
+    # 파일명에서 확장자만 추출하여 허용된 확장자인지 확인
+    # secure_filename은 한글 파일명을 제대로 처리하지 못하므로, 확장자만 확인
+    file_ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+    
     # 파일 확장자 확인
-    if not allowed_file(safe_filename):
+    if file_ext not in ALLOWED_EXTENSIONS:
         return jsonify({
             'success': False, 
             'error': '지원되지 않는 파일 형식입니다.'
