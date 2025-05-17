@@ -1032,28 +1032,34 @@ img {
 }
 
 .delete-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: none;
+    display: inline-block;
+    background-color: #ff3b30;
+    color: white;
     border: none;
-    color: #ff3b30;
+    border-radius: 4px;
+    padding: 6px 12px;
     cursor: pointer;
-    padding: 0.3rem;
-    border-radius: 0.3rem;
+    font-weight: 500;
     transition: all 0.2s ease;
+    font-size: 14px;
+    width: 80px;
+    text-align: center;
+    white-space: nowrap;
 }
 
 .delete-btn:hover {
-    background-color: rgba(255, 59, 48, 0.1);
+    background-color: #e02e24;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(224, 46, 36, 0.3);
 }
 
 [data-theme="dark"] .delete-btn {
-    color: #ff6b6b;
+    background-color: #ff6b6b;
+    color: white;
 }
 
 [data-theme="dark"] .delete-btn:hover {
-    background-color: rgba(255, 107, 107, 0.2);
+    background-color: #e85959;
 }
 
 @keyframes slideRight {
