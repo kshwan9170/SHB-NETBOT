@@ -92,9 +92,51 @@ with col2:
     with st.expander("🔍 문서 업로드", expanded=True):
         st.write("참고할 내부 문서를 업로드하면 더 정확한 답변을 제공합니다.")
         
-        col_upload1, col_upload2 = st.columns(2)
+        tabs = st.tabs(["파일 업로드", "예시 문서", "텍스트 입력"])
         
-        with col_upload1:
+        with tabs[0]:
+            st.write("PDF, DOCX, PPTX, TXT 파일을 업로드하세요.")
+            uploaded_file = st.file_uploader(
+                "파일 선택",
+                type=["pdf", "docx", "pptx", "txt"],
+                help="업로드된 문서는 AI의 답변 생성에 활용됩니다"
+            )
+            
+            if uploaded_file is not None:
+                with st.spinner("문서 처리 중..."):
+                    try:
+                        # 파일 내용을 바이트로 읽기
+                        file_bytes = uploaded_file.getvalue()
+                        
+                        # 임시 파일로 저장
+                        temp_path = Path(f"./uploaded_files/{uploaded_file.name}")
+                        os.makedirs(os.path.dirname(temp_path), exist_ok=True)
+                        
+                        with open(temp_path, "wb") as f:
+                            f.write(file_bytes)
+                        
+                        # 문서 처리
+                        texts = process_document(str(temp_path))
+                        
+                        if texts:
+                            # 데이터베이스 초기화
+                            initialize_database()
+                            
+                            # 벡터 데이터베이스에 문서 내용 추가
+                            add_document_embeddings(texts, metadata={"source": uploaded_file.name})
+                            
+                            st.session_state.document_uploaded = True
+                            st.success(f"문서 '{uploaded_file.name}'이(가) 성공적으로 처리되었습니다!")
+                            
+                            # 정리
+                            os.remove(temp_path)
+                        else:
+                            st.error("문서에서 텍스트를 추출할 수 없습니다. 다른 문서를 시도해 주세요.")
+                    except Exception as e:
+                        st.error(f"파일 처리 중 오류가 발생했습니다: {str(e)}")
+                        print(f"파일 처리 오류: {str(e)}")
+        
+        with tabs[1]:
             sample_txt = st.checkbox("예시 문서 사용하기", help="테스트용 예시 문서를 사용합니다")
             
             if sample_txt:
@@ -149,7 +191,7 @@ with col2:
                         st.error(f"문서 처리 중 오류가 발생했습니다: {str(e)}")
                         print(f"문서 처리 오류: {str(e)}")
         
-        with col_upload2:
+        with tabs[2]:
             # 직접 텍스트 입력 옵션
             text_input = st.text_area(
                 "직접 문서 텍스트 입력",
@@ -174,16 +216,6 @@ with col2:
                     except Exception as e:
                         st.error(f"텍스트 처리 중 오류가 발생했습니다: {str(e)}")
                         print(f"텍스트 처리 오류: {str(e)}")
-                        
-        # 구분선 추가
-        st.markdown("---")
-                        
-        # 파일 업로드 안내 섹션
-        st.markdown("### 💡 파일 대신 텍스트 입력 사용하기")
-        st.info(
-            "현재 파일 업로드 기능에 기술적 제한이 있어, 대신 문서의 내용을 복사하여 위의 텍스트 입력란에 붙여넣기 해주세요. "
-            "이 방법은 문서 내용을 바로 활용할 수 있는 장점이 있습니다."
-        )
     
     with st.expander("📊 데이터베이스 현황", expanded=True):
         db_status = get_database_status()
