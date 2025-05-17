@@ -768,35 +768,34 @@ img {
 
 /* 삭제 버튼 스타일 */
 .document-delete-btn {
-    background-color: #ff5252;
-    color: white;
+    background-color: transparent;
+    color: #ff5252;
     border: none;
-    border-radius: 8px;
-    padding: 12px;
+    border-radius: 4px;
+    padding: 4px 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    width: 100%;
-    font-size: 16px;
-    font-weight: 600;
-    margin-top: auto;
+    font-size: 14px;
+    font-weight: 500;
+    position: absolute;
+    top: 15px;
+    right: 15px;
 }
 
 .document-delete-btn svg {
-    margin-right: 8px;
+    margin-right: 4px;
 }
 
 .document-delete-btn:hover {
-    background-color: #ff3232;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(255, 50, 50, 0.3);
+    background-color: #ffeeee;
+    color: #ff3232;
 }
 
 .document-delete-btn:active {
-    transform: translateY(0);
-    box-shadow: none;
+    background-color: #ffe0e0;
 }
 
 .file-item {
