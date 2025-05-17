@@ -1067,10 +1067,9 @@ with chat_col:
                 </div>
                 ''', unsafe_allow_html=True)
     else:
-        # 첫 방문 시 환영 메시지
+        # 첫 방문 시 환영 메시지 - 간결하게 수정
         welcome_msg = (
-            "안녕하세요! 신한은행 네트워크 챗봇입니다. 네트워크 관련 질문이 있으시면 언제든지 물어보세요. "
-            "예를 들어, <strong>스윙 접속 방법</strong>, <strong>IP 확인 방법</strong> 등에 대해 물어보실 수 있습니다."
+            "안녕하세요! 신한은행 네트워크 챗봇입니다. 네트워크 관련 질문이 있으시면 언제든지 물어보세요."
         )
         st.markdown(f'''
         <div class="chat-message bot-message">
