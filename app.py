@@ -811,6 +811,29 @@ def sync_documents():
             db_status_before = database.get_database_status()
             sync_needed = False
             
+            # 빠른 검사: 이미 모든 파일이 처리되었는지 확인
+            # 문서 ID 목록 가져오기
+            existing_doc_ids = database.get_all_document_ids()
+            files_to_process = []
+            
+            # 처리가 필요한 파일만 필터링
+            for file_info in files:
+                doc_id = file_info['doc_id']
+                if doc_id not in existing_doc_ids:
+                    files_to_process.append(file_info)
+            
+            # 모든 파일이 이미 처리되었으면 동기화 필요 없음
+            if not files_to_process:
+                yield json.dumps({
+                    'progress': 100,
+                    'message': f'🛈 동기화할 항목이 없습니다. 현재 모든 파일은 최신 상태입니다.'
+                }) + '\n'
+                return
+                
+            # 처리가 필요한 파일로 목록 갱신
+            files = files_to_process
+            total_files = len(files)
+            
             for file_info in files:
                 try:
                     file_path = file_info['file_path']

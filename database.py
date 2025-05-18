@@ -348,6 +348,46 @@ def delete_document(doc_id: str):
         print(f"Error deleting document from database: {e}")
         return False
 
+def get_all_document_ids():
+    """
+    벡터 데이터베이스에 저장된 모든 문서 ID를 가져옵니다
+    
+    Returns:
+        Set of unique document IDs
+    """
+    try:
+        # 데이터베이스 연결
+        collection = initialize_database()
+        
+        # 메타데이터에서 문서 ID 추출
+        doc_ids = set()
+        
+        # 모든 메타데이터 가져오기
+        try:
+            results = collection.get()
+            
+            if results and 'metadatas' in results and results['metadatas']:
+                for metadata in results['metadatas']:
+                    if metadata and 'doc_id' in metadata:
+                        doc_ids.add(metadata['doc_id'])
+        except Exception as e:
+            print(f"메타데이터 조회 오류: {str(e)}")
+        
+        # 청크 ID에서 문서 ID 추출 (이전 버전 호환성)
+        try:
+            all_ids = collection.get()['ids']
+            for chunk_id in all_ids:
+                if '-' in chunk_id:
+                    doc_id = chunk_id.split('-')[0]
+                    doc_ids.add(doc_id)
+        except Exception as e:
+            print(f"청크 ID 처리 오류: {str(e)}")
+            
+        return doc_ids
+    except Exception as e:
+        print(f"문서 ID 목록 조회 오류: {str(e)}")
+        return set()
+
 def reset_database():
     """Reset the database by removing the directory"""
     if os.path.exists(CHROMA_DB_DIRECTORY):
