@@ -739,6 +739,144 @@ def report_delete(post_id):
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# 문서 동기화 API
+@app.route('/api/sync-documents', methods=['POST'])
+def sync_documents():
+    """
+    업로드된 문서와 벡터 데이터베이스 동기화
+    - 파일 시스템의 문서가 벡터 DB에 없으면 추가
+    - 파일 수정 시간이 변경된 문서는 다시 처리
+    """
+    try:
+        def generate_progress():
+            """진행 상황을 스트리밍하는 제너레이터 함수"""
+            
+            yield json.dumps({
+                'progress': 0,
+                'message': '문서 동기화를 시작합니다...'
+            }) + '\n'
+            
+            # 1. 현재 업로드된 파일 목록 수집
+            files = []
+            try:
+                file_list = os.listdir(app.config['UPLOAD_FOLDER'])
+                
+                for filename in file_list:
+                    if filename.startswith('.'):  # 숨김 파일 제외
+                        continue
+                        
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                    if os.path.isfile(file_path):
+                        file_stats = os.stat(file_path)
+                        
+                        # 시스템 파일명에서 UUID 추출 (문서 ID로 사용)
+                        doc_id = filename.split('_')[0] if '_' in filename else filename
+                        
+                        # 원본 파일명 추출
+                        original_filename = "_".join(filename.split("_")[1:])
+                        
+                        files.append({
+                            'system_filename': filename,
+                            'display_filename': original_filename,
+                            'file_path': file_path,
+                            'doc_id': doc_id,
+                            'modified_time': file_stats.st_mtime
+                        })
+                
+                yield json.dumps({
+                    'progress': 10,
+                    'message': f'{len(files)}개 문서를 확인했습니다.'
+                }) + '\n'
+                
+            except Exception as e:
+                print(f"파일 목록 수집 오류: {str(e)}")
+                yield json.dumps({
+                    'progress': 10,
+                    'message': f'파일 목록 수집 중 오류: {str(e)}'
+                }) + '\n'
+                return
+            
+            if not files:
+                yield json.dumps({
+                    'progress': 100,
+                    'message': '동기화할 문서가 없습니다.'
+                }) + '\n'
+                return
+            
+            # 2. 각 파일 동기화 처리
+            total_files = len(files)
+            processed_files = 0
+            
+            for file_info in files:
+                try:
+                    file_path = file_info['file_path']
+                    doc_id = file_info['doc_id']
+                    display_filename = file_info['display_filename']
+                    
+                    # 현재 파일 처리 시작 메시지
+                    current_progress = 10 + int((processed_files / total_files) * 80)
+                    yield json.dumps({
+                        'progress': current_progress,
+                        'message': f'({processed_files+1}/{total_files}) {display_filename} 동기화 중...'
+                    }) + '\n'
+                    
+                    # 문서 처리 및 벡터 DB 업데이트
+                    if allowed_file(display_filename):
+                        # 기존 문서 ID로 먼저 삭제 (문서 업데이트 효과)
+                        database.delete_document(doc_id)
+                        
+                        # 문서 처리
+                        chunks = document_processor.process_document(file_path)
+                        
+                        # 청크가 없으면 다음 파일로
+                        if not chunks:
+                            yield json.dumps({
+                                'progress': current_progress + 5,
+                                'message': f'{display_filename} 처리 중 청크를 추출할 수 없습니다.'
+                            }) + '\n'
+                            processed_files += 1
+                            continue
+                        
+                        # 문서 ID 설정
+                        for chunk in chunks:
+                            chunk['doc_id'] = doc_id
+                        
+                        # 벡터 DB에 저장
+                        database.add_document_embeddings(chunks)
+                        
+                        yield json.dumps({
+                            'progress': current_progress + 5,
+                            'message': f'{display_filename} 처리 완료 (청크 {len(chunks)}개)'
+                        }) + '\n'
+                    else:
+                        yield json.dumps({
+                            'progress': current_progress,
+                            'message': f'{display_filename}은 지원되지 않는 파일 형식입니다.'
+                        }) + '\n'
+                    
+                except Exception as e:
+                    print(f"파일 처리 오류 ({display_filename if 'display_filename' in locals() else '알 수 없는 파일'}): {str(e)}")
+                    yield json.dumps({
+                        'progress': current_progress,
+                        'message': f'{display_filename if "display_filename" in locals() else "알 수 없는 파일"} 처리 중 오류 발생: {str(e)}'
+                    }) + '\n'
+                
+                processed_files += 1
+            
+            # 3. 완료 메시지
+            db_status = database.get_database_status()
+            yield json.dumps({
+                'progress': 100,
+                'message': f'동기화 완료! 현재 문서 {db_status.get("document_count", 0)}개, 청크 {db_status.get("chunk_count", 0)}개'
+            }) + '\n'
+        
+        # 스트리밍 응답 반환
+        return app.response_class(generate_progress(), mimetype='text/event-stream')
+    
+    except Exception as e:
+        print(f"문서 동기화 오류: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 # 데이터베이스 초기화 후 앱 실행
 if __name__ == '__main__':
     # 데이터베이스 초기화
