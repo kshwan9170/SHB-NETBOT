@@ -855,10 +855,12 @@ def sync_documents():
                         }) + '\n'
                     
                 except Exception as e:
-                    print(f"파일 처리 오류 ({display_filename if 'display_filename' in locals() else '알 수 없는 파일'}): {str(e)}")
+                    error_filename = file_info.get('display_filename', '알 수 없는 파일')
+                    error_progress = 10 + int((processed_files / total_files) * 80)
+                    print(f"파일 처리 오류 ({error_filename}): {str(e)}")
                     yield json.dumps({
-                        'progress': current_progress,
-                        'message': f'{display_filename if "display_filename" in locals() else "알 수 없는 파일"} 처리 중 오류 발생: {str(e)}'
+                        'progress': error_progress,
+                        'message': f'{error_filename} 처리 중 오류 발생: {str(e)}'
                     }) + '\n'
                 
                 processed_files += 1
