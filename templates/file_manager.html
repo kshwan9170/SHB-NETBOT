@@ -356,12 +356,23 @@
                     const reader = response.body.getReader();
                     const decoder = new TextDecoder();
                     
+                    // 동기화 시작 후 타임아웃 설정 (10초 후 응답이 없으면 오류 메시지 표시)
+                    let noResponseTimeout = setTimeout(() => {
+                        syncMessage.innerHTML = '🛈 동기화 처리 중 지연이 발생했습니다. 잠시 기다려 주세요...';
+                    }, 10000);
+                    
+                    // 마지막 메시지 업데이트 시간 추적
+                    let lastMessageTime = Date.now();
+                    let hasStartedSync = false;
+                    
                     function processStream() {
                         return reader.read().then(({ done, value }) => {
                             if (done) {
                                 // 동기화 완료
                                 syncProgress.style.width = '100%';
-                                syncMessage.textContent = '문서 동기화가 완료되었습니다!';
+                                
+                                // 타임아웃 클리어
+                                clearTimeout(noResponseTimeout);
                                 
                                 // 동기화 버튼 복원
                                 syncBtn.disabled = false;
@@ -374,6 +385,13 @@
                                         문서 동기화
                                     </span>
                                 `;
+                                
+                                // 동기화 시작되지 않았거나 처음 몇 단계에서 완료된 경우 (동기화할 항목이 없는 경우)
+                                if (!hasStartedSync || syncProgress.style.width === '10%') {
+                                    syncMessage.innerHTML = '🛈 동기화할 항목이 없습니다. 현재 모든 파일은 최신 상태입니다.';
+                                } else {
+                                    syncMessage.textContent = '문서 동기화가 완료되었습니다!';
+                                }
                                 
                                 // 파일 목록 새로고침
                                 setTimeout(() => {
@@ -392,11 +410,32 @@
                             const text = decoder.decode(value, { stream: true });
                             try {
                                 const data = JSON.parse(text);
+                                
+                                // 메시지 타임스탬프 업데이트
+                                lastMessageTime = Date.now();
+                                
+                                // 타임아웃 클리어 및 재설정
+                                clearTimeout(noResponseTimeout);
+                                noResponseTimeout = setTimeout(() => {
+                                    syncMessage.innerHTML = '🛈 동기화 처리 중 지연이 발생했습니다. 잠시 기다려 주세요...';
+                                }, 10000);
+                                
                                 if (data.progress) {
                                     syncProgress.style.width = data.progress + '%';
+                                    
+                                    // 10% 이상이면 동기화가 시작된 것으로 간주
+                                    if (data.progress > 10) {
+                                        hasStartedSync = true;
+                                    }
                                 }
+                                
                                 if (data.message) {
-                                    syncMessage.textContent = data.message;
+                                    // 동기화할 항목이 없음을 명시적으로 표시
+                                    if (data.message.includes('동기화할 문서가 없습니다')) {
+                                        syncMessage.innerHTML = '🛈 동기화할 항목이 없습니다. 현재 모든 파일은 최신 상태입니다.';
+                                    } else {
+                                        syncMessage.textContent = data.message;
+                                    }
                                 }
                             } catch (error) {
                                 // JSON 파싱 오류는 무시
