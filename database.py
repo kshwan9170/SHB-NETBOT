@@ -114,16 +114,19 @@ def initialize_database():
 
 def add_document_embeddings(
     chunks: List[Dict[str, Any]]
-):
+) -> bool:
     """
     Add document chunks to the vector database
     
     Args:
         chunks: List of dictionaries containing text chunks and metadata
                Each dict should have: {"text": str, "doc_id": str, "chunk_id": str, "metadata": dict}
+               
+    Returns:
+        Boolean indicating whether documents were added (True) or not (False)
     """
     if not chunks:
-        return
+        return False
     
     # Initialize the database
     collection = initialize_database()
@@ -141,6 +144,7 @@ def add_document_embeddings(
     )
     
     print(f"Added {len(chunks)} document chunks to the database")
+    return True
 
 def search_similar_docs(
     query: str, 

@@ -807,6 +807,10 @@ def sync_documents():
             total_files = len(files)
             processed_files = 0
             
+            # 동기화 전에 데이터베이스 현재 상태 저장
+            db_status_before = database.get_database_status()
+            sync_needed = False
+            
             for file_info in files:
                 try:
                     file_path = file_info['file_path']
@@ -823,7 +827,7 @@ def sync_documents():
                     # 문서 처리 및 벡터 DB 업데이트
                     if allowed_file(display_filename):
                         # 기존 문서 ID로 먼저 삭제 (문서 업데이트 효과)
-                        database.delete_document(doc_id)
+                        deleted = database.delete_document(doc_id)
                         
                         # 문서 처리
                         chunks = document_processor.process_document(file_path)
@@ -842,7 +846,11 @@ def sync_documents():
                             chunk['doc_id'] = doc_id
                         
                         # 벡터 DB에 저장
-                        database.add_document_embeddings(chunks)
+                        added = database.add_document_embeddings(chunks)
+                        
+                        # 동기화가 실제로 이루어졌는지 확인
+                        if deleted or added:
+                            sync_needed = True
                         
                         yield json.dumps({
                             'progress': current_progress + 5,
@@ -867,10 +875,17 @@ def sync_documents():
             
             # 3. 완료 메시지
             db_status = database.get_database_status()
-            yield json.dumps({
-                'progress': 100,
-                'message': f'동기화 완료! 현재 문서 {db_status.get("document_count", 0)}개, 청크 {db_status.get("chunk_count", 0)}개'
-            }) + '\n'
+            
+            if not sync_needed:
+                yield json.dumps({
+                    'progress': 100,
+                    'message': f'🛈 동기화할 항목이 없습니다. 현재 모든 파일은 최신 상태입니다.'
+                }) + '\n'
+            else:
+                yield json.dumps({
+                    'progress': 100,
+                    'message': f'동기화 완료! 현재 문서 {db_status.get("document_count", 0)}개, 청크 {db_status.get("chunk_count", 0)}개'
+                }) + '\n'
         
         # 스트리밍 응답 반환
         return app.response_class(generate_progress(), mimetype='text/event-stream')
