@@ -55,6 +55,18 @@ def init_db():
         )
         ''')
         
+        # 챗봇 응답 피드백 테이블
+        db.execute('''
+        CREATE TABLE IF NOT EXISTS chat_feedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question TEXT NOT NULL,
+            answer TEXT NOT NULL,
+            feedback_type TEXT NOT NULL,
+            feedback_comment TEXT,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+        ''')
+        
         db.commit()
 
 # 게시판 기본 클래스
@@ -149,3 +161,82 @@ class FeedbackBoard(BoardModel):
 class ReportBoard(BoardModel):
     def __init__(self):
         super().__init__('report_posts')
+
+# 챗봇 피드백 모델
+class ChatFeedbackModel:
+    def __init__(self):
+        self.table_name = 'chat_feedback'
+    
+    def create_feedback(self, question, answer, feedback_type, feedback_comment=None):
+        """
+        챗봇 응답에 대한 피드백 저장
+        
+        Args:
+            question: 사용자 질문
+            answer: 챗봇 응답
+            feedback_type: 피드백 유형 (좋아요/싫어요)
+            feedback_comment: 추가 코멘트 (선택 사항)
+            
+        Returns:
+            생성된 피드백 ID
+        """
+        db = get_db()
+        query = f'''
+        INSERT INTO {self.table_name} (question, answer, feedback_type, feedback_comment)
+        VALUES (?, ?, ?, ?)
+        '''
+        cursor = db.execute(query, (question, answer, feedback_type, feedback_comment))
+        db.commit()
+        return cursor.lastrowid
+    
+    def get_all_feedback(self, page=1, per_page=20):
+        """
+        모든 피드백 조회
+        
+        Args:
+            page: 페이지 번호
+            per_page: 페이지당 항목 수
+            
+        Returns:
+            피드백 목록과 페이지 정보
+        """
+        db = get_db()
+        offset = (page - 1) * per_page
+        query = f'''
+        SELECT id, question, answer, feedback_type, feedback_comment, created_at
+        FROM {self.table_name}
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?
+        '''
+        feedbacks = db.execute(query, (per_page, offset)).fetchall()
+        
+        # 전체 피드백 수
+        count = db.execute(f'SELECT COUNT(*) FROM {self.table_name}').fetchone()[0]
+        
+        return {
+            'feedbacks': [dict(feedback) for feedback in feedbacks],
+            'total': count,
+            'page': page,
+            'per_page': per_page,
+            'pages': (count + per_page - 1) // per_page
+        }
+    
+    def get_feedback_stats(self):
+        """
+        피드백 통계 조회
+        
+        Returns:
+            피드백 통계 정보
+        """
+        db = get_db()
+        total = db.execute(f'SELECT COUNT(*) FROM {self.table_name}').fetchone()[0]
+        positive = db.execute(f'SELECT COUNT(*) FROM {self.table_name} WHERE feedback_type = ?', ('👍 도움 됨',)).fetchone()[0]
+        negative = db.execute(f'SELECT COUNT(*) FROM {self.table_name} WHERE feedback_type = ?', ('👎 부족함',)).fetchone()[0]
+        
+        return {
+            'total': total,
+            'positive': positive,
+            'negative': negative,
+            'positive_percentage': round(positive / total * 100, 2) if total > 0 else 0,
+            'negative_percentage': round(negative / total * 100, 2) if total > 0 else 0
+        }

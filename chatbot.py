@@ -744,56 +744,129 @@ def generate_external_system_response(query, df, keywords):
     Returns:
         생성된 응답
     """
-    # 대외계 관련 키워드 확인
-    external_keywords = ['기관', '회선', '담당자', '외부', '대외', '연락처']
-    has_external = any(kw in ' '.join(keywords).lower() for kw in external_keywords)
+    # 필요한 상세 정보 필드 확인
+    required_fields = ['회선사', '회선 번호', '회선번호', '서비스', '서비스 종류', '운영 IP', '운영IP', 
+                     '개발 IP', '개발IP', '담당 부서', '담당부서', '당행 담당자', '담당자', 
+                     '기관 담당자', '기관담당자', '기관 주소', '기관주소', 'IP']
     
-    # 대외계 키워드가 없는 경우 일반 참조 응답으로 처리
-    if not has_external:
-        return generate_reference_response(query, df, keywords)
+    # 기관명 확인 (서치 키워드)
+    org_keywords = ['카드', '생명', '캐피탈', '증권', '은행', '보험', '금융', '공사', '공단', 
+                    '협회', '연합회', '센터', '기관', '회사', '단체', '조합']
     
-    # 관련 행 찾기
-    relevant_rows = find_relevant_rows(df, keywords)
+    # 쿼리에서 기관명 추출 (예: "신한카드")
+    searched_org = None
+    for kw in keywords:
+        # 1. 직접적인 기관명 키워드 확인 (예: 신한카드, KB증권 등)
+        is_org = False
+        for org_kw in org_keywords:
+            if org_kw in kw:
+                is_org = True
+                searched_org = kw
+                break
+                
+        # 2. "신한" "KB" 등의 짧은 기관명도 체크
+        if len(kw) >= 2 and not is_org:
+            # 기관명 컬럼을 찾아서 검색
+            org_column = None
+            for col in df.columns:
+                if '기관' in col or '회사' in col or '업체' in col:
+                    org_column = col
+                    break
+            
+            if org_column:
+                for idx, row in df.iterrows():
+                    org_value = str(row[org_column]).lower()
+                    if kw.lower() in org_value and len(kw) >= 2:
+                        searched_org = str(row[org_column])
+                        break
+    
+    print(f"검색된 기관명: {searched_org}")
+    
+    # 관련 행 찾기 (기관명 우선, 그 다음 키워드)
+    relevant_rows = []
+    
+    # 1. 기관명이 있으면 먼저 기관명으로 검색
+    if searched_org:
+        for idx, row in df.iterrows():
+            row_text = ' '.join(str(val).lower() for val in row.values)
+            if searched_org.lower() in row_text.lower():
+                relevant_rows.append(idx)
+    
+    # 2. 기관명으로 결과가 없거나 기관명이 없으면 일반 키워드로 검색
+    if not relevant_rows:
+        relevant_rows = find_relevant_rows(df, keywords)
     
     if not relevant_rows:
-        return "관련된 대외계 정보를 찾을 수 없습니다."
+        return f"요청하신 대외계 정보를 찾을 수 없습니다. 좀 더 구체적인 기관명이나 키워드로 질문해 주세요."
     
-    # 데이터프레임의 내용을 문자열로 변환
-    df_info = dataframe_to_text(df.iloc[relevant_rows])
+    # 검색된 결과 데이터
+    result_data = df.iloc[relevant_rows]
     
-    # OpenAI를 사용한 대외계 정보 응답 생성
-    try:
-        if OPENAI_API_KEY:
-            messages = [
-                {"role": "system", "content": """
-                신한은행 네트워크 담당자 역할을 하는 챗봇으로, 사용자가 대외계 정보를 조회하려고 합니다.
-                대외계란 외부 기관과의 연계 시스템을 의미합니다. 
-                주어진 엑셀 데이터에서 관련 기관, 회선, IP, 담당자 정보 등을 찾아 정리해주세요.
-                중요한 연락처와 절차를 명확하게 표시해야 합니다.
-                표 형식은 마크다운 표 형식으로 제공하세요.
-                
-                응답 형식:
-                1. 친절한 인사로 시작
-                2. 대외계 정보 마크다운 테이블로 제공
-                3. 주요 담당자 연락처 강조 (있는 경우)
-                4. 간단한 절차 안내 (필요한 경우)
-                """},
-                {"role": "user", "content": f"사용자의 대외계 정보 조회 요청: {query}\n\n엑셀 데이터:\n{df_info}"}
-            ]
-            
-            response = openai_client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=messages,
-                temperature=0.7,
-                max_tokens=800
-            )
-            
-            return response.choices[0].message.content
-    except Exception as e:
-        print(f"OpenAI를 사용한 응답 생성 중 오류 발생: {str(e)}")
+    # 필요한 정보 추출
+    org_name = searched_org if searched_org else "요청하신 기관"
     
-    # API 호출 실패 시 기본 응답 제공
-    return summarize_dataframe(df.iloc[relevant_rows])
+    # 조회 결과를 자연어 형식으로 구성
+    info_dict = {}
+    
+    # 데이터프레임의 컬럼명-값을 매핑
+    for col in result_data.columns:
+        col_lower = col.lower()
+        
+        # 필드 매핑
+        field_key = None
+        
+        if '회선사' in col_lower:
+            field_key = '회선사'
+        elif any(kw in col_lower for kw in ['회선 번호', '회선번호', '전화번호']):
+            field_key = '회선 번호'
+        elif any(kw in col_lower for kw in ['서비스', '서비스 종류', '종류']):
+            field_key = '서비스 종류'
+        elif any(kw in col_lower for kw in ['운영 ip', '운영ip', '운영주소']):
+            field_key = '운영 IP'
+        elif any(kw in col_lower for kw in ['개발 ip', '개발ip', '개발주소']):
+            field_key = '개발 IP'
+        elif '담당 부서' in col_lower or '담당부서' in col_lower:
+            field_key = '당행 담당 부서'
+        elif any(kw in col_lower for kw in ['당행 담당자', '담당자']):
+            field_key = '당행 담당자'
+        elif any(kw in col_lower for kw in ['기관 담당자', '기관담당자', '외부담당자']):
+            field_key = '기관 담당자'
+        elif any(kw in col_lower for kw in ['기관 주소', '기관주소', '주소']):
+            field_key = '기관 주소'
+        elif 'ip' in col_lower and 'ip' not in info_dict:
+            # 일반 IP 컬럼이 있고 아직 IP 정보가 없으면
+            field_key = 'IP' 
+        
+        if field_key and field_key not in info_dict:
+            first_value = str(result_data.iloc[0][col]).strip()
+            if first_value and first_value != 'nan':
+                info_dict[field_key] = first_value
+    
+    # 자연어 응답 생성
+    response = f"📡 **{org_name} 연동 정보**입니다:\n\n"
+    
+    # 필수 필드 목록 (보여줄 순서대로)
+    display_order = ['회선사', '회선 번호', '서비스 종류', '운영 IP', '개발 IP', 'IP', 
+                     '당행 담당 부서', '당행 담당자', '기관 담당자', '기관 주소']
+    
+    # 정보 추가
+    for field in display_order:
+        if field in info_dict and info_dict[field]:
+            response += f"- **{field}**: {info_dict[field]}\n"
+    
+    # 추가 정보가 있으면 표시 (위 목록에 없는 컬럼)
+    for key, value in info_dict.items():
+        if key not in display_order:
+            response += f"- **{key}**: {value}\n"
+    
+    # 담당자 정보가 있으면 마무리 문구 추가
+    if '당행 담당 부서' in info_dict or '당행 담당자' in info_dict:
+        dept = info_dict.get('당행 담당 부서', '네트워크 운영팀')
+        response += f"\n더 궁금한 사항이 있으시면 {dept}으로 문의해 주세요."
+    else:
+        response += "\n더 궁금한 사항이 있으시면 네트워크 운영팀으로 문의해 주세요."
+    
+    return response
 
 def get_chatbot_response(
     query: str, 
