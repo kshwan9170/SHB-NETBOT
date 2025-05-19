@@ -260,10 +260,6 @@
                             <button class="view-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}" style="background-color: #4caf50; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-weight: 600; min-width: 60px;">
                                 보기
                             </button>
-                            ${file.file_type.toLowerCase() === 'txt' ? `
-                            <button class="edit-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}" style="background-color: #2196f3; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-weight: 600; min-width: 60px;">
-                                편집
-                            </button>` : ''}
                             <button class="delete-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}">
                                 DELETE
                             </button>
@@ -291,28 +287,7 @@
                     });
                 }
                 
-                // 편집 버튼에 이벤트 리스너 추가 (txt 파일만 해당)
-                const editBtn = row.querySelector('.edit-btn');
-                if (editBtn) {
-                    editBtn.addEventListener('click', function() {
-                        const systemFilename = this.getAttribute('data-filename');
-                        const displayFilename = this.getAttribute('data-displayname');
-                        // 먼저 문서 내용을 가져온 후 편집기 열기
-                        fetch(`/api/documents/view/${systemFilename}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    editDocument(systemFilename, displayFilename, data.content);
-                                } else {
-                                    alert(data.message || '문서 내용을 불러오는 중 오류가 발생했습니다.');
-                                }
-                            })
-                            .catch(error => {
-                                console.error('문서 내용 로드 중 오류 발생:', error);
-                                alert('서버 연결 중 오류가 발생했습니다.');
-                            });
-                    });
-                }
+                // 편집 기능은 요청에 따라 제거되었습니다
             });
         }
         
@@ -549,9 +524,9 @@
                         modalContent.className = 'document-modal-content';
                         modalContent.style.cssText = `
                             background-color: white;
-                            width: 80%;
-                            max-width: 800px;
-                            max-height: 80vh;
+                            width: 90%;
+                            max-width: 900px;
+                            max-height: 90vh;
                             border-radius: 8px;
                             overflow: hidden;
                             display: flex;
@@ -600,17 +575,153 @@
                         // 모달 본문
                         const modalBody = document.createElement('div');
                         modalBody.className = 'document-modal-body';
-                        modalBody.style.cssText = `
+                        
+                        // 파일 유형에 따라 다른 스타일 적용
+                        let bodyStyle = `
                             padding: 20px;
                             overflow-y: auto;
                             flex-grow: 1;
-                            white-space: pre-wrap;
-                            font-family: 'Courier New', monospace;
-                            line-height: 1.5;
-                            font-size: 14px;
-                            background-color: #fafafa;
                         `;
-                        modalBody.textContent = data.content;
+                        
+                        // 파일 유형에 따라 내용 표시 방식 변경
+                        switch (data.file_type.toLowerCase()) {
+                            case 'txt':
+                                // 텍스트 파일은 텍스트로 표시
+                                modalBody.style.cssText = bodyStyle + `
+                                    white-space: pre-wrap;
+                                    font-family: 'Courier New', monospace;
+                                    line-height: 1.5;
+                                    font-size: 14px;
+                                    background-color: #fafafa;
+                                `;
+                                modalBody.textContent = data.content;
+                                break;
+                                
+                            case 'pdf':
+                                // PDF 파일은 내장 PDF 뷰어로 표시
+                                modalBody.style.cssText = bodyStyle + `
+                                    padding: 0;
+                                    background-color: #f0f0f0;
+                                    display: flex;
+                                    justify-content: center;
+                                    align-items: center;
+                                `;
+                                
+                                const iframe = document.createElement('iframe');
+                                iframe.style.cssText = `
+                                    width: 100%;
+                                    height: 100%;
+                                    border: none;
+                                `;
+                                iframe.src = data.content;
+                                modalBody.appendChild(iframe);
+                                break;
+                                
+                            case 'xlsx':
+                            case 'xls':
+                                // 엑셀 파일은 HTML 테이블로 표시
+                                modalBody.style.cssText = bodyStyle + `
+                                    font-family: Arial, sans-serif;
+                                    font-size: 14px;
+                                    line-height: 1.5;
+                                    background-color: #ffffff;
+                                `;
+                                modalBody.innerHTML = data.content;
+                                
+                                // 스타일 추가
+                                const styleEl = document.createElement('style');
+                                styleEl.textContent = `
+                                    .excel-container {
+                                        width: 100%;
+                                    }
+                                    .sheet-container {
+                                        margin-bottom: 30px;
+                                        padding-bottom: 20px;
+                                        border-bottom: 2px solid #e0e0e0;
+                                    }
+                                    .sheet-name {
+                                        font-size: 18px;
+                                        font-weight: 600;
+                                        margin: 15px 0;
+                                        padding: 8px 12px;
+                                        background-color: #f0f0f0;
+                                        border-radius: 4px;
+                                        color: #333;
+                                    }
+                                    .table {
+                                        width: 100%;
+                                        border-collapse: collapse;
+                                        margin-bottom: 20px;
+                                        font-size: 13px;
+                                    }
+                                    .table-striped tbody tr:nth-of-type(odd) {
+                                        background-color: rgba(0, 0, 0, 0.05);
+                                    }
+                                    .table-bordered {
+                                        border: 1px solid #dee2e6;
+                                    }
+                                    .table-bordered th,
+                                    .table-bordered td {
+                                        border: 1px solid #dee2e6;
+                                        padding: 8px;
+                                        max-width: 300px;
+                                        overflow: hidden;
+                                        text-overflow: ellipsis;
+                                        white-space: nowrap;
+                                    }
+                                    .table-bordered td:hover {
+                                        white-space: normal;
+                                        word-break: break-word;
+                                    }
+                                    th {
+                                        text-align: left;
+                                        background-color: #f8f9fa;
+                                        position: sticky;
+                                        top: 0;
+                                        z-index: 10;
+                                    }
+                                `;
+                                modalBody.appendChild(styleEl);
+                                break;
+                                
+                            case 'docx':
+                                // Word 문서는 서식이 있는 텍스트로 표시
+                                modalBody.style.cssText = bodyStyle + `
+                                    font-family: 'Times New Roman', Times, serif;
+                                    line-height: 1.6;
+                                    font-size: 16px;
+                                    background-color: #ffffff;
+                                    padding: 30px;
+                                `;
+                                
+                                // 단락으로 분할하여 표시
+                                const paragraphs = data.content.split('\n\n');
+                                modalBody.innerHTML = '';
+                                
+                                paragraphs.forEach(para => {
+                                    if (para.trim()) {
+                                        const p = document.createElement('p');
+                                        p.textContent = para;
+                                        p.style.marginBottom = '1em';
+                                        modalBody.appendChild(p);
+                                    }
+                                });
+                                break;
+                                
+                            default:
+                                // 기타 지원되지 않는 형식
+                                modalBody.style.cssText = bodyStyle + `
+                                    background-color: #fafafa;
+                                    display: flex;
+                                    justify-content: center;
+                                    align-items: center;
+                                    font-family: Arial, sans-serif;
+                                    font-size: 16px;
+                                    color: #666;
+                                `;
+                                modalBody.innerHTML = `<div>이 파일 형식(${data.file_type})은 내용 조회를 지원하지 않습니다.</div>`;
+                                break;
+                        }
                         
                         // 모달 구성
                         modalHeader.appendChild(modalTitle);
@@ -646,204 +757,9 @@
         }
         
         /**
-         * 문서 내용 편집 기능
-         * @param {string} systemFilename - 시스템 내부 파일명
-         * @param {string} displayFilename - 화면에 표시되는 파일명
-         * @param {string} content - 초기 문서 내용
+         * 문서 내용 편집 기능 - 요청에 따라 제거되었습니다
+         * 모든 파일은 이제 읽기 전용으로 제공됩니다.
          */
-        function editDocument(systemFilename, displayFilename, content) {
-            // 모달 생성
-            const modal = document.createElement('div');
-            modal.className = 'document-modal';
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background-color: rgba(0, 0, 0, 0.5);
-                z-index: 1000;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            `;
-            
-            // 문서 편집 폼
-            const modalContent = document.createElement('div');
-            modalContent.className = 'document-modal-content';
-            modalContent.style.cssText = `
-                background-color: white;
-                width: 90%;
-                max-width: 900px;
-                height: 90vh;
-                border-radius: 8px;
-                overflow: hidden;
-                display: flex;
-                flex-direction: column;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            `;
-            
-            // 모달 헤더
-            const modalHeader = document.createElement('div');
-            modalHeader.className = 'document-modal-header';
-            modalHeader.style.cssText = `
-                padding: 15px 20px;
-                background-color: #f5f7fa;
-                border-bottom: 1px solid #e0e4e8;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            `;
-            
-            // 문서 제목
-            const modalTitle = document.createElement('h3');
-            modalTitle.className = 'document-modal-title';
-            modalTitle.style.cssText = `
-                margin: 0;
-                font-size: 18px;
-                font-weight: 600;
-                color: #333;
-            `;
-            modalTitle.textContent = `편집: ${displayFilename}`;
-            
-            // 닫기 버튼
-            const closeButton = document.createElement('button');
-            closeButton.className = 'document-modal-close';
-            closeButton.style.cssText = `
-                background: none;
-                border: none;
-                cursor: pointer;
-                font-size: 20px;
-                color: #666;
-            `;
-            closeButton.innerHTML = '&times;';
-            closeButton.addEventListener('click', () => {
-                if (confirm('편집 중인 내용이 저장되지 않을 수 있습니다. 정말 닫으시겠습니까?')) {
-                    document.body.removeChild(modal);
-                }
-            });
-            
-            // 편집 영역
-            const editArea = document.createElement('textarea');
-            editArea.className = 'document-edit-area';
-            editArea.value = content;
-            editArea.style.cssText = `
-                flex-grow: 1;
-                width: 100%;
-                padding: 15px;
-                font-family: 'Courier New', monospace;
-                font-size: 14px;
-                line-height: 1.5;
-                border: none;
-                resize: none;
-                outline: none;
-                background-color: #fafafa;
-            `;
-            
-            // 버튼 영역
-            const buttonArea = document.createElement('div');
-            buttonArea.className = 'document-modal-footer';
-            buttonArea.style.cssText = `
-                padding: 15px 20px;
-                background-color: #f5f7fa;
-                border-top: 1px solid #e0e4e8;
-                display: flex;
-                justify-content: flex-end;
-                align-items: center;
-                gap: 10px;
-            `;
-            
-            // 취소 버튼
-            const cancelButton = document.createElement('button');
-            cancelButton.className = 'cancel-button';
-            cancelButton.textContent = '취소';
-            cancelButton.style.cssText = `
-                padding: 8px 16px;
-                background-color: #f0f0f0;
-                color: #333;
-                border: none;
-                border-radius: 4px;
-                font-weight: 600;
-                cursor: pointer;
-            `;
-            cancelButton.addEventListener('click', () => {
-                if (confirm('편집 중인 내용이 저장되지 않을 수 있습니다. 정말 취소하시겠습니까?')) {
-                    document.body.removeChild(modal);
-                }
-            });
-            
-            // 저장 버튼
-            const saveButton = document.createElement('button');
-            saveButton.className = 'save-button';
-            saveButton.textContent = '저장';
-            saveButton.style.cssText = `
-                padding: 8px 16px;
-                background-color: #0064E1;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                font-weight: 600;
-                cursor: pointer;
-            `;
-            saveButton.addEventListener('click', () => {
-                const updatedContent = editArea.value;
-                
-                // 저장 요청
-                fetch(`/api/documents/edit/${systemFilename}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        content: updatedContent
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        alert(data.message || '문서가 성공적으로 저장되었습니다.');
-                        document.body.removeChild(modal);
-                        
-                        // 저장 후 파일 목록 새로고침
-                        fetchFileList();
-                    } else {
-                        alert(data.message || '문서 저장 중 오류가 발생했습니다.');
-                    }
-                })
-                .catch(error => {
-                    console.error('문서 저장 중 오류 발생:', error);
-                    alert('서버 연결 중 오류가 발생했습니다.');
-                });
-            });
-            
-            // 모달 구성
-            buttonArea.appendChild(cancelButton);
-            buttonArea.appendChild(saveButton);
-            
-            modalHeader.appendChild(modalTitle);
-            modalHeader.appendChild(closeButton);
-            
-            modalContent.appendChild(modalHeader);
-            modalContent.appendChild(editArea);
-            modalContent.appendChild(buttonArea);
-            
-            modal.appendChild(modalContent);
-            
-            // 모달 표시
-            document.body.appendChild(modal);
-            
-            // 텍스트 영역에 포커스
-            editArea.focus();
-            
-            // ESC 키로 모달 닫기 (저장 확인 안내 표시)
-            document.addEventListener('keydown', function(e) {
-                if (e.key === 'Escape' && document.body.contains(modal)) {
-                    if (confirm('편집 중인 내용이 저장되지 않을 수 있습니다. 정말 닫으시겠습니까?')) {
-                        document.body.removeChild(modal);
-                    }
-                }
-            });
-        }
     </script>
 </body>
 </html>

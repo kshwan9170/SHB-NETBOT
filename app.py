@@ -260,7 +260,7 @@ def get_documents():
         
 @app.route('/api/documents/view/<path:system_filename>', methods=['GET'])
 def view_document(system_filename):
-    """문서 내용 조회 API - 텍스트 문서만 지원"""
+    """문서 내용 조회 API - 다양한 파일 형식 지원"""
     try:
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], system_filename)
         
@@ -275,26 +275,80 @@ def view_document(system_filename):
         original_filename = "_".join(system_filename.split("_")[1:])
         file_extension = original_filename.split('.')[-1].lower()
         
-        # 텍스트 파일만 내용 조회 지원
-        if file_extension != 'txt':
-            return jsonify({
-                'status': 'error',
-                'message': f'이 파일 형식({file_extension})은 내용 조회를 지원하지 않습니다. 텍스트(.txt) 파일만 지원합니다.'
-            }), 400
+        # 파일 형식별 처리
+        content = ""
         
-        # 파일 내용 읽기 (UTF-8 먼저 시도, 실패 시 CP949 시도)
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-        except UnicodeDecodeError:
+        # TXT 파일 처리
+        if file_extension == 'txt':
+            # 파일 내용 읽기 (UTF-8 먼저 시도, 실패 시 CP949 시도)
             try:
-                with open(file_path, 'r', encoding='cp949') as f:
+                with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read()
+            except UnicodeDecodeError:
+                try:
+                    with open(file_path, 'r', encoding='cp949') as f:
+                        content = f.read()
+                except Exception as e:
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'파일을 읽는 중 오류가 발생했습니다: {str(e)}'
+                    }), 500
+        
+        # PDF 파일 처리
+        elif file_extension == 'pdf':
+            import base64
+            with open(file_path, 'rb') as f:
+                pdf_content = f.read()
+                # PDF를 base64로 인코딩
+                pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
+                content = f"data:application/pdf;base64,{pdf_base64}"
+        
+        # Excel 파일 처리
+        elif file_extension in ['xlsx', 'xls']:
+            import pandas as pd
+            try:
+                # 엑셀 파일의 모든 시트 읽기
+                excel_file = pd.ExcelFile(file_path)
+                sheet_names = excel_file.sheet_names
+                
+                # 모든 시트를 HTML로 변환
+                all_sheets_html = []
+                
+                for sheet_name in sheet_names:
+                    df = pd.read_excel(file_path, sheet_name=sheet_name)
+                    sheet_html = f'<div class="sheet-container"><h3 class="sheet-name">시트: {sheet_name}</h3>'
+                    sheet_html += df.to_html(index=False, classes='table table-striped table-bordered')
+                    sheet_html += '</div>'
+                    all_sheets_html.append(sheet_html)
+                
+                # 모든 시트 HTML 합치기
+                content = '<div class="excel-container">' + ''.join(all_sheets_html) + '</div>'
             except Exception as e:
                 return jsonify({
                     'status': 'error',
-                    'message': f'파일을 읽는 중 오류가 발생했습니다: {str(e)}'
+                    'message': f'엑셀 파일을 읽는 중 오류가 발생했습니다: {str(e)}'
                 }), 500
+        
+        # Word 파일 처리
+        elif file_extension == 'docx':
+            try:
+                from docx import Document
+                doc = Document(file_path)
+                # 문서의 모든 단락을 텍스트로 추출
+                paragraphs = [p.text for p in doc.paragraphs]
+                content = "\n\n".join(paragraphs)
+            except Exception as e:
+                return jsonify({
+                    'status': 'error',
+                    'message': f'Word 문서를 읽는 중 오류가 발생했습니다: {str(e)}'
+                }), 500
+        
+        # 지원하지 않는 파일 형식
+        else:
+            return jsonify({
+                'status': 'error',
+                'message': f'이 파일 형식({file_extension})은 내용 조회를 지원하지 않습니다.'
+            }), 400
         
         return jsonify({
             'status': 'success',
@@ -312,85 +366,11 @@ def view_document(system_filename):
 
 @app.route('/api/documents/edit/<path:system_filename>', methods=['POST'])
 def edit_document(system_filename):
-    """문서 내용 편집 API - 텍스트 문서만 지원"""
-    try:
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], system_filename)
-        
-        # 파일 존재 여부 확인
-        if not os.path.exists(file_path):
-            return jsonify({
-                'status': 'error',
-                'message': '요청한 파일을 찾을 수 없습니다.'
-            }), 404
-        
-        # 원본 파일명 추출 및 파일 형식 확인
-        original_filename = "_".join(system_filename.split("_")[1:])
-        file_extension = original_filename.split('.')[-1].lower()
-        
-        # 텍스트 파일만 내용 편집 지원
-        if file_extension != 'txt':
-            return jsonify({
-                'status': 'error',
-                'message': f'이 파일 형식({file_extension})은 내용 편집을 지원하지 않습니다. 텍스트(.txt) 파일만 지원합니다.'
-            }), 400
-        
-        # 요청에서 새 내용 가져오기
-        content = request.json.get('content')
-        if content is None:
-            return jsonify({
-                'status': 'error',
-                'message': '편집할 내용이 제공되지 않았습니다.'
-            }), 400
-        
-        # 1. 파일 내용 저장
-        try:
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-        except Exception as e:
-            return jsonify({
-                'status': 'error',
-                'message': f'파일을 저장하는 중 오류가 발생했습니다: {str(e)}'
-            }), 500
-        
-        # 2. 벡터 DB 업데이트 - 문서 ID 추출
-        doc_id = system_filename.split('_')[0]
-        
-        # 3. 텍스트 처리 및 새 청크 생성
-        try:
-            chunks = document_processor.process_text(
-                text=content,
-                doc_id=doc_id,
-                filename=original_filename,
-                file_type=file_extension
-            )
-            
-            # 4. DB 업데이트
-            update_result = database.update_document_embeddings(doc_id, chunks)
-            
-            if not update_result:
-                return jsonify({
-                    'status': 'error',
-                    'message': '벡터 데이터베이스 업데이트 중 오류가 발생했습니다.'
-                }), 500
-            
-            return jsonify({
-                'status': 'success',
-                'message': f"문서 '{original_filename}'이(가) 성공적으로 저장되고 벡터 DB에 동기화되었습니다.",
-                'chunk_count': len(chunks)
-            })
-            
-        except Exception as e:
-            return jsonify({
-                'status': 'error',
-                'message': f'문서 처리 중 오류가 발생했습니다: {str(e)}'
-            }), 500
-            
-    except Exception as e:
-        print(f"Error editing document: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': f'문서 편집 중 오류가 발생했습니다: {str(e)}'
-        }), 500
+    """문서 내용 편집 API - 요청에 따라 비활성화됨"""
+    return jsonify({
+        'status': 'error',
+        'message': '편집 기능이 비활성화되었습니다. 모든 문서는 읽기 전용으로 제공됩니다.'
+    }), 403
         
 @app.route('/api/upload-chunk', methods=['POST'])
 def upload_chunk():
