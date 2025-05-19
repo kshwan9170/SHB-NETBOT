@@ -11,7 +11,7 @@ import openai
 from openai import OpenAI
 
 # 게시판 모델 임포트
-from models import init_db, get_db, close_db, InquiryBoard, FeedbackBoard, ReportBoard, ChatFeedbackModel
+from models import init_db, get_db, close_db, InquiryBoard, FeedbackBoard, ReportBoard, ChatFeedbackModel, FAQModel
 
 # Custom modules
 import database
@@ -574,7 +574,7 @@ def upload_chunk():
 
 @app.route('/api/delete', methods=['POST'])
 def delete_file():
-    """업로드된 파일 삭제"""
+    """업로드된 파일 삭제 - 파일 시스템 및 벡터 DB에서 함께 삭제"""
     try:
         # 요청 데이터 로깅
         data = request.get_json()
@@ -598,27 +598,46 @@ def delete_file():
             print(f"File not found: {file_path}")
             return jsonify({'success': False, 'error': '파일을 찾을 수 없습니다.'}), 404
         
-        # 업로드 폴더 상태 확인
-        print("Current files in upload folder:")
-        for f in os.listdir(app.config['UPLOAD_FOLDER']):
-            print(f" - {f}")
-            
+        # 원본 파일명 추출 (사용자 표시용)
+        original_filename = "_".join(system_filename.split("_")[1:])
+        
         # 파일 삭제
         os.remove(file_path)
-        print(f"File removed: {file_path}")
+        print(f"File removed from filesystem: {file_path}")
         
         # 벡터 DB에서 해당 문서 관련 데이터 삭제
+        db_deletion_successful = False
+        db_error_message = ""
+        
         # 파일명에서 UUID 추출
         try:
             file_uuid = system_filename.split('_')[0]
             print(f"Extracted UUID: {file_uuid}")
-            database.delete_document(file_uuid)
-            print(f"Document deleted from vector database with ID: {file_uuid}")
-        except Exception as db_err:
-            print(f"DB 삭제 중 오류 발생: {str(db_err)}")
-            # DB 오류는 무시하고 파일 삭제 성공으로 처리
+            db_deletion_successful = database.delete_document(file_uuid)
             
-        return jsonify({'success': True, 'message': f'파일이 삭제되었습니다.'})
+            if db_deletion_successful:
+                print(f"Document successfully deleted from vector database with ID: {file_uuid}")
+            else:
+                db_error_message = "벡터 데이터베이스에서 문서를 찾을 수 없습니다."
+                print(f"No document found in vector database with ID: {file_uuid}")
+        except Exception as db_err:
+            db_error_message = str(db_err)
+            print(f"DB 삭제 중 오류 발생: {db_error_message}")
+        
+        # 응답 메시지 구성
+        response_message = f'파일이 성공적으로 삭제되었습니다.'
+        if db_deletion_successful:
+            response_message += ' 벡터 데이터베이스에서도 관련 정보가 함께 삭제되었습니다.'
+        elif db_error_message:
+            response_message += f' 그러나 벡터 데이터베이스 삭제 중 오류가 발생했습니다: {db_error_message}'
+        
+        return jsonify({
+            'success': True, 
+            'message': response_message,
+            'filename': original_filename,
+            'vector_db_cleaned': db_deletion_successful,
+            'db_error': db_error_message if not db_deletion_successful and db_error_message else None
+        })
         
     except Exception as e:
         error_msg = str(e)
@@ -994,19 +1013,59 @@ def sync_documents():
             db_status_before = database.get_database_status()
             sync_needed = False
             
-            # 빠른 검사: 이미 모든 파일이 처리되었는지 확인
-            # 문서 ID 목록 가져오기
+            # 벡터 DB에 있는 모든 문서 ID 목록 가져오기
             existing_doc_ids = database.get_all_document_ids()
-            files_to_process = []
             
-            # 처리가 필요한 파일만 필터링
+            # 파일 시스템에 있는 문서 ID 목록
+            file_system_doc_ids = {file_info['doc_id'] for file_info in files}
+            
+            # 파일 시스템에는 없지만 벡터 DB에 있는 문서 ID (고아 문서)
+            orphan_doc_ids = existing_doc_ids - file_system_doc_ids
+            
+            # 고아 문서가 있으면 벡터 DB에서 정리
+            if orphan_doc_ids:
+                orphan_count = len(orphan_doc_ids)
+                yield json.dumps({
+                    'progress': 20,
+                    'message': f'파일은 삭제되었지만 벡터 DB에는 여전히 남아있는 {orphan_count}개의 문서를 정리합니다.'
+                }) + '\n'
+                
+                # 벡터 DB에서 고아 문서 제거
+                for i, orphan_id in enumerate(orphan_doc_ids):
+                    try:
+                        # 벡터 DB에서 문서 삭제
+                        deleted = database.delete_document(orphan_id)
+                        if deleted:
+                            yield json.dumps({
+                                'progress': 20 + int((i / orphan_count) * 10),
+                                'message': f'벡터 DB에서 문서 ID {orphan_id} 제거 완료 ({i+1}/{orphan_count})'
+                            }) + '\n'
+                            sync_needed = True
+                        else:
+                            yield json.dumps({
+                                'progress': 20 + int((i / orphan_count) * 10),
+                                'message': f'문서 ID {orphan_id}를 벡터 DB에서 찾을 수 없습니다 ({i+1}/{orphan_count})'
+                            }) + '\n'
+                    except Exception as e:
+                        yield json.dumps({
+                            'progress': 20 + int((i / orphan_count) * 10),
+                            'message': f'벡터 DB에서 문서 ID {orphan_id} 제거 실패: {str(e)}'
+                        }) + '\n'
+                
+                yield json.dumps({
+                    'progress': 30,
+                    'message': f'벡터 DB에서 불필요한 {orphan_count}개 문서 정리 완료. 이제 삭제된 문서 정보는 더 이상 사용되지 않습니다.'
+                }) + '\n'
+            
+            # 처리가 필요한 파일 필터링 (벡터 DB에 없는 파일)
+            files_to_process = []
             for file_info in files:
                 doc_id = file_info['doc_id']
                 if doc_id not in existing_doc_ids:
                     files_to_process.append(file_info)
             
-            # 모든 파일이 이미 처리되었으면 동기화 필요 없음
-            if not files_to_process:
+            # 모든 파일이 이미 처리되었고 고아 문서도 없으면 동기화 필요 없음
+            if not files_to_process and not orphan_doc_ids:
                 yield json.dumps({
                     'progress': 100,
                     'message': f'🛈 동기화할 항목이 없습니다. 현재 모든 파일은 최신 상태입니다.'
@@ -1099,6 +1158,178 @@ def sync_documents():
     except Exception as e:
         print(f"문서 동기화 오류: {str(e)}")
         return jsonify({'error': str(e)}), 500
+
+# ====== FAQ 관리 (Fine-tuning 기반) ======
+@app.route('/faq')
+def faq_list():
+    """FAQ 목록 페이지"""
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 10, type=int)
+    search = request.args.get('search', '')
+    is_admin = request.args.get('admin', '0') == '1'
+    
+    faq_model = FAQModel()
+    
+    # 검색어가 있으면 검색 결과를, 없으면 전체 목록을 가져옴
+    if search:
+        result = faq_model.search_faqs(search, page, per_page, is_admin)
+    else:
+        result = faq_model.get_all_faqs(page, per_page, is_admin)
+    
+    # 카테고리 목록 조회
+    categories = faq_model.get_faq_categories()
+    
+    return render_template(
+        'faq_list.html',
+        faqs=result['items'],
+        page=result['page'],
+        per_page=result['per_page'],
+        total_pages=result['total_pages'],
+        total_count=result['total_count'],
+        search=search,
+        categories=categories,
+        is_admin=is_admin
+    )
+
+@app.route('/faq/<int:faq_id>')
+def faq_view(faq_id):
+    """FAQ 상세 페이지"""
+    is_admin = request.args.get('admin', '0') == '1'
+    
+    faq_model = FAQModel()
+    faq = faq_model.get_faq_by_id(faq_id, is_admin)
+    
+    if not faq:
+        abort(404)
+    
+    # 카테고리 목록 조회
+    categories = faq_model.get_faq_categories()
+    
+    return render_template(
+        'faq_view.html',
+        faq=faq,
+        categories=categories,
+        is_admin=is_admin
+    )
+
+@app.route('/faq/create', methods=['GET', 'POST'])
+def faq_create():
+    """FAQ 생성 페이지"""
+    faq_model = FAQModel()
+    
+    if request.method == 'POST':
+        question = request.form.get('question', '')
+        answer = request.form.get('answer', '')
+        category = request.form.get('category', '')
+        is_published = request.form.get('is_published', '') == 'on'
+        
+        # 필수 필드 검증
+        if not (question and answer and category):
+            return render_template(
+                'faq_create.html',
+                error="질문, 답변, 카테고리는 필수 입력 항목입니다.",
+                categories=faq_model.get_faq_categories()
+            )
+        
+        # FAQ 생성
+        faq_id = faq_model.create_faq(question, answer, category, is_published)
+        
+        return redirect(url_for('faq_view', faq_id=faq_id, admin=1))
+    
+    # GET 요청: 생성 페이지 표시
+    return render_template(
+        'faq_create.html',
+        categories=faq_model.get_faq_categories()
+    )
+
+@app.route('/faq/edit/<int:faq_id>', methods=['GET', 'POST'])
+def faq_edit(faq_id):
+    """FAQ 수정 페이지"""
+    faq_model = FAQModel()
+    faq = faq_model.get_faq_by_id(faq_id, True)
+    
+    if not faq:
+        abort(404)
+    
+    if request.method == 'POST':
+        question = request.form.get('question', '')
+        answer = request.form.get('answer', '')
+        category = request.form.get('category', '')
+        is_published = request.form.get('is_published', '') == 'on'
+        model_reflected = request.form.get('model_reflected', '') == 'on'
+        
+        # 필수 필드 검증
+        if not (question and answer and category):
+            return render_template(
+                'faq_edit.html',
+                error="질문, 답변, 카테고리는 필수 입력 항목입니다.",
+                faq=faq,
+                categories=faq_model.get_faq_categories()
+            )
+        
+        # FAQ 업데이트
+        faq_model.update_faq(
+            faq_id,
+            question=question,
+            answer=answer,
+            category=category,
+            is_published=is_published,
+            model_reflected=model_reflected
+        )
+        
+        return redirect(url_for('faq_view', faq_id=faq_id, admin=1))
+    
+    # GET 요청: 수정 페이지 표시
+    return render_template(
+        'faq_edit.html',
+        faq=faq,
+        categories=faq_model.get_faq_categories()
+    )
+
+@app.route('/faq/delete/<int:faq_id>', methods=['POST'])
+def faq_delete(faq_id):
+    """FAQ 삭제"""
+    faq_model = FAQModel()
+    faq_model.delete_faq(faq_id)
+    return redirect(url_for('faq_list', admin=1))
+
+@app.route('/faq/feedback/<int:faq_id>', methods=['POST'])
+def faq_feedback(faq_id):
+    """FAQ 피드백 처리 (좋아요/싫어요)"""
+    faq_model = FAQModel()
+    feedback_type = request.form.get('feedback_type', '')
+    
+    if feedback_type not in ['positive', 'negative']:
+        return jsonify({'success': False, 'message': '잘못된 피드백 유형입니다.'})
+    
+    is_positive = (feedback_type == 'positive')
+    success = faq_model.update_feedback(faq_id, is_positive)
+    
+    return jsonify({
+        'success': success,
+        'message': '피드백이 성공적으로 처리되었습니다.' if success else '피드백 처리 중 오류가 발생했습니다.'
+    })
+
+@app.route('/faq/export', methods=['GET'])
+def faq_export():
+    """FAQ 데이터를 Fine-tuning용 JSONL로 내보내기"""
+    include_unpublished = request.args.get('include_unpublished', '0') == '1'
+    include_not_reflected = request.args.get('include_not_reflected', '0') == '1'
+    
+    faq_model = FAQModel()
+    jsonl_data = faq_model.export_to_jsonl(include_unpublished, include_not_reflected)
+    
+    # 응답 생성
+    response = app.response_class(
+        response=jsonl_data,
+        status=200,
+        mimetype='application/jsonl'
+    )
+    
+    # 다운로드 헤더 추가
+    response.headers["Content-Disposition"] = f"attachment; filename=faq_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl"
+    
+    return response
 
 # 데이터베이스 초기화 후 앱 실행
 if __name__ == '__main__':
