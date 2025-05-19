@@ -349,10 +349,10 @@
 <!-- FAQ 삭제 확인 모달 -->
 <div class="modal fade" id="deleteFaqModal" tabindex="-1" role="dialog" aria-labelledby="deleteFaqModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
-        <div class="modal-content border-0 shadow">
+        <div class="modal-content border-0 shadow-lg">
             <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title" id="deleteFaqModalLabel">
-                    <i class="fas fa-exclamation-triangle mr-2"></i>FAQ 삭제 확인
+                <h5 class="modal-title font-weight-bold" id="deleteFaqModalLabel">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>FAQ 삭제
                 </h5>
                 <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
@@ -360,23 +360,23 @@
             </div>
             <div class="modal-body p-4">
                 <div class="text-center mb-4">
-                    <div class="mb-3">
-                        <i class="fas fa-trash-alt fa-3x text-danger mb-3"></i>
-                        <h4>정말로 이 FAQ를 삭제하시겠습니까?</h4>
+                    <div class="mb-4">
+                        <i class="fas fa-trash-alt fa-4x text-danger mb-3"></i>
+                        <h4 class="font-weight-bold">정말로 이 FAQ를 삭제하시겠습니까?</h4>
                     </div>
-                    <p class="alert alert-warning">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        이 작업은 되돌릴 수 없으며, 모든 FAQ 내용과 피드백 데이터가 영구적으로 삭제됩니다.
-                    </p>
+                    <div class="alert alert-warning py-3">
+                        <i class="fas fa-exclamation-circle mr-2"></i>
+                        <strong>주의:</strong> 이 작업은 되돌릴 수 없으며, 모든 FAQ 내용과 피드백 데이터가 영구적으로 삭제됩니다.
+                    </div>
                 </div>
             </div>
-            <div class="modal-footer bg-light">
-                <button type="button" class="btn btn-lg btn-secondary" data-dismiss="modal">
+            <div class="modal-footer bg-light d-flex justify-content-center">
+                <button type="button" class="btn btn-lg btn-secondary px-4 mx-2" data-dismiss="modal">
                     <i class="fas fa-times mr-1"></i> 취소
                 </button>
                 <form id="deleteFaqForm" method="POST" class="d-inline">
-                    <button type="submit" class="btn btn-lg btn-danger">
-                        <i class="fas fa-trash-alt mr-1"></i> 삭제 확인
+                    <button type="submit" class="btn btn-lg btn-danger px-4 mx-2">
+                        <i class="fas fa-trash-alt mr-1"></i> 삭제
                     </button>
                 </form>
             </div>
@@ -386,8 +386,13 @@
 
 <!-- 피드백 응답 모달 - 인라인 피드백으로 대체 -->
 
+    <!-- 푸터 구분선 -->
+    <div class="container mt-5">
+        <hr class="border-top border-light">
+    </div>
+    
     <!-- 푸터 -->
-    <footer class="footer">
+    <footer class="footer mt-5">
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
@@ -401,6 +406,7 @@
                         <li><a href="/#chat">챗봇</a></li>
                         <li><a href="/#documents">문서관리</a></li>
                         <li><a href="/#support">고객지원</a></li>
+                        <li><a href="/faq">자주 묻는 질문</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
@@ -425,30 +431,78 @@
     <script src="{{ url_for('static', filename='js/modern.js') }}"></script>
     
     <style>
+        /* 전체 스타일 통일 */
+        body {
+            --primary-color: #0c73d7;
+            --secondary-color: #6c757d;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --success-color: #28a745;
+            --light-color: #f8f9fa;
+            --border-radius: 0.5rem;
+            --shadow-sm: 0 .125rem .25rem rgba(0,0,0,.075);
+            --shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+            --shadow-lg: 0 1rem 3rem rgba(0,0,0,.175);
+            --transition-time: 0.3s;
+        }
+        
+        /* 모달 스타일 향상 */
+        .modal {
+            overflow-y: auto;
+        }
+        
+        .modal-dialog {
+            margin-top: 10vh;
+        }
+        
+        .modal-content {
+            border-radius: var(--border-radius);
+        }
+        
+        /* 버튼 일관성 */
+        .btn {
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            border-radius: 0.3rem;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .btn-lg {
+            padding: 0.75rem 1.5rem;
+        }
+        
+        .btn-primary, .btn-danger, .btn-secondary {
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+        
         /* FAQ 카드 호버 효과 */
         .hover-shadow {
-            transition: all 0.3s ease;
+            transition: all var(--transition-time) ease;
         }
+        
         .hover-shadow:hover {
             transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+            box-shadow: var(--shadow) !important;
         }
         
         /* 토글 아이콘 애니메이션 */
         .toggle-icon {
-            transition: transform 0.3s ease;
+            transition: transform var(--transition-time) ease;
             display: inline-block;
         }
+        
         .collapsed .toggle-icon {
             transform: rotate(0deg);
         }
+        
         .btn-link:not(.collapsed) .toggle-icon {
             transform: rotate(90deg);
         }
         
         /* 필터 버튼 강조 효과 */
         .category-btn.active {
-            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+            box-shadow: 0 0 0 0.2rem rgba(12, 115, 215, 0.25);
             font-weight: bold;
         }
         
@@ -456,8 +510,31 @@
         .feedback-btn {
             transition: all 0.2s ease;
         }
+        
         .feedback-btn:hover {
             transform: scale(1.05);
+        }
+        
+        /* 푸터 개선 */
+        .footer {
+            padding-top: 2rem;
+            background-color: #f8f9fa;
+            margin-top: 3rem;
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .footer-content {
+            padding-bottom: 1.5rem;
+        }
+        
+        .footer a {
+            color: var(--primary-color);
+            transition: color 0.2s;
+        }
+        
+        .footer a:hover {
+            color: #0056b3;
+            text-decoration: none;
         }
     </style>
     
