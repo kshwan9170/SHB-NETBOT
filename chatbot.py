@@ -3,12 +3,17 @@ from typing import List, Dict, Any, Optional, Tuple
 import json
 import openai
 import re
+import pandas as pd
+from pathlib import Path
 from openai import OpenAI
 from database import search_similar_docs
 
 # Initialize OpenAI client
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
+
+# 업로드된 파일 디렉토리 경로
+UPLOAD_FOLDER = 'uploaded_files'
 
 def detect_language(text: str) -> str:
     """
@@ -55,6 +60,741 @@ def retrieve_relevant_documents(query: str, top_k: int = 5) -> Tuple[List[Any], 
         print(f"ERROR: RAG pipeline failed during document retrieval: {str(e)}")
         return [], ""
 
+# 엑셀 처리 관련 함수들
+def find_excel_files(search_keyword="업무 절차 안내 가이드"):
+    """
+    업로드된 파일 중 엑셀 파일을 검색합니다.
+    
+    Args:
+        search_keyword: 검색할 키워드
+        
+    Returns:
+        찾은 엑셀 파일의 경로 목록
+    """
+    excel_files = []
+    
+    # 업로드 폴더가 존재하는지 확인
+    if not os.path.exists(UPLOAD_FOLDER):
+        print(f"업로드 폴더가 존재하지 않습니다: {UPLOAD_FOLDER}")
+        return excel_files
+    
+    # 업로드 폴더 내 파일 검색
+    for filename in os.listdir(UPLOAD_FOLDER):
+        if filename.endswith(('.xlsx', '.xls')):
+            # 키워드가 포함된 파일인지 확인
+            if search_keyword.lower() in filename.lower():
+                file_path = os.path.join(UPLOAD_FOLDER, filename)
+                excel_files.append(file_path)
+    
+    # 키워드가 없으면 모든 엑셀 파일 검색
+    if not excel_files:
+        for filename in os.listdir(UPLOAD_FOLDER):
+            if filename.endswith(('.xlsx', '.xls')):
+                file_path = os.path.join(UPLOAD_FOLDER, filename)
+                excel_files.append(file_path)
+    
+    return excel_files
+
+def get_sheet_names(excel_file):
+    """
+    엑셀 파일의 시트 이름 목록을 반환합니다.
+    
+    Args:
+        excel_file: 엑셀 파일 경로
+        
+    Returns:
+        시트 이름 목록
+    """
+    try:
+        xls = pd.ExcelFile(excel_file)
+        return xls.sheet_names
+    except Exception as e:
+        print(f"시트 이름을 가져오는 중 오류 발생: {str(e)}")
+        return []
+
+def read_excel_sheet(excel_file, sheet_name):
+    """
+    엑셀 파일의 특정 시트를 DataFrame으로 읽어옵니다.
+    
+    Args:
+        excel_file: 엑셀 파일 경로
+        sheet_name: 시트 이름
+        
+    Returns:
+        pandas DataFrame
+    """
+    try:
+        # 모든 열을 문자열로 처리하여 데이터 유실 방지
+        df = pd.read_excel(excel_file, sheet_name=sheet_name, dtype=str, na_filter=False)
+        
+        # NaN 값을 빈 문자열로 대체
+        df = df.fillna('')
+        
+        return df
+    except Exception as e:
+        print(f"엑셀 시트 '{sheet_name}'를 읽는 중 오류 발생: {str(e)}")
+        return pd.DataFrame()
+
+def extract_keywords_from_query(query):
+    """
+    사용자 질문에서 키워드를 추출합니다.
+    
+    Args:
+        query: 사용자 질문
+        
+    Returns:
+        추출된 키워드 리스트
+    """
+    # 기본 키워드 추출 (공백 기준)
+    basic_keywords = query.split()
+    
+    # OpenAI를 사용한 키워드 추출 (API 키가 있는 경우)
+    try:
+        if OPENAI_API_KEY:
+            messages = [
+                {"role": "system", "content": "사용자의 질문에서 중요한 키워드를 추출해주세요. JSON 형식의 배열로 반환해야 합니다."},
+                {"role": "user", "content": f"다음 질문에서 네트워크 관련 중요 키워드를 추출해주세요: {query}"}
+            ]
+            
+            response = openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                temperature=0.3,
+                max_tokens=150
+            )
+            
+            content = response.choices[0].message.content
+            
+            # JSON 부분 추출 시도
+            try:
+                # JSON 배열이 직접 반환된 경우
+                keywords = json.loads(content)
+                if isinstance(keywords, list):
+                    return keywords
+            except:
+                # 텍스트에서 JSON 배열 찾기 시도
+                match = re.search(r'\[(.*?)\]', content)
+                if match:
+                    try:
+                        keywords = json.loads('[' + match.group(1) + ']')
+                        if isinstance(keywords, list):
+                            return keywords
+                    except:
+                        pass
+                
+                # 줄바꿈을 기준으로 키워드 추출 시도
+                if '\n' in content:
+                    lines = content.split('\n')
+                    keywords = []
+                    for line in lines:
+                        line = line.strip()
+                        if line and not line.startswith(('•', '-', '*', '1.', '2.')):
+                            keywords.append(line)
+                        elif line.startswith(('•', '-', '*')):
+                            keyword = line[1:].strip()
+                            keywords.append(keyword)
+                        elif re.match(r'^\d+\.', line):
+                            keyword = re.sub(r'^\d+\.', '', line).strip()
+                            keywords.append(keyword)
+                    
+                    if keywords:
+                        return keywords
+    except Exception as e:
+        print(f"OpenAI를 사용한 키워드 추출 중 오류 발생: {str(e)}")
+    
+    # 기본 키워드 반환
+    return basic_keywords
+
+def find_relevant_rows(df, keywords):
+    """
+    키워드와 관련된 행을 찾습니다.
+    
+    Args:
+        df: 데이터프레임
+        keywords: 키워드 리스트
+        
+    Returns:
+        관련 행의 인덱스 리스트
+    """
+    relevant_indices = []
+    
+    # 각 행에 대해 키워드 매칭 확인
+    for idx, row in df.iterrows():
+        row_text = ' '.join(str(val).lower() for val in row.values)
+        
+        # 키워드 일치 확인
+        match_score = 0
+        for keyword in keywords:
+            if keyword.lower() in row_text:
+                match_score += 1
+        
+        if match_score > 0:
+            # (인덱스, 매칭 점수) 형태로 저장
+            relevant_indices.append((idx, match_score))
+    
+    # 매칭 점수 기준으로 정렬하고 인덱스만 추출
+    if relevant_indices:
+        relevant_indices.sort(key=lambda x: x[1], reverse=True)
+        return [idx for idx, _ in relevant_indices]
+    
+    # 매칭되는 내용이 없으면 처음 몇 개 행만 반환
+    return list(range(min(5, len(df))))
+
+def dataframe_to_text(df):
+    """
+    데이터프레임을 문자열로 변환합니다.
+    
+    Args:
+        df: 데이터프레임
+        
+    Returns:
+        데이터프레임 내용을 표현한 문자열
+    """
+    # 빈 데이터프레임 처리
+    if df.empty:
+        return "데이터가 없습니다."
+    
+    # 데이터프레임의 열 이름과 값을 텍스트로 변환
+    text_parts = []
+    
+    # 테이블 헤더 추가
+    columns = ' | '.join(df.columns)
+    text_parts.append(columns)
+    text_parts.append('-' * len(columns))
+    
+    # 각 행 데이터 추가
+    for _, row in df.iterrows():
+        row_text = ' | '.join(str(val) for val in row.values)
+        text_parts.append(row_text)
+    
+    return '\n'.join(text_parts)
+
+def format_reference_result(df, search_term):
+    """
+    조회 결과를 포맷팅합니다.
+    
+    Args:
+        df: 결과 데이터프레임
+        search_term: 검색어
+        
+    Returns:
+        포맷팅된 결과 문자열
+    """
+    if df.empty:
+        return f"'{search_term}'에 대한 정보를 찾을 수 없습니다."
+    
+    # 마크다운 테이블 형식으로 변환
+    md_table = []
+    
+    # 헤더 추가
+    headers = '| ' + ' | '.join(df.columns) + ' |'
+    md_table.append(headers)
+    
+    # 구분선 추가
+    separator = '| ' + ' | '.join(['---'] * len(df.columns)) + ' |'
+    md_table.append(separator)
+    
+    # 데이터 행 추가
+    for _, row in df.iterrows():
+        row_values = '| ' + ' | '.join(str(val) for val in row.values) + ' |'
+        md_table.append(row_values)
+    
+    result = '\n'.join(md_table)
+    result = f"'{search_term}'에 대한 조회 결과:\n\n{result}"
+    
+    return result
+
+def summarize_dataframe(df):
+    """
+    데이터프레임 내용을 요약합니다.
+    
+    Args:
+        df: 데이터프레임
+        
+    Returns:
+        요약 문자열
+    """
+    if df.empty:
+        return "데이터가 없습니다."
+    
+    # 마크다운 테이블 형식으로 변환
+    md_table = []
+    
+    # 헤더 추가
+    headers = '| ' + ' | '.join(df.columns) + ' |'
+    md_table.append(headers)
+    
+    # 구분선 추가
+    separator = '| ' + ' | '.join(['---'] * len(df.columns)) + ' |'
+    md_table.append(separator)
+    
+    # 데이터 행 추가 (최대 5개 행만)
+    for _, row in df.head(5).iterrows():
+        row_values = '| ' + ' | '.join(str(val) for val in row.values) + ' |'
+        md_table.append(row_values)
+    
+    result = '\n'.join(md_table)
+    
+    # 행이 더 있으면 메시지 추가
+    if len(df) > 5:
+        result += f"\n\n(총 {len(df)}개 중 5개 결과만 표시합니다.)"
+    
+    return result
+
+def process_excel_query(query):
+    """
+    엑셀 기반 처리 흐름에 따라 사용자 질문을 처리합니다.
+    
+    1. 전체_관리_시트를 검색하여 업무 유형/키워드 파악
+    2. 연결 시트로 이동하여 필요 데이터 찾기
+    3. 처리 방식에 맞게 응답 생성
+    
+    Args:
+        query: 사용자 질문
+        
+    Returns:
+        처리 결과와 응답 내용을 담은 딕셔너리
+    """
+    # 결과 저장용 딕셔너리
+    result = {
+        "found": False,
+        "response": "",
+        "from_excel": True,
+        "category": "",
+        "sheet_used": "",
+        "response_type": ""
+    }
+    
+    # 엑셀 파일 검색
+    excel_files = find_excel_files()
+    if not excel_files:
+        result["response"] = "참조할 엑셀 데이터를 찾을 수 없습니다."
+        result["from_excel"] = False
+        return result
+    
+    # 첫 번째 엑셀 파일 사용
+    excel_file = excel_files[0]
+    print(f"엑셀 파일 사용: {excel_file}")
+    
+    # 시트 목록 가져오기
+    sheet_names = get_sheet_names(excel_file)
+    if not sheet_names:
+        result["response"] = "엑셀 파일에서 시트를 찾을 수 없습니다."
+        result["from_excel"] = False
+        return result
+    
+    print(f"시트 목록: {sheet_names}")
+    
+    # 1. 전체_관리_시트 검색
+    main_sheet = None
+    for sheet in sheet_names:
+        if "전체" in sheet and "관리" in sheet:
+            main_sheet = sheet
+            break
+    
+    # 전체 관리 시트가 없으면 첫 번째 시트 사용
+    if not main_sheet:
+        main_sheet = sheet_names[0]
+    
+    print(f"메인 시트 사용: {main_sheet}")
+    
+    # 전체 관리 시트 데이터 읽기
+    main_df = read_excel_sheet(excel_file, main_sheet)
+    if main_df.empty:
+        result["response"] = f"'{main_sheet}' 시트에서 데이터를 읽을 수 없습니다."
+        result["from_excel"] = False
+        return result
+    
+    # 전체 관리 시트의 데이터를 기반으로 사용자 질문과 관련된 내용 찾기
+    matched_row = None
+    target_sheet = None
+    category = None
+    response_type = "DB 응답 (자연어)"  # 기본 응답 유형
+    
+    # 질문에서 키워드 추출 (OpenAI 사용)
+    query_keywords = extract_keywords_from_query(query)
+    print(f"추출된 키워드: {query_keywords}")
+    
+    # 각 행을 확인하며 매칭되는 내용 찾기
+    for idx, row in main_df.iterrows():
+        # 필요한 열이 존재하는지 확인
+        if '구분' in main_df.columns and '카테고리' in main_df.columns:
+            row_category = str(row.get('구분', '')) + " " + str(row.get('카테고리', ''))
+            keywords = []
+            
+            # 키워드 열 확인
+            for col in main_df.columns:
+                if '키워드' in col or '검색어' in col:
+                    if row[col]:
+                        keywords.extend(str(row[col]).split(','))
+            
+            # 시트 정보 열 확인
+            sheet_col = None
+            for col in main_df.columns:
+                if '시트' in col or '링크' in col:
+                    sheet_col = col
+                    break
+            
+            # 요약 내용 열 확인
+            summary_col = None
+            for col in main_df.columns:
+                if '요약' in col or '설명' in col:
+                    summary_col = col
+                    break
+            
+            # 처리 방식 열 확인
+            response_type_col = None
+            for col in main_df.columns:
+                if '처리' in col or '방식' in col:
+                    response_type_col = col
+                    break
+            
+            # 키워드 매칭 확인
+            match_found = False
+            for kw in query_keywords:
+                if any(kw.lower() in keyword.lower() for keyword in keywords):
+                    match_found = True
+                    break
+            
+            if match_found:
+                matched_row = row
+                category = row_category
+                
+                # 연결 시트 정보 추출
+                if sheet_col and row[sheet_col]:
+                    target_sheet_info = str(row[sheet_col])
+                    # "XX 시트 참조" 형식에서 시트 이름 추출
+                    sheet_match = re.search(r'([가-힣A-Za-z0-9_]+)[\s_]시트', target_sheet_info)
+                    if sheet_match:
+                        target_sheet = sheet_match.group(1)
+                
+                # 처리 방식 정보 추출
+                if response_type_col and row[response_type_col]:
+                    response_type = str(row[response_type_col])
+                
+                break
+    
+    # 매칭되는 내용을 찾지 못한 경우
+    if not matched_row or not target_sheet:
+        # 일단 기본 처리로 전환하고 첫 번째 내용 시트 사용
+        alternative_sheet = None
+        for sheet in sheet_names:
+            if "전체" not in sheet and "관리" not in sheet and sheet != main_sheet:
+                alternative_sheet = sheet
+                break
+        
+        if alternative_sheet:
+            target_sheet = alternative_sheet
+            result["sheet_used"] = "대체 시트 사용: " + target_sheet
+        else:
+            result["response"] = "질문과 관련된 정보를 찾을 수 없습니다."
+            result["from_excel"] = False
+            return result
+    
+    # 2. 연결 시트로 이동하여 필요 데이터 찾기
+    # 실제 시트 이름 찾기 (부분 매칭)
+    actual_sheet = None
+    for sheet in sheet_names:
+        if target_sheet in sheet:
+            actual_sheet = sheet
+            break
+    
+    if not actual_sheet:
+        actual_sheet = target_sheet  # 직접 매칭 시도
+    
+    print(f"연결 시트 사용: {actual_sheet}")
+    
+    # 연결 시트 데이터 읽기
+    sheet_df = read_excel_sheet(excel_file, actual_sheet)
+    if sheet_df.empty:
+        result["response"] = f"'{actual_sheet}' 시트에서 데이터를 읽을 수 없습니다."
+        result["from_excel"] = False
+        return result
+    
+    # 3. 처리 방식에 맞게 응답 생성
+    result["found"] = True
+    result["category"] = category
+    result["sheet_used"] = actual_sheet
+    result["response_type"] = response_type
+    
+    # 처리 방식에 따른 분기 처리
+    if "자연어" in response_type:
+        # DB 응답 (자연어): 답변용 텍스트를 자연어로 응답
+        response = generate_natural_language_response(query, sheet_df, query_keywords)
+        result["response"] = response
+    
+    elif "참조" in response_type:
+        # DB 참조 응답: 특정 항목을 테이블에서 검색 후 응답
+        response = generate_reference_response(query, sheet_df, query_keywords)
+        result["response"] = response
+    
+    elif "조건" in response_type:
+        # DB + 조건 응답: 조건을 판단해서 응답
+        response = generate_conditional_response(query, sheet_df, query_keywords)
+        result["response"] = response
+    
+    elif "대외계" in response_type:
+        # 대외계 조회 응답: 대외계 정보 조회 응답
+        response = generate_external_system_response(query, sheet_df, query_keywords)
+        result["response"] = response
+    
+    else:
+        # 기본 응답 방식
+        response = generate_natural_language_response(query, sheet_df, query_keywords)
+        result["response"] = response
+    
+    return result
+
+def generate_natural_language_response(query, df, keywords):
+    """
+    자연어 응답을 생성합니다.
+    
+    Args:
+        query: 사용자 질문
+        df: 데이터프레임
+        keywords: 추출된 키워드
+        
+    Returns:
+        생성된 응답
+    """
+    # 관련 행 찾기
+    relevant_rows = find_relevant_rows(df, keywords)
+    
+    if not relevant_rows:
+        return "관련된 정보를 찾을 수 없습니다."
+    
+    # 데이터프레임의 내용을 문자열로 변환
+    df_info = dataframe_to_text(df.iloc[relevant_rows])
+    
+    # OpenAI를 사용한 응답 생성
+    try:
+        if OPENAI_API_KEY:
+            messages = [
+                {"role": "system", "content": """
+                신한은행 네트워크 담당자 역할을 하는 챗봇으로, 네트워크 시스템, 장비, IP, 대외계, 보안 관련 질문에 답변합니다.
+                주어진 엑셀 데이터를 바탕으로 사용자 질문에 정확하고 친절하게 대답해주세요.
+                간결하고 직관적인 설명을 제공하되, 중요한 세부사항은 포함해야 합니다.
+                
+                응답 스타일:
+                - 시작은 친근한 인사나 사용자 상황 인식으로 시작 (예: "네! NexG 장비에 IP를 설정하시려면...")
+                - 주요 제목은 ## 수준으로, 부제목은 ### 수준으로 구조화
+                - 대화형 문체로 정보 전달 (예: "먼저 설정 모드로 들어가볼게요", "다음으로 이렇게 해보세요")
+                - 중요 정보는 **굵은 글씨**로 강조
+                - 사용자에게 추가 질문이나 확인이 필요한 경우 마지막에 물어봄
+                """},
+                {"role": "user", "content": f"사용자 질문: {query}\n\n엑셀 데이터:\n{df_info}"}
+            ]
+            
+            response = openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                temperature=0.7,
+                max_tokens=800
+            )
+            
+            return response.choices[0].message.content
+    except Exception as e:
+        print(f"OpenAI를 사용한 응답 생성 중 오류 발생: {str(e)}")
+    
+    # API 호출 실패 시 기본 응답 제공
+    return summarize_dataframe(df.iloc[relevant_rows])
+
+def generate_reference_response(query, df, keywords):
+    """
+    DB 참조 응답을 생성합니다 (특정 항목 직접 검색).
+    
+    Args:
+        query: 사용자 질문
+        df: 데이터프레임
+        keywords: 추출된 키워드
+        
+    Returns:
+        생성된 응답
+    """
+    # IP 주소 형식 검색
+    ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
+    ip_matches = re.findall(ip_pattern, query)
+    
+    # IP 주소가 있으면 해당 IP로 검색
+    if ip_matches:
+        target_ip = ip_matches[0]
+        
+        # 각 열에서 IP 주소 검색
+        for col in df.columns:
+            # IP 주소 열로 추정되는 열 찾기
+            if any(kw in col.lower() for kw in ['ip', '주소', 'address']):
+                mask = df[col].str.contains(target_ip, regex=False, na=False)
+                if mask.any():
+                    matched_rows = df[mask]
+                    result = format_reference_result(matched_rows, target_ip)
+                    return result
+        
+        # 모든 열에서 IP 검색
+        for col in df.columns:
+            mask = df[col].str.contains(target_ip, regex=False, na=False)
+            if mask.any():
+                matched_rows = df[mask]
+                result = format_reference_result(matched_rows, target_ip)
+                return result
+    
+    # 일반 키워드 검색
+    relevant_rows = find_relevant_rows(df, keywords)
+    
+    if not relevant_rows:
+        return "관련된 정보를 찾을 수 없습니다."
+    
+    # 데이터프레임의 내용을 문자열로 변환
+    df_info = dataframe_to_text(df.iloc[relevant_rows])
+    
+    # OpenAI를 사용한 응답 생성
+    try:
+        if OPENAI_API_KEY:
+            messages = [
+                {"role": "system", "content": """
+                신한은행 네트워크 담당자 역할을 하는 챗봇으로, 사용자가 특정 정보를 조회하려고 합니다.
+                엑셀 데이터에서 해당 정보를 찾아 표 형식으로 정리하여 반환해주세요.
+                정보 조회 결과를 간결하고 명확하게 표시하되, 필요한 모든 정보가 포함되어야 합니다.
+                표 형식은 마크다운 표 형식으로 제공하세요.
+                
+                응답 형식:
+                1. 시작은 친근한 인사로 시작
+                2. 조회 결과를 마크다운 테이블로 제공
+                3. 필요한 경우 결과에 대한 간단한 설명 추가
+                """},
+                {"role": "user", "content": f"사용자 질문(정보 조회 요청): {query}\n\n엑셀 데이터:\n{df_info}"}
+            ]
+            
+            response = openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                temperature=0.7,
+                max_tokens=800
+            )
+            
+            return response.choices[0].message.content
+    except Exception as e:
+        print(f"OpenAI를 사용한 응답 생성 중 오류 발생: {str(e)}")
+    
+    # API 호출 실패 시 기본 응답 제공
+    return summarize_dataframe(df.iloc[relevant_rows])
+
+def generate_conditional_response(query, df, keywords):
+    """
+    DB + 조건 응답을 생성합니다 (조건 판단).
+    
+    Args:
+        query: 사용자 질문
+        df: 데이터프레임
+        keywords: 추출된 키워드
+        
+    Returns:
+        생성된 응답
+    """
+    # 관련 행 찾기
+    relevant_rows = find_relevant_rows(df, keywords)
+    
+    if not relevant_rows:
+        return "관련된 정보를 찾을 수 없습니다."
+    
+    # 데이터프레임의 내용을 문자열로 변환
+    df_info = dataframe_to_text(df.iloc[relevant_rows])
+    
+    # OpenAI를 사용한 조건부 응답 생성
+    try:
+        if OPENAI_API_KEY:
+            messages = [
+                {"role": "system", "content": """
+                신한은행 네트워크 담당자 역할을 하는 챗봇으로, 사용자 질문에 대해 조건에 따른 판단이 필요합니다.
+                주어진 엑셀 데이터를 분석하여, 조건을 판단하고 적절한 답변을 제공해주세요.
+                예를 들어 'IP 장기미사용 여부', '네트워크 연결 상태' 등의 조건을 판단해야 합니다.
+                명확한 결론과 필요한 조치 사항을 포함해주세요.
+                
+                응답 형식:
+                1. 시작은 사용자 질문 인식으로 시작
+                2. 조건 판단 결과 설명
+                3. 필요한 조치 사항 안내
+                4. 마무리 말 또는 후속 질문
+                """},
+                {"role": "user", "content": f"사용자 질문(조건 판단 요청): {query}\n\n엑셀 데이터:\n{df_info}"}
+            ]
+            
+            response = openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                temperature=0.7,
+                max_tokens=800
+            )
+            
+            return response.choices[0].message.content
+    except Exception as e:
+        print(f"OpenAI를 사용한 응답 생성 중 오류 발생: {str(e)}")
+    
+    # API 호출 실패 시 기본 응답 제공
+    return summarize_dataframe(df.iloc[relevant_rows])
+
+def generate_external_system_response(query, df, keywords):
+    """
+    대외계 조회 응답을 생성합니다.
+    
+    Args:
+        query: 사용자 질문
+        df: 데이터프레임
+        keywords: 추출된 키워드
+        
+    Returns:
+        생성된 응답
+    """
+    # 대외계 관련 키워드 확인
+    external_keywords = ['기관', '회선', '담당자', '외부', '대외', '연락처']
+    has_external = any(kw in ' '.join(keywords).lower() for kw in external_keywords)
+    
+    # 대외계 키워드가 없는 경우 일반 참조 응답으로 처리
+    if not has_external:
+        return generate_reference_response(query, df, keywords)
+    
+    # 관련 행 찾기
+    relevant_rows = find_relevant_rows(df, keywords)
+    
+    if not relevant_rows:
+        return "관련된 대외계 정보를 찾을 수 없습니다."
+    
+    # 데이터프레임의 내용을 문자열로 변환
+    df_info = dataframe_to_text(df.iloc[relevant_rows])
+    
+    # OpenAI를 사용한 대외계 정보 응답 생성
+    try:
+        if OPENAI_API_KEY:
+            messages = [
+                {"role": "system", "content": """
+                신한은행 네트워크 담당자 역할을 하는 챗봇으로, 사용자가 대외계 정보를 조회하려고 합니다.
+                대외계란 외부 기관과의 연계 시스템을 의미합니다. 
+                주어진 엑셀 데이터에서 관련 기관, 회선, IP, 담당자 정보 등을 찾아 정리해주세요.
+                중요한 연락처와 절차를 명확하게 표시해야 합니다.
+                표 형식은 마크다운 표 형식으로 제공하세요.
+                
+                응답 형식:
+                1. 친절한 인사로 시작
+                2. 대외계 정보 마크다운 테이블로 제공
+                3. 주요 담당자 연락처 강조 (있는 경우)
+                4. 간단한 절차 안내 (필요한 경우)
+                """},
+                {"role": "user", "content": f"사용자의 대외계 정보 조회 요청: {query}\n\n엑셀 데이터:\n{df_info}"}
+            ]
+            
+            response = openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                temperature=0.7,
+                max_tokens=800
+            )
+            
+            return response.choices[0].message.content
+    except Exception as e:
+        print(f"OpenAI를 사용한 응답 생성 중 오류 발생: {str(e)}")
+    
+    # API 호출 실패 시 기본 응답 제공
+    return summarize_dataframe(df.iloc[relevant_rows])
+
 def get_chatbot_response(
     query: str, 
     context: Optional[str] = None, 
@@ -79,6 +819,16 @@ def get_chatbot_response(
         return "Error: OpenAI API key is not set. Please set the OPENAI_API_KEY environment variable."
     
     try:
+        # 먼저 엑셀 기반 처리 시도
+        excel_result = process_excel_query(query)
+        
+        # 엑셀에서 결과를 찾았으면 해당 결과 반환
+        if excel_result["found"] and excel_result["from_excel"]:
+            print(f"엑셀 처리 결과: {excel_result['category']} / {excel_result['sheet_used']} / {excel_result['response_type']}")
+            return excel_result["response"]
+        
+        # 엑셀에서 결과를 찾지 못했으면 기존 RAG 기반 응답 생성
+        
         # 사용자 질문의 언어 감지
         language = detect_language(query)
         
@@ -120,39 +870,6 @@ def get_chatbot_response(
             - 중요 정보는 **굵은 글씨**로 강조
             - CLI 명령어는 ```로 감싸진 코드 블록에, 각 단계에 간단한 설명 추가
             - 사용자에게 추가 질문이나 확인이 필요한 경우 마지막에 물어봄 (예: "혹시 특정 인터페이스에 대해 더 알고 싶으신가요?")
-            
-            마크다운 형식 예시:
-            
-            ```
-            ## NexG 장비 IP 설정 방법
-            
-            안녕하세요! NexG 장비에 IP를 설정하시려면 아래 단계대로 진행해 보시면 됩니다. 먼저 인터페이스 설정부터 시작해볼게요.
-            
-            다음 단계를 따라해보세요:
-            
-            1. **설정 모드 진입**: 먼저 관리자 권한으로 장비에 접속한 다음 설정 모드로 들어갑니다
-            2. **인터페이스 선택**: 설정하려는 인터페이스를 지정합니다
-            3. **IP 주소 할당**: 원하는 IP와 서브넷 마스크를 설정합니다
-            
-            ### CLI에서 설정하는 방법
-            ```
-            vforce# configure terminal
-            vforce(config)# interface eth2
-            vforce(config-if)# ip address 192.168.50.1 255.255.255.0
-            vforce(config-if)# no shutdown
-            vforce(config-if)# exit
-            vforce(config)# write memory
-            ```
-            
-            ### 웹 인터페이스에서 설정하기
-            1. 관리자 계정으로 웹 UI에 로그인하세요
-            2. '네트워크 설정' 메뉴로 이동합니다
-            3. '인터페이스 관리'에서 원하는 포트를 선택하세요
-            
-            > 참고: IP 설정 후에는 꼭 설정을 저장해주셔야 재부팅 후에도 유지됩니다.
-            
-            혹시 다른 인터페이스에 대해서도 설정이 필요하신가요?
-            ```
             """
             
             if context:
@@ -196,39 +913,6 @@ def get_chatbot_response(
             - Highlight important information with **bold text**
             - Present CLI commands in code blocks with brief explanations for each step
             - End with a question if additional information or clarification might be needed
-            
-            Markdown format example:
-            
-            ```
-            ## NexG Device IP Configuration
-            
-            Hello! To set up an IP address on your NexG device, you can follow these steps. Let's start with configuring the interface.
-            
-            Follow these steps:
-            
-            1. **Enter configuration mode**: First, access the device with admin privileges and enter configuration mode
-            2. **Select the interface**: Specify which interface you want to configure
-            3. **Assign IP address**: Set your desired IP and subnet mask
-            
-            ### CLI Configuration Method
-            ```
-            vforce# configure terminal
-            vforce(config)# interface eth2
-            vforce(config-if)# ip address 192.168.50.1 255.255.255.0
-            vforce(config-if)# no shutdown
-            vforce(config-if)# exit
-            vforce(config)# write memory
-            ```
-            
-            ### Web Interface Configuration
-            1. Log in to the web UI with administrator credentials
-            2. Navigate to 'Network Settings'
-            3. Select 'Interface Management' and choose the port you want to configure
-            
-            > Note: Remember to save your configuration so it persists after a reboot.
-            
-            Would you like to configure any other interfaces as well?
-            ```
             """
             
             if context:
