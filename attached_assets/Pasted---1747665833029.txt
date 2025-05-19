@@ -1,0 +1,88 @@
+ 포함 기능:
+검색 필드 (질문 키워드 필터링)
+
+카테고리 필터 버튼
+
+아코디언(질문 클릭 → 답변 펼침)
+
+“이 답변이 도움이 되었나요?” 버튼
+
+심플하고 깔끔한 카드 스타일
+
+📦 faq_ui_sample.py 예시 코드 (Streamlit 기반)
+python
+복사
+편집
+import streamlit as st
+
+# 샘플 FAQ 데이터
+faq_data = [
+    {
+        "category": "네트워크 문제",
+        "question": "네트워크 접속이 되지 않을 때 어떻게 해야 하나요?",
+        "answer": """1. 네트워크 케이블 상태 확인  
+2. IP 설정 확인  
+3. 방화벽 설정 확인  
+4. 해결되지 않으면 IT지원팀(02-1234-5678)으로 문의"""
+    },
+    {
+        "category": "보안 정책",
+        "question": "사내 네트워크 보안 정책은 어떻게 되나요?",
+        "answer": """1. 외부 저장 장치 사용 금지  
+2. 모바일 핫스팟 금지  
+3. 매월 보안 패치 적용  
+4. 분기별 패스워드 변경"""
+    },
+    {
+        "category": "원격 접속",
+        "question": "VPN 연결 방법을 알려주세요.",
+        "answer": """1. VPN 클라이언트 실행  
+2. vpn.shinhan.com 접속  
+3. 인증서 로그인  
+4. 연결 버튼 클릭"""
+    }
+]
+
+# --- UI ---
+
+st.set_page_config(page_title="FAQ", layout="wide")
+st.title("❓ 자주 묻는 질문 (FAQ)")
+
+# 검색 필드
+search_query = st.text_input("🔍 궁금한 내용을 입력해 보세요", "")
+
+# 카테고리 필터
+categories = ["전체"] + sorted(set([f["category"] for f in faq_data]))
+selected_cat = st.selectbox("📂 카테고리 선택", categories)
+
+# FAQ 필터링
+def filter_faq(item):
+    in_search = search_query.lower() in item["question"].lower()
+    in_category = (selected_cat == "전체") or (item["category"] == selected_cat)
+    return in_search and in_category
+
+filtered_faq = list(filter(filter_faq, faq_data))
+
+# FAQ 목록 출력
+if not filtered_faq:
+    st.info("검색 결과가 없습니다.")
+else:
+    for i, faq in enumerate(filtered_faq):
+        with st.container():
+            with st.expander(f"**Q{i+1}. {faq['question']}**", expanded=False):
+                st.markdown(f"**A:** {faq['answer']}")
+                col1, col2 = st.columns([1, 6])
+                with col1:
+                    st.write("이 답변이 도움이 되었나요?")
+                with col2:
+                    st.button("👍 예", key=f"yes_{i}")
+                    st.button("👎 아니요", key=f"no_{i}")
+            st.divider()
+🎨 결과 화면 스타일 요약
+왼쪽: FAQ 질문 리스트 (아코디언/토글)
+
+상단: 검색창 + 카테고리 선택
+
+하단: 좋아요/싫어요 버튼
+
+✅ 깔끔하고 확장 가능

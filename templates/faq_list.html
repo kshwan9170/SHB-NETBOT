@@ -60,15 +60,18 @@
                 <p class="lead">무엇이 궁금하신가요? 자주 묻는 질문에서 빠르게 확인하세요!</p>
             </div>
             
-            <!-- 검색 폼 -->
+            <!-- 검색 폼 (개선됨) -->
             <form action="{{ url_for('faq_list') }}" method="GET" class="mb-5">
                 <div class="input-group input-group-lg">
-                    <input type="text" name="search" class="form-control form-control-lg shadow-sm border-primary" placeholder="궁금한 질문을 검색하세요..." value="{{ search }}">
+                    <input type="text" name="search" class="form-control shadow-sm border-primary" 
+                           placeholder="궁금한 질문을 검색하세요..." value="{{ search }}"
+                           style="height: auto; padding: 12px 20px; font-size: 16px; border-radius: 0.5rem 0 0 0.5rem;">
                     {% if is_admin %}
                     <input type="hidden" name="admin" value="1">
                     {% endif %}
                     <div class="input-group-append">
-                        <button class="btn btn-primary btn-lg shadow-sm" type="submit">
+                        <button class="btn btn-primary shadow-sm" type="submit" 
+                                style="padding: 12px 25px; font-size: 16px; border-radius: 0 0.5rem 0.5rem 0;">
                             <i class="fas fa-search mr-1"></i> 검색
                         </button>
                     </div>
@@ -143,48 +146,50 @@
     {% if faqs %}
     <div class="row justify-content-center">
         <div class="col-md-10">
-            <div class="row">
+            <div class="faq-list">
                 {% for faq in faqs %}
-                <div class="col-lg-6 faq-item mb-4" data-category="{{ faq.category }}">
-                    <div class="card h-100 shadow-sm border-0 hover-shadow">
-                        <div class="card-header bg-primary text-white rounded-top">
-                            <div class="d-flex align-items-center justify-content-between">
+                <div class="faq-item mb-4" data-category="{{ faq.category }}">
+                    <div class="faq-category mb-2">
+                        <span class="badge badge-pill badge-primary px-3 py-2">
+                            {% if faq.category == '네트워크' %}
+                            <i class="fas fa-network-wired mr-1"></i>
+                            {% elif faq.category == '보안' %}
+                            <i class="fas fa-shield-alt mr-1"></i>
+                            {% elif faq.category == '계정' %}
+                            <i class="fas fa-user-shield mr-1"></i>
+                            {% elif faq.category == '시스템' %}
+                            <i class="fas fa-server mr-1"></i>
+                            {% elif faq.category == '장애' %}
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            {% elif faq.category == '인증' %}
+                            <i class="fas fa-key mr-1"></i>
+                            {% else %}
+                            <i class="fas fa-book mr-1"></i>
+                            {% endif %}
+                            {{ faq.category }}
+                        </span>
+                        <span class="badge badge-pill badge-light ml-2">
+                            <i class="far fa-thumbs-up text-success"></i> {{ faq.positive_count }}
+                        </span>
+                    </div>
+                    
+                    <!-- 질문 말풍선 -->
+                    <div class="message-container">
+                        <div class="message question-bubble shadow-sm">
+                            <button class="btn btn-link p-0 text-left font-weight-bold w-100 text-dark collapsed" type="button" data-toggle="collapse" data-target="#collapse{{ faq.id }}" aria-expanded="false" aria-controls="collapse{{ faq.id }}">
                                 <div class="d-flex align-items-center">
-                                    <div class="mr-3 icon-bg">
-                                        <div class="rounded-circle bg-white p-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-                                            {% if faq.category == '네트워크' %}
-                                            <i class="fas fa-network-wired text-primary"></i>
-                                            {% elif faq.category == '보안' %}
-                                            <i class="fas fa-shield-alt text-primary"></i>
-                                            {% elif faq.category == '계정' %}
-                                            <i class="fas fa-user-shield text-primary"></i>
-                                            {% elif faq.category == '시스템' %}
-                                            <i class="fas fa-server text-primary"></i>
-                                            {% elif faq.category == '장애' %}
-                                            <i class="fas fa-exclamation-triangle text-primary"></i>
-                                            {% elif faq.category == '인증' %}
-                                            <i class="fas fa-key text-primary"></i>
-                                            {% else %}
-                                            <i class="fas fa-question text-primary"></i>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                    <h5 class="mb-0">{{ faq.category }}</h5>
+                                    <i class="fas fa-chevron-right toggle-icon mr-2"></i>
+                                    <div>{{ faq.question }}</div>
                                 </div>
-                                <span class="badge badge-pill badge-light">
-                                    <i class="far fa-thumbs-up text-success"></i> {{ faq.positive_count }}
-                                </span>
-                            </div>
+                            </button>
                         </div>
-                        <div class="card-body">
-                            <h5 class="card-title">
-                                <button class="btn btn-link p-0 text-left font-weight-bold collapsed" type="button" data-toggle="collapse" data-target="#collapse{{ faq.id }}" aria-expanded="false" aria-controls="collapse{{ faq.id }}">
-                                    <i class="fas fa-chevron-right toggle-icon mr-2"></i>{{ faq.question }}
-                                </button>
-                            </h5>
-                            <div id="collapse{{ faq.id }}" class="collapse" aria-labelledby="heading{{ faq.id }}" data-parent="#faqAccordion">
-                                <div class="card-text mt-3 border-top pt-3">
-                                    {{ faq.answer|safe }}
+                    </div>
+                    
+                    <!-- 답변 말풍선 -->
+                    <div id="collapse{{ faq.id }}" class="collapse" aria-labelledby="heading{{ faq.id }}" data-parent="#faqAccordion">
+                        <div class="message-container answer-container">
+                            <div class="message answer-bubble shadow-sm">
+                                {{ faq.answer|safe }}
                                 </div>
                             
                             <!-- 관리자 모드인 경우 추가 정보와 편집/삭제 버튼 표시 -->
@@ -346,7 +351,7 @@
     {% endif %}
 </div>
 
-<!-- FAQ 삭제 확인 모달 -->
+<!-- FAQ 삭제 확인 모달 (개선됨) -->
 <div class="modal fade" id="deleteFaqModal" tabindex="-1" role="dialog" aria-labelledby="deleteFaqModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content border-0 shadow-lg">
@@ -358,24 +363,25 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <div class="modal-body p-4">
-                <div class="text-center mb-4">
+            <div class="modal-body p-5">
+                <div class="text-center">
                     <div class="mb-4">
-                        <i class="fas fa-trash-alt fa-4x text-danger mb-3"></i>
-                        <h4 class="font-weight-bold">정말로 이 FAQ를 삭제하시겠습니까?</h4>
+                        <i class="fas fa-trash-alt fa-4x text-danger mb-4"></i>
+                        <h4 class="font-weight-bold mb-3">정말로 이 FAQ를 삭제하시겠습니까?</h4>
+                        <p class="text-muted">이 작업은 되돌릴 수 없습니다.</p>
                     </div>
-                    <div class="alert alert-warning py-3">
+                    <div class="alert alert-warning py-3 mb-4 border-left border-warning" style="border-left-width: 4px !important;">
                         <i class="fas fa-exclamation-circle mr-2"></i>
-                        <strong>주의:</strong> 이 작업은 되돌릴 수 없으며, 모든 FAQ 내용과 피드백 데이터가 영구적으로 삭제됩니다.
+                        <strong>주의:</strong> FAQ 내용과 모든 관련 피드백 데이터가 영구적으로 삭제됩니다.
                     </div>
                 </div>
             </div>
-            <div class="modal-footer bg-light d-flex justify-content-center">
-                <button type="button" class="btn btn-lg btn-secondary px-4 mx-2" data-dismiss="modal">
+            <div class="modal-footer bg-light d-flex justify-content-center py-3">
+                <button type="button" class="btn btn-lg btn-secondary px-4 mx-2 font-weight-bold" data-dismiss="modal">
                     <i class="fas fa-times mr-1"></i> 취소
                 </button>
                 <form id="deleteFaqForm" method="POST" class="d-inline">
-                    <button type="submit" class="btn btn-lg btn-danger px-4 mx-2">
+                    <button type="submit" class="btn btn-lg btn-danger px-4 mx-2 font-weight-bold">
                         <i class="fas fa-trash-alt mr-1"></i> 삭제
                     </button>
                 </form>
@@ -386,41 +392,103 @@
 
 <!-- 피드백 응답 모달 - 인라인 피드백으로 대체 -->
 
-    <!-- 푸터 구분선 -->
-    <div class="container mt-5">
-        <hr class="border-top border-light">
-    </div>
-    
-    <!-- 푸터 -->
-    <footer class="footer mt-5">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>SHB-NetBot</h4>
-                    <p>신한은행 네트워크 지원 챗봇 서비스</p>
-                </div>
-                <div class="footer-section">
-                    <h4>바로가기</h4>
-                    <ul>
-                        <li><a href="/#home">홈</a></li>
-                        <li><a href="/#chat">챗봇</a></li>
-                        <li><a href="/#documents">문서관리</a></li>
-                        <li><a href="/#support">고객지원</a></li>
-                        <li><a href="/faq">FAQ</a></li>
-                    </ul>
-                </div>
-                <div class="footer-section">
-                    <h4>문의하기</h4>
-                    <ul>
-                        <li><a href="/inquiry">문의 게시판</a></li>
-                        <li><a href="/feedback">피드백</a></li>
-                        <li><a href="/report">장애 신고</a></li>
-                    </ul>
+    <!-- 푸터 섹션 -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h3>서비스</h3>
+                <div class="footer-links">
+                    <a href="/" class="footer-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                        홈
+                    </a>
+                    <a href="/#about" class="footer-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        소개
+                    </a>
+                    <a href="/#chat" class="footer-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        대화하기
+                    </a>
+                    <a href="/#documents" class="footer-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        문서
+                    </a>
                 </div>
             </div>
-            <div class="footer-bottom">
-                <p>&copy; 2025 SHB-NetBot. All rights reserved.</p>
+            <div class="footer-col">
+                <h3>고객지원</h3>
+                <div class="footer-links">
+                    <a href="/inquiry" class="footer-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        문의하기
+                    </a>
+                    <a href="/feedback" class="footer-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                        </svg>
+                        피드백
+                    </a>
+                    <a href="/report" class="footer-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                        장애 신고
+                    </a>
+                    <a href="/faq" class="footer-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                        FAQ
+                    </a>
+                </div>
             </div>
+            <div class="footer-col">
+                <h3>정책 및 약관</h3>
+                <div class="footer-links">
+                    <a href="/terms" class="footer-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        이용약관
+                    </a>
+                    <a href="/privacy" class="footer-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        </svg>
+                        개인정보처리방침
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2025 SHB-NetBot. All rights reserved.</p>
         </div>
     </footer>
 
@@ -439,11 +507,14 @@
             --warning-color: #ffc107;
             --success-color: #28a745;
             --light-color: #f8f9fa;
+            --dark-color: #343a40;
             --border-radius: 0.5rem;
             --shadow-sm: 0 .125rem .25rem rgba(0,0,0,.075);
             --shadow: 0 .5rem 1rem rgba(0,0,0,.15);
             --shadow-lg: 0 1rem 3rem rgba(0,0,0,.175);
             --transition-time: 0.3s;
+            --bubble-bg-q: #e9f2ff;
+            --bubble-bg-a: #f1f1f1;
         }
         
         /* 모달 스타일 향상 */
@@ -476,14 +547,63 @@
             font-size: 0.85rem;
         }
         
-        /* FAQ 카드 호버 효과 */
-        .hover-shadow {
-            transition: all var(--transition-time) ease;
+        /* 말풍선 스타일 */
+        .faq-list {
+            max-width: 900px;
+            margin: 0 auto;
         }
         
-        .hover-shadow:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow) !important;
+        .faq-item {
+            margin-bottom: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .message-container {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+        
+        .answer-container {
+            justify-content: flex-end;
+        }
+        
+        .message {
+            padding: 1rem 1.5rem;
+            border-radius: 1rem;
+            max-width: 85%;
+            position: relative;
+        }
+        
+        .question-bubble {
+            background-color: var(--bubble-bg-q);
+            border-top-left-radius: 0;
+            color: var(--dark-color);
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .answer-bubble {
+            background-color: var(--bubble-bg-a);
+            border-top-right-radius: 0;
+            color: var(--dark-color);
+            border-right: 3px solid var(--secondary-color);
+        }
+        
+        .question-bubble:before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 0;
+            border-right: 10px solid var(--bubble-bg-q);
+            border-bottom: 10px solid transparent;
+        }
+        
+        .answer-bubble:before {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: 0;
+            border-left: 10px solid var(--bubble-bg-a);
+            border-bottom: 10px solid transparent;
         }
         
         /* 토글 아이콘 애니메이션 */
@@ -515,26 +635,84 @@
             transform: scale(1.05);
         }
         
-        /* 푸터 개선 */
+        /* 검색 폼 개선 */
+        .form-control-lg {
+            height: calc(1.5em + 1rem + 2px);
+            padding: 0.75rem 1.5rem;
+            font-size: 1.25rem;
+            border-radius: 0.5rem;
+        }
+        
+        .input-group-lg .btn {
+            padding: 0.75rem 1.5rem;
+        }
+        
+        /* 푸터 스타일 - 메인 페이지와 통일 */
         .footer {
-            padding-top: 2rem;
-            background-color: #f8f9fa;
-            margin-top: 3rem;
-            border-top: 1px solid rgba(0,0,0,0.05);
+            background-color: var(--dark-color);
+            color: #fff;
+            padding: 4rem 0 2rem;
+            margin-top: 5rem;
         }
         
-        .footer-content {
-            padding-bottom: 1.5rem;
+        .footer-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
         }
         
-        .footer a {
-            color: var(--primary-color);
-            transition: color 0.2s;
+        .footer-col {
+            flex: 1;
+            min-width: 250px;
+            margin-bottom: 2rem;
         }
         
-        .footer a:hover {
-            color: #0056b3;
+        .footer-col h3 {
+            color: #fff;
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 10px;
+        }
+        
+        .footer-col h3:after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 50px;
+            height: 2px;
+            background-color: var(--primary-color);
+        }
+        
+        .footer-link {
+            display: flex;
+            align-items: center;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
             text-decoration: none;
+        }
+        
+        .footer-link:hover {
+            color: #fff;
+            transform: translateX(5px);
+            text-decoration: none;
+        }
+        
+        .footer-link svg {
+            margin-right: 10px;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 2rem;
+            margin-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.5);
         }
     </style>
     
