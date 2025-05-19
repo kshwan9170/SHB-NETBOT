@@ -388,6 +388,48 @@ def get_all_document_ids():
         print(f"문서 ID 목록 조회 오류: {str(e)}")
         return set()
 
+def update_document_embeddings(doc_id: str, chunks: List[Dict[str, Any]]) -> bool:
+    """
+    문서의 기존 임베딩을 삭제하고 새로운 임베딩으로 교체합니다
+    
+    Args:
+        doc_id: 업데이트할 문서의 ID (UUID)
+        chunks: 새로운 텍스트 청크와 메타데이터 목록
+               각 딕셔너리는 {"text": str, "doc_id": str, "chunk_id": str, "metadata": dict} 형식
+               
+    Returns:
+        업데이트 성공 여부 (True/False)
+    """
+    if not chunks:
+        return False
+    
+    try:
+        # 벡터 데이터베이스 연결
+        collection = initialize_database()
+        
+        # 1. 기존 문서 청크 삭제
+        delete_result = delete_document(doc_id)
+        
+        # 2. 새로운 청크 추가
+        # 데이터 추출
+        texts = [chunk["text"] for chunk in chunks]
+        ids = [chunk["chunk_id"] for chunk in chunks]
+        metadatas = [chunk["metadata"] for chunk in chunks]
+        
+        # 새 임베딩 추가
+        collection.add(
+            documents=texts,
+            ids=ids,
+            metadatas=metadatas
+        )
+        
+        print(f"Updated document {doc_id} with {len(chunks)} chunks")
+        return True
+        
+    except Exception as e:
+        print(f"Error updating document embeddings: {e}")
+        return False
+
 def reset_database():
     """Reset the database by removing the directory"""
     if os.path.exists(CHROMA_DB_DIRECTORY):
