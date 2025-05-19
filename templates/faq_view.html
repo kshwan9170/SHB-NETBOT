@@ -23,8 +23,7 @@
                 <a href="/#about" class="nav-link">About</a>
                 <a href="/#chat" class="nav-link">Chat</a>
                 <a href="/#documents" class="nav-link">Documents</a>
-                <a href="/#support" class="nav-link">Support</a>
-                <a href="/faq" class="nav-link active">FAQ</a>
+                <a href="/#support" class="nav-link active">Support</a>
                 <button id="theme-toggle" class="theme-toggle">
                     <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="5"></circle>
@@ -77,13 +76,17 @@
 
     <div class="row">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">{{ faq.question }}</h5>
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center" style="background-color: rgba(0, 123, 255, 0.05);">
+                    <h5 class="mb-0">
+                        <i class="fas fa-question-circle text-primary mr-2"></i>
+                        {{ faq.question }}
+                    </h5>
                     <span class="badge badge-primary">{{ faq.category }}</span>
                 </div>
                 <div class="card-body">
                     <div class="faq-answer mb-4">
+                        <i class="fas fa-comment-dots text-primary mr-2"></i>
                         {{ faq.answer|safe }}
                     </div>
                     
@@ -144,14 +147,23 @@
                     </div>
                     {% else %}
                     <!-- 일반 사용자 모드인 경우 피드백 버튼 표시 -->
-                    <div class="mt-3 text-right">
-                        <small class="mr-2">이 답변이 도움되었나요?</small>
-                        <button class="btn btn-sm btn-outline-success feedback-btn" data-id="{{ faq.id }}" data-type="positive">
-                            <i class="far fa-thumbs-up"></i> 예
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger feedback-btn" data-id="{{ faq.id }}" data-type="negative">
-                            <i class="far fa-thumbs-down"></i> 아니오
-                        </button>
+                    <hr>
+                    <div class="faq-feedback text-center mt-3">
+                        <p class="mb-2">👍 이 답변이 도움이 되었나요?</p>
+                        <div class="btn-group">
+                            <button class="btn btn-outline-success feedback-btn" data-id="{{ faq.id }}" data-type="positive">
+                                <i class="far fa-thumbs-up"></i> 예
+                            </button>
+                            <button class="btn btn-outline-danger feedback-btn" data-id="{{ faq.id }}" data-type="negative">
+                                <i class="far fa-thumbs-down"></i> 아니오
+                            </button>
+                        </div>
+                        <div class="feedback-response mt-2" style="display: none;">
+                            <small class="text-muted">피드백을 보내주셔서 감사합니다.</small>
+                        </div>
+                    </div>
+                    <div class="text-right mt-2">
+                        <small class="text-muted">마지막 업데이트: {{ faq.last_updated }}</small>
                     </div>
                     {% endif %}
                 </div>
@@ -191,25 +203,7 @@
     </div>
 </div>
 
-<!-- 피드백 응답 모달 -->
-<div class="modal fade" id="feedbackResponseModal" tabindex="-1" role="dialog" aria-labelledby="feedbackResponseModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="feedbackResponseModalLabel">피드백 전송 완료</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                피드백을 보내주셔서 감사합니다. 더 나은 서비스를 제공하기 위해 노력하겠습니다.
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" data-dismiss="modal">확인</button>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- 피드백 응답 모달 - 인라인 피드백으로 대체 -->
     <!-- 푸터 -->
     <footer class="footer">
         <div class="container">
@@ -225,7 +219,6 @@
                         <li><a href="/#chat">챗봇</a></li>
                         <li><a href="/#documents">문서관리</a></li>
                         <li><a href="/#support">고객지원</a></li>
-                        <li><a href="/faq">FAQ</a></li>
                     </ul>
                 </div>
                 <div class="footer-section">
@@ -256,11 +249,11 @@
         });
         
         $(document).ready(function() {
-            // 피드백 버튼 처리
+            // 피드백 버튼 처리 - 인라인 피드백
             $('.feedback-btn').click(function() {
-                var faqId = $(this).data('id');
                 var feedbackType = $(this).data('type');
                 var feedbackUrl = "{{ url_for('faq_feedback', faq_id=faq.id) }}";
+                var feedbackContainer = $(this).closest('.faq-feedback');
                 
                 // 피드백 전송
                 $.ajax({
@@ -270,15 +263,18 @@
                         feedback_type: feedbackType
                     },
                     success: function(response) {
-                        // 피드백 전송 성공 시 모달 표시
-                        $('#feedbackResponseModal').modal('show');
-                        
-                        // 피드백 버튼 비활성화
-                        $('.feedback-btn').prop('disabled', true);
+                        // 인라인 피드백 메시지 표시
+                        feedbackContainer.find('.btn-group').fadeOut(300, function() {
+                            feedbackContainer.find('.feedback-response').fadeIn(300);
+                        });
                     },
                     error: function(xhr, status, error) {
                         console.error('피드백 전송 오류:', error);
-                        alert('피드백 전송 중 오류가 발생했습니다.');
+                        feedbackContainer.find('.feedback-response')
+                            .removeClass('text-muted')
+                            .addClass('text-danger')
+                            .text('피드백 전송 중 오류가 발생했습니다.')
+                            .fadeIn(300);
                     }
                 });
             });
