@@ -306,6 +306,8 @@ def view_document(system_filename):
         # Excel 파일 처리
         elif file_extension in ['xlsx', 'xls']:
             import pandas as pd
+            import io
+            import base64
             try:
                 # 엑셀 파일의 모든 시트 읽기
                 excel_file = pd.ExcelFile(file_path)
@@ -315,15 +317,48 @@ def view_document(system_filename):
                 all_sheets_html = []
                 
                 for sheet_name in sheet_names:
-                    df = pd.read_excel(file_path, sheet_name=sheet_name)
+                    # 시트 읽기 설정 - 모든 열을 텍스트로 처리하여 데이터 유실 방지
+                    df = pd.read_excel(file_path, sheet_name=sheet_name, dtype=str, na_filter=False)
+                    
+                    # 데이터프레임이 비어있으면 건너뛰기
+                    if df.empty:
+                        sheet_html = f'<div class="sheet-container"><h3 class="sheet-name">시트: {sheet_name}</h3>'
+                        sheet_html += '<p class="empty-sheet">이 시트에는 데이터가 없습니다.</p>'
+                        sheet_html += '</div>'
+                        all_sheets_html.append(sheet_html)
+                        continue
+                    
+                    # 테이블 HTML 생성 시 설정
                     sheet_html = f'<div class="sheet-container"><h3 class="sheet-name">시트: {sheet_name}</h3>'
-                    sheet_html += df.to_html(index=False, classes='table table-striped table-bordered')
+                    sheet_html += df.to_html(
+                        index=False, 
+                        classes='table table-striped table-bordered',
+                        na_rep='', 
+                        escape=False,  # HTML 태그 허용
+                        border=1
+                    )
                     sheet_html += '</div>'
                     all_sheets_html.append(sheet_html)
                 
-                # 모든 시트 HTML 합치기
-                content = '<div class="excel-container">' + ''.join(all_sheets_html) + '</div>'
+                # 원본 엑셀 다운로드 링크 제공을 위해 엑셀 파일 base64 인코딩
+                with open(file_path, 'rb') as excel:
+                    excel_data = excel.read()
+                    excel_base64 = base64.b64encode(excel_data).decode('utf-8')
+                
+                # 모든 시트 HTML 합치기 (다운로드 링크 포함)
+                content = '<div class="excel-container">'
+                content += f'''
+                <div class="excel-download">
+                    <a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{excel_base64}" 
+                       download="{original_filename}" class="excel-download-btn">
+                        원본 엑셀 파일 다운로드
+                    </a>
+                </div>
+                '''
+                content += ''.join(all_sheets_html)
+                content += '</div>'
             except Exception as e:
+                print(f"Excel 파일 처리 중 오류: {str(e)}")
                 return jsonify({
                     'status': 'error',
                     'message': f'엑셀 파일을 읽는 중 오류가 발생했습니다: {str(e)}'
