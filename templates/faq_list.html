@@ -51,28 +51,29 @@
 
 
 <div class="container mt-5">
-    <div class="card shadow-sm mb-4">
-        <div class="card-body">
-            <div class="row">
-                <div class="col-lg-7">
-                    <h2><i class="fas fa-book text-primary"></i> 자주 묻는 질문 (FAQ)</h2>
-                    <p class="text-muted">신한은행 네트워크 지원 서비스에 관한 자주 묻는 질문과 답변입니다.</p>
-                </div>
-                <div class="col-lg-5">
-                    <!-- 검색 폼 -->
-                    <form action="{{ url_for('faq_list') }}" method="GET" class="mt-2">
-                        <div class="input-group">
-                            <input type="text" name="search" class="form-control form-control-lg" placeholder="질문 또는 키워드 검색" value="{{ search }}">
-                            {% if is_admin %}
-                            <input type="hidden" name="admin" value="1">
-                            {% endif %}
-                            <div class="input-group-append">
-                                <button class="btn btn-primary btn-lg" type="submit"><i class="fas fa-search"></i></button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+    <div class="row mb-4 justify-content-center">
+        <div class="col-md-8">
+            <div class="text-center mb-4">
+                <h2 class="display-4">
+                    <i class="fas fa-question-circle text-primary"></i> 자주 묻는 질문
+                </h2>
+                <p class="lead">무엇이 궁금하신가요? 자주 묻는 질문에서 빠르게 확인하세요!</p>
             </div>
+            
+            <!-- 검색 폼 -->
+            <form action="{{ url_for('faq_list') }}" method="GET" class="mb-5">
+                <div class="input-group input-group-lg">
+                    <input type="text" name="search" class="form-control form-control-lg shadow-sm border-primary" placeholder="궁금한 질문을 검색하세요..." value="{{ search }}">
+                    {% if is_admin %}
+                    <input type="hidden" name="admin" value="1">
+                    {% endif %}
+                    <div class="input-group-append">
+                        <button class="btn btn-primary btn-lg shadow-sm" type="submit">
+                            <i class="fas fa-search mr-1"></i> 검색
+                        </button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
     
@@ -120,104 +121,118 @@
 
     <!-- 카테고리 필터 -->
     {% if categories %}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title d-flex align-items-center">
-                        <i class="fas fa-tags text-primary mr-2"></i>카테고리 선택
-                    </h5>
-                    <div class="category-filter">
-                        <button type="button" class="btn btn-lg btn-outline-primary category-btn active m-1" data-category="all">
-                            <i class="fas fa-border-all mr-1"></i> 전체
-                        </button>
-                        {% for category in categories %}
-                        <button type="button" class="btn btn-lg btn-outline-primary category-btn m-1" data-category="{{ category }}">
-                            <i class="fas fa-tag mr-1"></i> {{ category }}
-                        </button>
-                        {% endfor %}
-                    </div>
-                </div>
+    <div class="row mb-4 justify-content-center">
+        <div class="col-md-10">
+            <div class="text-center mb-3">
+                <h4 class="text-primary"><i class="fas fa-tags"></i> 카테고리 선택</h4>
+            </div>
+            <div class="category-filter text-center">
+                <button type="button" class="btn btn-lg btn-outline-primary category-btn active m-1 rounded-pill" data-category="all">
+                    <i class="fas fa-border-all mr-1"></i> 전체
+                </button>
+                {% for category in categories %}
+                <button type="button" class="btn btn-lg btn-outline-primary category-btn m-1 rounded-pill" data-category="{{ category }}">
+                    <i class="fas fa-tag mr-1"></i> {{ category }}
+                </button>
+                {% endfor %}
             </div>
         </div>
     </div>
     {% endif %}
 
     {% if faqs %}
-    <div class="row">
-        <div class="col-12">
-            <h4 class="mb-3 text-primary"><i class="fas fa-list"></i> 질문 목록</h4>
-            <div class="accordion" id="faqAccordion">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="row">
                 {% for faq in faqs %}
-                <div class="card faq-item mb-3 shadow-sm" data-category="{{ faq.category }}">
-                    <div class="card-header d-flex justify-content-between align-items-center" id="heading{{ faq.id }}" style="background-color: rgba(0, 123, 255, 0.05);">
-                        <h5 class="mb-0 w-75">
-                            <button class="btn btn-link collapsed text-left w-100" type="button" data-toggle="collapse" data-target="#collapse{{ faq.id }}" aria-expanded="false" aria-controls="collapse{{ faq.id }}">
-                                <i class="fas fa-question-circle text-primary mr-2"></i>
-                                {{ faq.question }}
-                            </button>
-                        </h5>
-                        <span class="badge badge-primary p-2">{{ faq.category }}</span>
-                    </div>
-                    <div id="collapse{{ faq.id }}" class="collapse" aria-labelledby="heading{{ faq.id }}" data-parent="#faqAccordion">
-                        <div class="card-body">
-                            <div class="faq-answer">
-                                {{ faq.answer|safe }}
+                <div class="col-lg-6 faq-item mb-4" data-category="{{ faq.category }}">
+                    <div class="card h-100 shadow-sm rounded">
+                        <div class="card-header bg-primary text-white rounded-top">
+                            <div class="d-flex align-items-center">
+                                <div class="mr-3 icon-bg">
+                                    <div class="rounded-circle bg-white p-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                        <i class="fas fa-question text-primary"></i>
+                                    </div>
+                                </div>
+                                <h5 class="mb-0">{{ faq.category }}</h5>
                             </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <button class="btn btn-link p-0 text-left collapsed" type="button" data-toggle="collapse" data-target="#collapse{{ faq.id }}" aria-expanded="false" aria-controls="collapse{{ faq.id }}">
+                                    {{ faq.question }}
+                                </button>
+                            </h5>
+                            <div id="collapse{{ faq.id }}" class="collapse" aria-labelledby="heading{{ faq.id }}" data-parent="#faqAccordion">
+                                <div class="card-text mt-3">
+                                    {{ faq.answer|safe }}
+                                </div>
                             
                             <!-- 관리자 모드인 경우 추가 정보와 편집/삭제 버튼 표시 -->
                             {% if is_admin %}
                             <hr>
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <small class="text-muted">
-                                        <i class="far fa-thumbs-up"></i> {{ faq.positive_count }}
-                                        <i class="far fa-thumbs-down ml-2"></i> {{ faq.negative_count }}
-                                        <span class="ml-3">모델 반영: 
-                                            {% if faq.model_reflected %}
-                                            <span class="text-success"><i class="fas fa-check"></i> 반영됨</span>
-                                            {% else %}
-                                            <span class="text-danger"><i class="fas fa-times"></i> 미반영</span>
-                                            {% endif %}
+                            <div class="admin-panel mt-3">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <span class="badge badge-pill badge-light mr-2">
+                                            <i class="far fa-thumbs-up text-success"></i> {{ faq.positive_count }}
                                         </span>
-                                        <span class="ml-3">공개 여부: 
-                                            {% if faq.is_published %}
-                                            <span class="text-success"><i class="fas fa-eye"></i> 공개</span>
-                                            {% else %}
-                                            <span class="text-danger"><i class="fas fa-eye-slash"></i> 비공개</span>
-                                            {% endif %}
+                                        <span class="badge badge-pill badge-light mr-2">
+                                            <i class="far fa-thumbs-down text-danger"></i> {{ faq.negative_count }}
                                         </span>
-                                        <span class="ml-3">마지막 수정: {{ faq.last_updated }}</span>
-                                    </small>
+                                        {% if faq.model_reflected %}
+                                        <span class="badge badge-pill badge-success mr-2">
+                                            <i class="fas fa-robot"></i> 모델 반영됨
+                                        </span>
+                                        {% else %}
+                                        <span class="badge badge-pill badge-secondary mr-2">
+                                            <i class="fas fa-robot"></i> 미반영
+                                        </span>
+                                        {% endif %}
+                                        
+                                        {% if faq.is_published %}
+                                        <span class="badge badge-pill badge-info">
+                                            <i class="fas fa-eye"></i> 공개
+                                        </span>
+                                        {% else %}
+                                        <span class="badge badge-pill badge-warning">
+                                            <i class="fas fa-eye-slash"></i> 비공개
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <a href="{{ url_for('faq_edit', faq_id=faq.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-edit"></i> 편집
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-danger delete-faq" data-id="{{ faq.id }}">
+                                            <i class="fas fa-trash"></i> 삭제
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="col-md-4 text-right">
-                                    <a href="{{ url_for('faq_edit', faq_id=faq.id) }}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-edit"></i> 편집
-                                    </a>
-                                    <button type="button" class="btn btn-sm btn-danger delete-faq" data-id="{{ faq.id }}">
-                                        <i class="fas fa-trash"></i> 삭제
-                                    </button>
+                                <div class="text-right mt-2">
+                                    <small class="text-muted">마지막 수정: {{ faq.last_updated }}</small>
                                 </div>
                             </div>
                             {% else %}
                             <!-- 일반 사용자 모드인 경우 피드백 버튼 표시 -->
-                            <hr>
-                            <div class="faq-feedback text-center mt-3">
-                                <p class="mb-2">👍 이 답변이 도움이 되었나요?</p>
-                                <div class="btn-group">
-                                    <button class="btn btn-sm btn-outline-success feedback-btn" data-id="{{ faq.id }}" data-type="positive">
-                                        <i class="far fa-thumbs-up"></i> 예
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger feedback-btn" data-id="{{ faq.id }}" data-type="negative">
-                                        <i class="far fa-thumbs-down"></i> 아니오
-                                    </button>
+                            <div class="faq-feedback mt-4">
+                                <div class="feedback-question text-center mb-3">
+                                    <p class="font-weight-bold mb-2">이 답변이 도움이 되었나요?</p>
+                                    <div class="btn-group">
+                                        <button class="btn btn-success feedback-btn" data-id="{{ faq.id }}" data-type="positive">
+                                            <i class="far fa-thumbs-up mr-1"></i> 예
+                                        </button>
+                                        <button class="btn btn-outline-danger feedback-btn" data-id="{{ faq.id }}" data-type="negative">
+                                            <i class="far fa-thumbs-down mr-1"></i> 아니오
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="feedback-response mt-2" style="display: none;">
-                                    <small class="text-muted">피드백을 보내주셔서 감사합니다.</small>
+                                <div class="feedback-response text-center py-2 px-3 rounded bg-light" style="display: none;">
+                                    <p class="mb-0"><i class="fas fa-check-circle text-success mr-1"></i> 피드백을 보내주셔서 감사합니다.</p>
                                 </div>
-                            </div>
-                            <div class="text-right mt-2">
-                                <small class="text-muted">마지막 업데이트: {{ faq.last_updated }}</small>
+                                <div class="text-right mt-3">
+                                    <small class="text-muted">마지막 업데이트: {{ faq.last_updated }}</small>
+                                </div>
                             </div>
                             {% endif %}
                         </div>
@@ -230,33 +245,45 @@
     
     <!-- 페이지네이션 -->
     {% if total_pages > 1 %}
-    <div class="row mt-4">
-        <div class="col-12">
-            <nav aria-label="FAQ pagination">
-                <ul class="pagination justify-content-center">
+    <div class="row justify-content-center mt-5">
+        <div class="col-md-8">
+            <nav aria-label="FAQ 페이지 탐색">
+                <ul class="pagination pagination-lg justify-content-center">
                     {% if page > 1 %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('faq_list', page=page-1, search=search, admin=1 if is_admin else 0) }}">이전</a>
+                        <a class="page-link shadow-sm rounded-pill" href="{{ url_for('faq_list', page=page-1, search=search, admin=1 if is_admin else 0) }}" aria-label="이전">
+                            <i class="fas fa-chevron-left"></i>
+                            <span class="d-none d-md-inline ml-1">이전</span>
+                        </a>
                     </li>
                     {% else %}
                     <li class="page-item disabled">
-                        <a class="page-link" href="#" tabindex="-1">이전</a>
+                        <a class="page-link rounded-pill" href="#" tabindex="-1" aria-label="이전">
+                            <i class="fas fa-chevron-left"></i>
+                            <span class="d-none d-md-inline ml-1">이전</span>
+                        </a>
                     </li>
                     {% endif %}
                     
                     {% for p in range(1, total_pages + 1) %}
                     <li class="page-item {% if p == page %}active{% endif %}">
-                        <a class="page-link" href="{{ url_for('faq_list', page=p, search=search, admin=1 if is_admin else 0) }}">{{ p }}</a>
+                        <a class="page-link shadow-sm rounded-pill" href="{{ url_for('faq_list', page=p, search=search, admin=1 if is_admin else 0) }}">{{ p }}</a>
                     </li>
                     {% endfor %}
                     
                     {% if page < total_pages %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('faq_list', page=page+1, search=search, admin=1 if is_admin else 0) }}">다음</a>
+                        <a class="page-link shadow-sm rounded-pill" href="{{ url_for('faq_list', page=page+1, search=search, admin=1 if is_admin else 0) }}" aria-label="다음">
+                            <span class="d-none d-md-inline mr-1">다음</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
                     </li>
                     {% else %}
                     <li class="page-item disabled">
-                        <a class="page-link" href="#" tabindex="-1">다음</a>
+                        <a class="page-link rounded-pill" href="#" tabindex="-1" aria-label="다음">
+                            <span class="d-none d-md-inline mr-1">다음</span>
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
                     </li>
                     {% endif %}
                 </ul>
@@ -266,13 +293,27 @@
     {% endif %}
     
     {% else %}
-    <div class="row">
-        <div class="col-12">
-            <div class="alert alert-info">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <div class="empty-state p-5 mt-3 mb-5 bg-light rounded shadow-sm">
                 {% if search %}
-                <i class="fas fa-info-circle"></i> '{{ search }}' 검색 결과가 없습니다.
+                <div class="mb-4">
+                    <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                    <h3 class="text-primary">'{{ search }}' 검색 결과가 없습니다</h3>
+                    <p class="lead">다른 검색어로 다시 시도해보세요.</p>
+                </div>
+                <a href="{{ url_for('faq_list') }}" class="btn btn-lg btn-primary">
+                    <i class="fas fa-undo-alt mr-1"></i> 전체 FAQ 목록 보기
+                </a>
                 {% else %}
-                <i class="fas fa-info-circle"></i> 등록된 FAQ가 없습니다.
+                <div class="mb-4">
+                    <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+                    <h3 class="text-primary">등록된 FAQ가 없습니다</h3>
+                    <p class="lead">곧 새로운 질문과 답변이 업데이트될 예정입니다.</p>
+                </div>
+                <a href="{{ url_for('index') }}" class="btn btn-lg btn-primary">
+                    <i class="fas fa-home mr-1"></i> 홈으로 돌아가기
+                </a>
                 {% endif %}
             </div>
         </div>
