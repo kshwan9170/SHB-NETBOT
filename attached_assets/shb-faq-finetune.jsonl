@@ -1,0 +1,32 @@
+{"messages":[{"role":"user","content":"회사 네트워크가 연결되지 않아요"},{"role":"assistant","content":"1. 케이블이 제대로 연결되어 있는지 확인해 주세요.\n2. 무선 네트워크(WiFi_SHB)에 연결되어 있는지 확인하세요.\n3. 그래도 문제가 지속되면 IT지원팀에 문의해 주세요."}]}
+{"messages":[{"role":"user","content":"VPN 연결이 안 됩니다."},{"role":"assistant","content":"VPN 클라이언트를 실행한 후 사내 VPN 주소(vpn.shb.co.kr)를 입력하고, 인증서로 로그인해 주세요. 문제가 지속되면 IT지원팀으로 문의해 주세요."}]}
+{"messages":[{"role":"user","content":"IP주소는 어떻게 확인하나요?"},{"role":"assistant","content":"Windows에서 명령 프롬프트(cmd)를 열고 `ipconfig` 명령어를 입력하면 현재 컴퓨터의 IP 주소를 확인할 수 있습니다."}]}
+{"messages":[{"role":"user","content":"망분리 PC에서 외부 메일을 받을 수 있나요?"},{"role":"assistant","content":"망분리 환경에서는 외부 메일 첨부파일이 차단됩니다. 업무상 필요 시 보안 승인 절차를 통해 예외 요청이 가능합니다."}]}
+{"messages":[{"role":"user","content":"사내 전화기가 작동하지 않아요."},{"role":"assistant","content":"전화기의 전원과 네트워크 케이블 연결 상태를 확인해 주세요. 문제가 지속되면 내선번호와 함께 IT지원팀에 장애를 접수해 주세요."}]}
+{"messages":[{"role":"user","content":"사외 출장 중 VPN 연결 가능한가요?"},{"role":"assistant","content":"네, 인터넷 연결만 되면 국내외 어디서든 VPN을 사용할 수 있습니다. 단, 공용 Wi-Fi 환경에서는 연결이 제한될 수 있습니다."}]}
+{"messages":[{"role":"user","content":"보안 정책 요약 좀 알려주세요."},{"role":"assistant","content":"1. 외부 저장장치 사용 금지\n2. 핫스팟 금지\n3. 비밀번호 15자 이상\n4. 분기별 변경 필수\n5. 보안 프로그램 상시 실행"}]}
+{"messages":[{"role":"user","content":"PC에 프린터를 추가하려면 어떻게 하나요?"},{"role":"assistant","content":"1. 제어판 > 장치 > 프린터 추가로 이동합니다.\n2. 네트워크 프린터 주소를 입력하고 설치를 완료하세요.\n3. 필요 시 드라이버 수동 설치가 필요할 수 있습니다."}]}
+{"messages":[{"role":"user","content":"공용폴더 접근이 안 돼요."},{"role":"assistant","content":"폴더 경로가 변경되었거나 권한이 없을 수 있습니다. IT 지원팀에 폴더 경로와 사용자 계정을 전달해 문의해 주세요."}]}
+{"messages":[{"role":"user","content":"사내 시스템 접속이 느려요."},{"role":"assistant","content":"네트워크 상태를 먼저 확인해 주세요. VPN이나 방화벽이 영향을 줄 수 있습니다. 계속 느릴 경우 시스템 담당자에게 문의해 주세요."}]}
+{"messages":[{"role":"user","content":"네트워크 오류가 발생했어요. IP 충돌일까요?"},{"role":"assistant","content":"같은 네트워크에서 중복된 IP를 사용할 경우 충돌이 발생할 수 있습니다. 고정 IP 설정 여부를 확인하고 IT팀에 문의해 주세요."}]}
+{"messages":[{"role":"user","content":"사내 인증서 만료 시 어떻게 하나요?"},{"role":"assistant","content":"인증서 갱신은 보안 포털에서 직접 신청 가능하며, 재발급 후 VPN이나 인트라넷 로그인 오류가 해결됩니다."}]}
+{"messages":[{"role":"user","content":"방화벽 설정은 어디서 확인하나요?"},{"role":"assistant","content":"Windows Defender 또는 회사에서 지정한 보안 솔루션을 통해 방화벽 상태를 확인할 수 있습니다. 변경 권한이 제한될 수 있으니 유의하세요."}]}
+{"messages":[{"role":"user","content":"USB 저장장치를 사용할 수 없어요."},{"role":"assistant","content":"보안 정책상 일반 USB는 차단됩니다. 보안 인증된 USB만 허용되며, 장치 등록은 보안 포털에서 진행해 주세요."}]}
+{"messages":[{"role":"user","content":"IP 변경은 어떻게 하나요?"},{"role":"assistant","content":"일반 사용자는 직접 변경할 수 없습니다. IT 지원팀에 고정 IP 요청을 해 주세요."}]}
+{"messages":[{"role":"user","content":"사내 메신저 로그인 오류가 나요."},{"role":"assistant","content":"네트워크 연결 상태와 계정 비밀번호가 올바른지 확인하세요. 문제가 지속되면 메신저 운영자에게 문의해 주세요."}]}
+{"messages":[{"role":"user","content":"업무 시스템 링크가 열리지 않아요."},{"role":"assistant","content":"VPN 연결 여부와 시스템 접속 URL을 다시 확인해 주세요. 특정 브라우저에서 제한이 있을 수 있습니다."}]}
+{"messages":[{"role":"user","content":"전화 내선번호는 어디서 확인하나요?"},{"role":"assistant","content":"사내 전화번호부 또는 부서 안내 시트에서 내선번호를 확인할 수 있습니다."}]}
+{"messages":[{"role":"user","content":"업무용 Wi-Fi가 끊깁니다."},{"role":"assistant","content":"Wi-Fi 신호가 약한 장소일 수 있습니다. 가까운 AP로 이동하거나 유선 LAN을 사용해 주세요."}]}
+{"messages":[{"role":"user","content":"사내 시스템 접속 URL이 뭔가요?"},{"role":"assistant","content":"접속하려는 시스템 명칭을 알려주시면 정확한 URL을 안내해 드립니다. 일반적으로 사내 인트라넷 메인에서 접근 가능합니다."}]}
+{"messages":[{"role":"user","content":"보안 점검은 언제 진행되나요?"},{"role":"assistant","content":"월 1회 정기 보안 점검이 있습니다. 일정은 메일 또는 인트라넷 공지사항을 참고해 주세요."}]}
+{"messages":[{"role":"user","content":"비밀번호 변경 주기는 어떻게 되나요?"},{"role":"assistant","content":"사내 정책상 비밀번호는 3개월마다 변경해야 하며, 복잡도 규칙을 반드시 준수해야 합니다."}]}
+{"messages":[{"role":"user","content":"이메일이 차단됐어요."},{"role":"assistant","content":"스팸 또는 첨부파일 제한으로 인해 차단될 수 있습니다. 보안 포털에서 차단 사유 확인 및 예외 요청을 해 주세요."}]}
+{"messages":[{"role":"user","content":"부서 공용 프린터 설정은 어떻게 하나요?"},{"role":"assistant","content":"IT팀에서 공유된 네트워크 프린터 경로를 확인하고, 프린터 추가 메뉴를 통해 설치해 주세요."}]}
+{"messages":[{"role":"user","content":"파일 서버가 접속되지 않습니다."},{"role":"assistant","content":"서버 주소 확인, 네트워크 연결 상태, 계정 권한 확인이 필요합니다. 계속 접속되지 않으면 IT지원팀에 문의해 주세요."}]}
+{"messages":[{"role":"user","content":"망분리 PC에서 외부 웹사이트 접속 가능한가요?"},{"role":"assistant","content":"보안상 외부 웹사이트 접속은 차단되어 있으며, 예외가 필요한 경우 별도 보안 승인 절차가 필요합니다."}]}
+{"messages":[{"role":"user","content":"메일 첨부파일이 열리지 않아요."},{"role":"assistant","content":"보안 솔루션에서 차단되었을 수 있습니다. 확장자 확인 후 예외 요청을 IT팀에 제출해 주세요."}]}
+{"messages":[{"role":"user","content":"공유폴더가 보이지 않습니다."},{"role":"assistant","content":"공유폴더 권한이 없거나 네트워크가 단절된 상태일 수 있습니다. IT팀에 요청해 권한 확인을 받아 주세요."}]}
+{"messages":[{"role":"user","content":"VPN 비밀번호를 잊어버렸어요."},{"role":"assistant","content":"보안 인증서를 재발급 받거나, VPN 초기화를 위해 IT팀에 본인 확인 후 요청해 주세요."}]}
+{"messages":[{"role":"user","content":"새 장비 등록 절차 알려주세요."},{"role":"assistant","content":"새 장비는 보안 점검 후 MAC 등록이 필요합니다. 장비명과 MAC 주소를 IT운영팀에 전달해 주세요."}]}
+{"messages":[{"role":"user","content":"전화기 벨소리가 안 나요."},{"role":"assistant","content":"볼륨 설정 확인 후에도 소리가 없으면 장비 불량일 수 있습니다. IT 지원팀에 장애 접수해 주세요."}]}
+{"messages":[{"role":"user","content":"인터넷 속도가 느려요."},{"role":"assistant","content":"네트워크 혼잡 또는 회선 장애일 수 있습니다. 근무 중인 지점/부서명을 포함해 IT팀에 문의해 주세요."}]}

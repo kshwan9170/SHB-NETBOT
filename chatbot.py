@@ -8,6 +8,9 @@ from pathlib import Path
 from openai import OpenAI
 from database import search_similar_docs
 
+# Import configuration
+from config import FAQ_KEYWORDS, FINE_TUNED_MODEL, RAG_SYSTEM
+
 # Initialize OpenAI client
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 openai_client = OpenAI(api_key=OPENAI_API_KEY)
@@ -868,6 +871,76 @@ def generate_external_system_response(query, df, keywords):
     
     return response
 
+def check_keyword_match(query: str, keywords: List[str]) -> bool:
+    """
+    사용자 질문에 특정 키워드가 포함되어 있는지 확인합니다.
+    
+    Args:
+        query: 사용자 질문
+        keywords: 검색할 키워드 리스트
+        
+    Returns:
+        키워드 포함 여부 (True/False)
+    """
+    query_lower = query.lower()
+    for keyword in keywords:
+        if keyword.lower() in query_lower:
+            return True
+    return False
+
+def get_fine_tuned_response(query: str, chat_history: Optional[List[Dict[str, str]]] = None) -> Optional[str]:
+    """
+    Fine-tuned 모델을 사용하여 응답을 생성합니다.
+    
+    Args:
+        query: 사용자 질문
+        chat_history: 채팅 기록 (선택 사항)
+        
+    Returns:
+        생성된 응답 또는 None (오류 발생 시)
+    """
+    try:
+        # 메시지 목록 준비
+        messages = []
+        
+        # 시스템 메시지 추가
+        system_message = """
+        당신은 신한은행 네트워크 담당자로, VPN, 보안, 네트워크 장비, PC 문제 등에 대한 질문에 답변합니다.
+        간결하고 정확한 정보를 제공하며, 문제 해결을 위한 단계별 안내를 제공하세요.
+        """
+        messages.append({"role": "system", "content": system_message})
+        
+        # 채팅 기록 추가 (타입 안전성 보장)
+        if chat_history:
+            for msg in chat_history:
+                role = msg.get("role", "")
+                content = msg.get("content", "")
+                if role in ["user", "assistant"] and content is not None:
+                    messages.append({"role": role, "content": content})
+        
+        # 현재 질문 추가
+        messages.append({"role": "user", "content": query})
+        
+        # OpenAI에서 응답 받기
+        response = openai_client.chat.completions.create(
+            model=FINE_TUNED_MODEL["model_id"],
+            messages=messages,
+            temperature=FINE_TUNED_MODEL["temperature"],
+            max_tokens=FINE_TUNED_MODEL["max_tokens"],
+        )
+        
+        # 응답 처리
+        response_content = response.choices[0].message.content
+        if response_content is None:
+            print("Fine-tuned 모델에서 None 응답을 받음")
+            return None
+            
+        return response_content
+    
+    except Exception as e:
+        print(f"Fine-tuned 모델 응답 생성 중 오류 발생: {str(e)}")
+        return None  # 오류 발생 시 None 반환하여 RAG 시스템으로 폴백
+
 def get_chatbot_response(
     query: str, 
     context: Optional[str] = None, 
@@ -892,7 +965,22 @@ def get_chatbot_response(
         return "Error: OpenAI API key is not set. Please set the OPENAI_API_KEY environment variable."
     
     try:
-        # 먼저 엑셀 기반 처리 시도
+        # 먼저 키워드 기반 분기 확인 - FAQ 키워드가 포함된 질문이고 Fine-tuned 모델이 활성화되어 있으면 Fine-tuned 모델 사용
+        use_fine_tuned = False
+        
+        if FINE_TUNED_MODEL["enabled"] and check_keyword_match(query, FAQ_KEYWORDS):
+            print(f"FAQ 키워드 매치됨: {query} - Fine-tuned 모델 사용")
+            use_fine_tuned = True
+            fine_tuned_response = get_fine_tuned_response(query, chat_history)
+            
+            # Fine-tuned 모델 응답이 성공적으로 생성되면 해당 응답 반환
+            if fine_tuned_response:
+                return fine_tuned_response
+            
+            # 실패 시 자동으로 RAG 시스템으로 폴백 (아래 코드 계속 실행)
+            print("Fine-tuned 모델 응답 생성 실패, RAG 시스템으로 전환")
+        
+        # 다음으로 엑셀 기반 처리 시도
         excel_result = process_excel_query(query)
         
         # 엑셀에서 결과를 찾았으면 해당 결과 반환
@@ -907,7 +995,7 @@ def get_chatbot_response(
         
         # RAG 파이프라인 적용 (필요시)
         retrieved_docs = []
-        if use_rag and not context:
+        if RAG_SYSTEM["enabled"] and use_rag and not context:
             retrieved_docs, context = retrieve_relevant_documents(query, top_k=5)
             if not context:
                 if language == 'ko':
@@ -1022,10 +1110,10 @@ def get_chatbot_response(
         
         # OpenAI에서 응답 받기
         response = openai_client.chat.completions.create(
-            model=model,
+            model=RAG_SYSTEM["model"],
             messages=messages,
-            temperature=0.7,
-            max_tokens=1000,
+            temperature=RAG_SYSTEM["temperature"],
+            max_tokens=RAG_SYSTEM["max_tokens"],
         )
         
         # 응답 처리
