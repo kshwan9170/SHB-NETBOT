@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHB-NetBot - 자주 묻는 질문 (FAQ)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 고정 내비게이션 바 -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='images/shinhan_logo_refined.svg') }}" alt="신한은행 로고">
+                <span>SHB-NetBot</span>
+            </div>
+            <div class="nav-links">
+                <a href="/#home" class="nav-link">Home</a>
+                <a href="/#about" class="nav-link">About</a>
+                <a href="/#chat" class="nav-link">Chat</a>
+                <a href="/#documents" class="nav-link">Documents</a>
+                <a href="/#support" class="nav-link">Support</a>
+                <a href="/faq" class="nav-link active">FAQ</a>
+                <button id="theme-toggle" class="theme-toggle">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="mobile-menu-btn">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+        </div>
+    </nav>
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-question-circle"></i> 자주 묻는 질문 (FAQ)</h2>
+            <p class="text-muted">신한은행 네트워크 지원 서비스에 관한 자주 묻는 질문과 답변입니다.</p>
+        </div>
+        <div class="col-md-4 text-right">
+            <!-- 검색 폼 -->
+            <form action="{{ url_for('faq_list') }}" method="GET" class="form-inline justify-content-end">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="검색어 입력" value="{{ search }}">
+                    {% if is_admin %}
+                    <input type="hidden" name="admin" value="1">
+                    {% endif %}
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if is_admin %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">관리자 도구</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <a href="{{ url_for('faq_create') }}" class="btn btn-success mr-2">
+                                <i class="fas fa-plus-circle"></i> 새 FAQ 작성
+                            </a>
+                        </div>
+                        <div class="col-md-6 text-right">
+                            <div class="btn-group">
+                                <a href="{{ url_for('faq_export') }}" class="btn btn-info">
+                                    <i class="fas fa-file-export"></i> 표준 내보내기
+                                </a>
+                                <button type="button" class="btn btn-info dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <span class="sr-only">Toggle Dropdown</span>
+                                </button>
+                                <div class="dropdown-menu">
+                                    <a class="dropdown-item" href="{{ url_for('faq_export', include_unpublished=1) }}">비공개 항목 포함</a>
+                                    <a class="dropdown-item" href="{{ url_for('faq_export', include_not_reflected=1) }}">미반영 항목 포함</a>
+                                    <a class="dropdown-item" href="{{ url_for('faq_export', include_unpublished=1, include_not_reflected=1) }}">모든 항목 포함</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 카테고리 필터 -->
+    {% if categories %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">카테고리</h5>
+                    <div class="btn-group category-filter">
+                        <button type="button" class="btn btn-outline-primary category-btn active" data-category="all">전체</button>
+                        {% for category in categories %}
+                        <button type="button" class="btn btn-outline-primary category-btn" data-category="{{ category }}">{{ category }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if faqs %}
+    <div class="row">
+        <div class="col-12">
+            <div class="accordion" id="faqAccordion">
+                {% for faq in faqs %}
+                <div class="card faq-item" data-category="{{ faq.category }}">
+                    <div class="card-header d-flex justify-content-between align-items-center" id="heading{{ faq.id }}">
+                        <h5 class="mb-0">
+                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse{{ faq.id }}" aria-expanded="false" aria-controls="collapse{{ faq.id }}">
+                                {{ faq.question }}
+                            </button>
+                        </h5>
+                        <span class="badge badge-primary">{{ faq.category }}</span>
+                    </div>
+                    <div id="collapse{{ faq.id }}" class="collapse" aria-labelledby="heading{{ faq.id }}" data-parent="#faqAccordion">
+                        <div class="card-body">
+                            <div class="faq-answer">
+                                {{ faq.answer|safe }}
+                            </div>
+                            
+                            <!-- 관리자 모드인 경우 추가 정보와 편집/삭제 버튼 표시 -->
+                            {% if is_admin %}
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <small class="text-muted">
+                                        <i class="far fa-thumbs-up"></i> {{ faq.positive_count }}
+                                        <i class="far fa-thumbs-down ml-2"></i> {{ faq.negative_count }}
+                                        <span class="ml-3">모델 반영: 
+                                            {% if faq.model_reflected %}
+                                            <span class="text-success"><i class="fas fa-check"></i> 반영됨</span>
+                                            {% else %}
+                                            <span class="text-danger"><i class="fas fa-times"></i> 미반영</span>
+                                            {% endif %}
+                                        </span>
+                                        <span class="ml-3">공개 여부: 
+                                            {% if faq.is_published %}
+                                            <span class="text-success"><i class="fas fa-eye"></i> 공개</span>
+                                            {% else %}
+                                            <span class="text-danger"><i class="fas fa-eye-slash"></i> 비공개</span>
+                                            {% endif %}
+                                        </span>
+                                        <span class="ml-3">마지막 수정: {{ faq.last_updated }}</span>
+                                    </small>
+                                </div>
+                                <div class="col-md-4 text-right">
+                                    <a href="{{ url_for('faq_edit', faq_id=faq.id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i> 편집
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger delete-faq" data-id="{{ faq.id }}">
+                                        <i class="fas fa-trash"></i> 삭제
+                                    </button>
+                                </div>
+                            </div>
+                            {% else %}
+                            <!-- 일반 사용자 모드인 경우 피드백 버튼 표시 -->
+                            <div class="mt-3 text-right">
+                                <small class="mr-2">이 답변이 도움되었나요?</small>
+                                <button class="btn btn-sm btn-outline-success feedback-btn" data-id="{{ faq.id }}" data-type="positive">
+                                    <i class="far fa-thumbs-up"></i> 예
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger feedback-btn" data-id="{{ faq.id }}" data-type="negative">
+                                    <i class="far fa-thumbs-down"></i> 아니오
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- 페이지네이션 -->
+    {% if total_pages > 1 %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="FAQ pagination">
+                <ul class="pagination justify-content-center">
+                    {% if page > 1 %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('faq_list', page=page-1, search=search, admin=1 if is_admin else 0) }}">이전</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1">이전</a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for p in range(1, total_pages + 1) %}
+                    <li class="page-item {% if p == page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('faq_list', page=p, search=search, admin=1 if is_admin else 0) }}">{{ p }}</a>
+                    </li>
+                    {% endfor %}
+                    
+                    {% if page < total_pages %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('faq_list', page=page+1, search=search, admin=1 if is_admin else 0) }}">다음</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1">다음</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info">
+                {% if search %}
+                <i class="fas fa-info-circle"></i> '{{ search }}' 검색 결과가 없습니다.
+                {% else %}
+                <i class="fas fa-info-circle"></i> 등록된 FAQ가 없습니다.
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- FAQ 삭제 확인 모달 -->
+<div class="modal fade" id="deleteFaqModal" tabindex="-1" role="dialog" aria-labelledby="deleteFaqModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteFaqModalLabel">FAQ 삭제 확인</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                이 FAQ를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
+                <form id="deleteFaqForm" method="POST">
+                    <button type="submit" class="btn btn-danger">삭제</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 피드백 응답 모달 -->
+<div class="modal fade" id="feedbackResponseModal" tabindex="-1" role="dialog" aria-labelledby="feedbackResponseModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="feedbackResponseModalLabel">피드백 전송 완료</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                피드백을 보내주셔서 감사합니다. 더 나은 서비스를 제공하기 위해 노력하겠습니다.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-dismiss="modal">확인</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- 푸터 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>SHB-NetBot</h4>
+                    <p>신한은행 네트워크 지원 챗봇 서비스</p>
+                </div>
+                <div class="footer-section">
+                    <h4>바로가기</h4>
+                    <ul>
+                        <li><a href="/#home">홈</a></li>
+                        <li><a href="/#chat">챗봇</a></li>
+                        <li><a href="/#documents">문서관리</a></li>
+                        <li><a href="/#support">고객지원</a></li>
+                        <li><a href="/faq">FAQ</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>문의하기</h4>
+                    <ul>
+                        <li><a href="/inquiry">문의 게시판</a></li>
+                        <li><a href="/feedback">피드백</a></li>
+                        <li><a href="/report">장애 신고</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 SHB-NetBot. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery, Bootstrap 및 AOS 스크립트 -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script src="{{ url_for('static', filename='js/modern.js') }}"></script>
+    
+    <script>
+        AOS.init({
+            duration: 800,
+            once: true
+        });
+        
+        $(document).ready(function() {
+            // 카테고리 필터링
+            $('.category-btn').click(function() {
+                $('.category-btn').removeClass('active');
+                $(this).addClass('active');
+                
+                var category = $(this).data('category');
+                
+                if (category === 'all') {
+                    $('.faq-item').show();
+                } else {
+                    $('.faq-item').hide();
+                    $('.faq-item[data-category="' + category + '"]').show();
+                }
+            });
+            
+            // FAQ 삭제 모달 설정
+            $('.delete-faq').click(function() {
+                var faqId = $(this).data('id');
+                var deleteUrl = "{{ url_for('faq_delete', faq_id=0) }}".replace('0', faqId);
+                $('#deleteFaqForm').attr('action', deleteUrl);
+                $('#deleteFaqModal').modal('show');
+            });
+            
+            // 피드백 버튼 처리
+            $('.feedback-btn').click(function() {
+                var faqId = $(this).data('id');
+                var feedbackType = $(this).data('type');
+                var feedbackUrl = "{{ url_for('faq_feedback', faq_id=0) }}".replace('0', faqId);
+                
+                // 피드백 전송
+                $.ajax({
+                    url: feedbackUrl,
+                    type: 'POST',
+                    data: {
+                        feedback_type: feedbackType
+                    },
+                    success: function(response) {
+                        // 피드백 전송 성공 시 모달 표시
+                        $('#feedbackResponseModal').modal('show');
+                        
+                        // 피드백 버튼 비활성화
+                        $('.feedback-btn[data-id="' + faqId + '"]').prop('disabled', true);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('피드백 전송 오류:', error);
+                        alert('피드백 전송 중 오류가 발생했습니다.');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

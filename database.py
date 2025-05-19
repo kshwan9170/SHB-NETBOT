@@ -87,24 +87,46 @@ def initialize_database():
             if ('documents' in old_data and 'ids' in old_data and
                 'metadatas' in old_data and len(old_data['documents']) > 0):
                 
-                print(f"Migrating {len(old_data['documents'])} documents to new collection '{COLLECTION_NAME}'")
+                total_docs = len(old_data['documents'])
+                print(f"Migrating {total_docs} documents to new collection '{COLLECTION_NAME}'")
                 
-                # 메타데이터가 None인 경우 빈 딕셔너리로 대체
-                metadatas = []
-                for i, metadata in enumerate(old_data['metadatas']):
-                    if metadata is None:
-                        metadatas.append({})
-                    else:
-                        metadatas.append(metadata)
+                # 배치 크기 설정 (토큰 한도 초과 방지)
+                batch_size = 200
+                total_batches = (total_docs + batch_size - 1) // batch_size  # 올림 나눗셈
                 
-                # 새 컬렉션에 데이터 추가
-                collection.add(
-                    documents=old_data['documents'],
-                    ids=old_data['ids'],
-                    metadatas=metadatas
-                )
+                for batch_idx in range(total_batches):
+                    start_idx = batch_idx * batch_size
+                    end_idx = min(start_idx + batch_size, total_docs)
+                    
+                    print(f"Processing batch {batch_idx+1}/{total_batches} (docs {start_idx} to {end_idx-1})")
+                    
+                    # 현재 배치의 문서, ID, 메타데이터 추출
+                    batch_docs = old_data['documents'][start_idx:end_idx]
+                    batch_ids = old_data['ids'][start_idx:end_idx]
+                    
+                    # 메타데이터가 None인 경우 빈 딕셔너리로 대체
+                    batch_metadatas = []
+                    for i in range(start_idx, end_idx):
+                        metadata = old_data['metadatas'][i] if i < len(old_data['metadatas']) else None
+                        if metadata is None:
+                            batch_metadatas.append({})
+                        else:
+                            batch_metadatas.append(metadata)
+                    
+                    try:
+                        # 새 컬렉션에 배치 단위로 데이터 추가
+                        collection.add(
+                            documents=batch_docs,
+                            ids=batch_ids,
+                            metadatas=batch_metadatas
+                        )
+                        print(f"Successfully migrated batch {batch_idx+1}/{total_batches}")
+                    except Exception as batch_err:
+                        print(f"Error migrating batch {batch_idx+1}/{total_batches}: {str(batch_err)}")
+                        # 배치 오류가 발생해도 계속 진행
+                        continue
                 
-                print(f"Successfully migrated data to '{COLLECTION_NAME}'")
+                print(f"Migration to '{COLLECTION_NAME}' completed")
                 MIGRATION_DONE = True
             
         except Exception as e:
@@ -312,40 +334,83 @@ def delete_document(doc_id: str):
     
     Args:
         doc_id: 삭제할 문서의 ID (UUID)
+        
+    Returns:
+        성공 여부를 나타내는 불리언 값
     """
     try:
         collection = initialize_database()
+        chunks_deleted = 0
         
-        # 문서 ID로 관련 청크 찾기 - 메타데이터에서 doc_id 필드 검색
-        results = collection.get(
-            where={"doc_id": doc_id}
-        )
+        # 1. 메타데이터의 doc_id 필드로 검색 (신규 형식)
+        try:
+            results = collection.get(
+                where={"doc_id": doc_id}
+            )
+            
+            if results and results['ids'] and len(results['ids']) > 0:
+                collection.delete(ids=results['ids'])
+                chunks_deleted += len(results['ids'])
+                print(f"Deleted {len(results['ids'])} chunks from metadata doc_id: {doc_id}")
+        except Exception as e:
+            print(f"Error during metadata-based deletion: {e}")
         
-        if results and results['ids'] and len(results['ids']) > 0:
-            # 해당 ID의 모든 청크 삭제
-            collection.delete(ids=results['ids'])
-            print(f"Deleted {len(results['ids'])} chunks for document ID: {doc_id}")
-            return True
-        else:
-            # 이전 버전 호환성: chunk_id에서 doc_id 형식으로 검색
+        # 2. 메타데이터의 source 필드에서 파일명으로 검색 (파일 경로에 UUID가 포함된 경우)
+        try:
+            source_results = collection.get()
+            source_target_ids = []
+            
+            if source_results and 'metadatas' in source_results and source_results['metadatas']:
+                for i, metadata in enumerate(source_results['metadatas']):
+                    if metadata and 'source' in metadata and isinstance(metadata['source'], str):
+                        # 파일 경로에 UUID가 포함되어 있는지 확인
+                        if doc_id in metadata['source']:
+                            if i < len(source_results['ids']):
+                                source_target_ids.append(source_results['ids'][i])
+            
+            if source_target_ids:
+                # 이미 삭제된 ID 제외
+                source_target_ids = [id for id in source_target_ids if id not in (results.get('ids', []) if 'results' in locals() and results else [])]
+                if source_target_ids:
+                    collection.delete(ids=source_target_ids)
+                    chunks_deleted += len(source_target_ids)
+                    print(f"Deleted {len(source_target_ids)} chunks based on source path: {doc_id}")
+        except Exception as e:
+            print(f"Error during source-based deletion: {e}")
+        
+        # 3. 이전 버전 호환성: chunk_id에서 doc_id 형식으로 검색
+        try:
             all_chunks = collection.get()
             target_ids = []
             
             if all_chunks and 'ids' in all_chunks and all_chunks['ids']:
-                for i, chunk_id in enumerate(all_chunks['ids']):
-                    # 청크 ID가 "doc_id-번호" 형식이므로 doc_id로 시작하는지 확인
-                    if chunk_id.startswith(f"{doc_id}-"):
-                        target_ids.append(chunk_id)
+                for chunk_id in all_chunks['ids']:
+                    # UUID 형식 검증 후 청크 ID가 "doc_id-번호" 형식이므로 doc_id로 시작하는지 확인
+                    if isinstance(chunk_id, str) and '-' in chunk_id:
+                        chunk_doc_id = chunk_id.split('-')[0]
+                        if chunk_doc_id == doc_id:
+                            target_ids.append(chunk_id)
             
             if target_ids:
-                collection.delete(ids=target_ids)
-                print(f"Deleted {len(target_ids)} chunks with IDs starting with: {doc_id}")
-                return True
-            else:
-                print(f"No chunks found for document ID: {doc_id}")
-                return False
+                # 이미 삭제된 ID 제외
+                target_ids = [id for id in target_ids if id not in (results.get('ids', []) if 'results' in locals() and results else [])]
+                if target_ids:
+                    collection.delete(ids=target_ids)
+                    chunks_deleted += len(target_ids)
+                    print(f"Deleted {len(target_ids)} chunks with IDs starting with: {doc_id}")
+        except Exception as e:
+            print(f"Error during chunk-id based deletion: {e}")
+        
+        # 최종 결과 반환
+        if chunks_deleted > 0:
+            print(f"총 {chunks_deleted}개의 청크가 성공적으로 삭제되었습니다. (문서 ID: {doc_id})")
+            return True
+        else:
+            print(f"문서 ID {doc_id}에 해당하는 청크를 찾을 수 없습니다.")
+            return False
+            
     except Exception as e:
-        print(f"Error deleting document from database: {e}")
+        print(f"문서 삭제 중 오류 발생: {e}")
         return False
 
 def get_all_document_ids():

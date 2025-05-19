@@ -293,8 +293,25 @@
         
         // 파일 삭제 요청
         function deleteFile(systemFilename, displayFilename) {
-            if (confirm(`정말 "${displayFilename}" 파일을 삭제하시겠습니까?`)) {
+            if (confirm(`정말 "${displayFilename}" 파일을 삭제하시겠습니까?\n\n삭제 시 챗봇 답변에서도 해당 문서 정보가 제거됩니다.`)) {
                 console.log(`Sending delete request with filename: ${systemFilename}`);
+                
+                // 삭제 중임을 표시할 요소 생성
+                const deleteStatus = document.createElement('div');
+                deleteStatus.id = 'delete-status';
+                deleteStatus.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 8px; z-index: 1000; text-align: center;';
+                deleteStatus.innerHTML = `
+                    <div style="margin-bottom: 15px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="rotating-icon">
+                            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+                        </svg>
+                    </div>
+                    <div>"${displayFilename}" 파일 삭제 중...</div>
+                    <div style="font-size: 12px; margin-top: 8px;">파일 시스템 및 벡터 DB에서 모두 제거하고 있습니다.</div>
+                `;
+                
+                document.body.appendChild(deleteStatus);
+                
                 fetch('/api/delete', {
                     method: 'POST',
                     headers: {
@@ -306,8 +323,15 @@
                 })
                 .then(response => response.json())
                 .then(data => {
+                    // 삭제 상태 표시 제거
+                    document.body.removeChild(deleteStatus);
+                    
                     if (data.success) {
-                        alert(`"${displayFilename}" 파일이 삭제되었습니다.`);
+                        const successMessage = data.vector_db_cleaned ? 
+                            `"${displayFilename}" 파일이 성공적으로 삭제되었습니다.\n\n파일 시스템 및 벡터 데이터베이스에서 모두 제거되었습니다.` : 
+                            `"${displayFilename}" 파일이 삭제되었습니다.`;
+                        
+                        alert(successMessage);
                         // 삭제 후 파일 목록 다시 조회
                         fetchFileList();
                     } else {
@@ -315,6 +339,11 @@
                     }
                 })
                 .catch(error => {
+                    // 오류 발생 시 삭제 상태 표시 제거
+                    if (document.getElementById('delete-status')) {
+                        document.body.removeChild(deleteStatus);
+                    }
+                    
                     console.error('API 호출 중 오류 발생:', error);
                     alert('서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
                 });
