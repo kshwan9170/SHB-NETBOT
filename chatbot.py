@@ -495,8 +495,10 @@ def process_excel_query(query):
             # 키워드 열 확인
             for col in main_df.columns:
                 if '키워드' in col or '검색어' in col:
-                    if row[col]:
-                        keywords.extend(str(row[col]).split(','))
+                    # 안전하게 Series를 문자열로 처리 (Truth value 오류 방지)
+                    cell_value = str(row[col])
+                    if cell_value and cell_value.strip() and cell_value.lower() != 'nan':
+                        keywords.extend(cell_value.split(','))
             
             # 시트 정보 열 확인
             sheet_col = None
@@ -531,21 +533,24 @@ def process_excel_query(query):
                 category = row_category
                 
                 # 연결 시트 정보 추출
-                if sheet_col and row[sheet_col]:
+                if sheet_col:
                     target_sheet_info = str(row[sheet_col])
-                    # "XX 시트 참조" 형식에서 시트 이름 추출
-                    sheet_match = re.search(r'([가-힣A-Za-z0-9_]+)[\s_]시트', target_sheet_info)
-                    if sheet_match:
-                        target_sheet = sheet_match.group(1)
+                    if target_sheet_info and target_sheet_info.strip() and target_sheet_info.lower() != 'nan':
+                        # "XX 시트 참조" 형식에서 시트 이름 추출
+                        sheet_match = re.search(r'([가-힣A-Za-z0-9_]+)[\s_]시트', target_sheet_info)
+                        if sheet_match:
+                            target_sheet = sheet_match.group(1)
                 
                 # 처리 방식 정보 추출
-                if response_type_col and row[response_type_col]:
-                    response_type = str(row[response_type_col])
+                if response_type_col:
+                    response_type_value = str(row[response_type_col])
+                    if response_type_value and response_type_value.strip() and response_type_value.lower() != 'nan':
+                        response_type = response_type_value
                 
                 break
     
     # 매칭되는 내용을 찾지 못한 경우
-    if not matched_row or not target_sheet:
+    if not isinstance(matched_row, pd.Series) or not target_sheet:
         # 일단 기본 처리로 전환하고 첫 번째 내용 시트 사용
         alternative_sheet = None
         for sheet in sheet_names:
