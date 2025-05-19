@@ -3,7 +3,7 @@
 # Fine-tuned 모델 설정
 FINE_TUNED_MODEL = {
     "enabled": True,
-    "model_id": "ft:gpt-3.5-turbo-0613:shinhan-bank::shb-faq-v1",  # 실제 모델 ID로 업데이트됨
+    "model_id": "ft:gpt-3.5-turbo-0125:personal:shb-faq-v1:BYwj2K2G",  # 훈련 완료된 실제 모델 ID
     "temperature": 0.3,
     "max_tokens": 500
 }
