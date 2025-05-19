@@ -336,7 +336,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // 피드백 질문 
             const feedbackQuestion = document.createElement('div');
             feedbackQuestion.className = 'feedback-question';
-            feedbackQuestion.textContent = '도움이 되었나요?';
+            feedbackQuestion.textContent = '응답이 도움이 되었나요?';
             
             // 피드백 버튼 컨테이너
             const feedbackButtons = document.createElement('div');
@@ -345,27 +345,64 @@ document.addEventListener('DOMContentLoaded', function() {
             // 좋아요 버튼
             const likeButton = document.createElement('button');
             likeButton.className = 'feedback-button like-button';
-            likeButton.innerHTML = '👍 도움 됨';
+            likeButton.innerHTML = '<i class="fas fa-thumbs-up"></i> 만족해요';
+            likeButton.setAttribute('title', '이 응답에 만족합니다');
             likeButton.onclick = function() {
-                submitFeedback(questionText, content, '👍 도움 됨', feedbackContainer);
+                submitFeedback(questionText, content, '만족', feedbackContainer);
+                showThankYouMessage(feedbackContainer, '피드백 감사합니다!');
             };
             
             // 싫어요 버튼
             const dislikeButton = document.createElement('button');
             dislikeButton.className = 'feedback-button dislike-button';
-            dislikeButton.innerHTML = '👎 부족함';
+            dislikeButton.innerHTML = '<i class="fas fa-thumbs-down"></i> 개선 필요';
+            dislikeButton.setAttribute('title', '이 응답이 개선이 필요합니다');
             dislikeButton.onclick = function() {
                 // 부족함 피드백일 때는 추가 코멘트 입력 UI 표시
                 showDislikeFeedbackForm(questionText, content, feedbackContainer);
             };
             
+            // 정보추가 버튼
+            const moreInfoButton = document.createElement('button');
+            moreInfoButton.className = 'feedback-button more-info-button';
+            moreInfoButton.innerHTML = '<i class="fas fa-info-circle"></i> 더 자세히';
+            moreInfoButton.setAttribute('title', '더 자세한 정보가 필요합니다');
+            moreInfoButton.onclick = function() {
+                // "더 자세히" 버튼 클릭 시, 같은 질문에 "더 자세히 설명해 주세요"를 추가하여 새 질문 생성
+                userInput.value = questionText + " 더 자세히 설명해 주세요.";
+                
+                // 폼 직접 제출 (submitQuestion 대신)
+                if (chatForm) {
+                    chatForm.dispatchEvent(new Event('submit'));
+                }
+                
+                // 피드백 UI 감사 메시지로 교체
+                feedbackContainer.innerHTML = '<div class="feedback-success">자세한 정보를 가져올게요</div>';
+                
+                // 5초 후 피드백 UI 흐리게 처리
+                setTimeout(() => {
+                    feedbackContainer.style.opacity = '0.6';
+                }, 5000);
+            };
+            
             // 버튼 추가
             feedbackButtons.appendChild(likeButton);
             feedbackButtons.appendChild(dislikeButton);
+            feedbackButtons.appendChild(moreInfoButton);
             
             // 피드백 UI 구성
             feedbackContainer.appendChild(feedbackQuestion);
             feedbackContainer.appendChild(feedbackButtons);
+            
+            // 피드백 감사 메시지 함수 정의
+            function showThankYouMessage(container, message = '피드백을 주셔서 감사합니다!') {
+                container.innerHTML = `<div class="feedback-success">${message}</div>`;
+                
+                // 5초 후 피드백 UI 흐리게 처리
+                setTimeout(() => {
+                    container.style.opacity = '0.6';
+                }, 5000);
+            }
             
             // 메시지 아래에 피드백 UI 추가
             messageDiv.appendChild(messageContent);
