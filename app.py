@@ -1022,6 +1022,24 @@ def sync_documents():
                         # 기존 문서 ID로 먼저 삭제 (문서 업데이트 효과)
                         deleted = database.delete_document(doc_id)
                         
+                        # 특별히 Excel 파일 처리 (파일명 변경에도 매핑 유지)
+                        # "업무 안내 가이드" 또는 "업무안내" 등의 키워드가 포함된 엑셀 파일 식별
+                        # 일자별 파일 업데이트 형식도 자동 인식 (예: 업무 안내 가이드_2025.05.19.xlsx)
+                        excel_procedure_file = False
+                        excel_date_pattern = re.search(r'_(\d{4}[.년\-_]\d{1,2}[.월\-_]\d{1,2})', display_filename)
+                        file_date = excel_date_pattern.group(1) if excel_date_pattern else "최신"
+                        
+                        if display_filename.lower().endswith(('.xlsx', '.xls')):
+                            # 업무 안내 가이드 파일 패턴 체크 (날짜 형식이 포함된 버전도 인식)
+                            guide_keywords = ['업무 안내', '업무_안내', '업무안내', '가이드', '매뉴얼', '절차']
+                            
+                            if any(keyword in display_filename for keyword in guide_keywords):
+                                excel_procedure_file = True
+                                yield json.dumps({
+                                    'progress': current_progress,
+                                    'message': f'✨ {display_filename} - 업무 안내 가이드 파일로 인식되었습니다. 절차 안내 시트를 세부 항목별로 분리하여 처리합니다. (버전: {file_date})'
+                                }) + '\n'
+                            
                         # 문서 처리
                         chunks = document_processor.process_document(file_path)
                         

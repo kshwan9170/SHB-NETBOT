@@ -148,7 +148,8 @@ def add_document_embeddings(
 
 def search_similar_docs(
     query: str, 
-    top_k: int = 3
+    top_k: int = 3,
+    filter: Optional[Dict[str, str]] = None
 ) -> List[Any]:
     """
     Search for similar documents in the vector database
@@ -156,6 +157,7 @@ def search_similar_docs(
     Args:
         query: The query to search for
         top_k: Number of results to return
+        filter: Optional metadata filter dictionary (e.g., {"content_type": "procedure_guide"})
         
     Returns:
         List of document objects with page_content and metadata
@@ -175,6 +177,23 @@ def search_similar_docs(
     for vendor, keywords in keyword_filters.items():
         if any(keyword.lower() in query.lower() for keyword in keywords):
             detected_vendors.append(vendor)
+            
+    # 메타데이터 필터 로직
+    where_clause = {}
+    
+    # 벤더 필터링을 위한 where 조건
+    if detected_vendors:
+        # where_clause["vendor"] = {"$in": detected_vendors}
+        print(f"장비 유형 필터링: {detected_vendors}")
+    
+    # 추가 필터링 (예: 특정 컨텐츠 타입으로 제한)
+    if filter:
+        for key, value in filter.items():
+            where_clause[key] = value
+            
+    # 필터링 조건이 있는 경우 로그 출력
+    if where_clause:
+        print(f"메타데이터 필터 적용: {where_clause}")
     
     documents = []
     
@@ -194,7 +213,8 @@ def search_similar_docs(
                 # 일단 전체 검색 실행
                 results = collection.query(
                     query_texts=[query],
-                    n_results=top_k
+                    n_results=top_k,
+                    where=where_clause if where_clause else None
                 )
                 
                 # 검색 결과가 있으면 벤더 키워드 포함 여부를 확인하여 필터링
@@ -247,10 +267,32 @@ def search_similar_docs(
     if not documents or len(documents) < top_k:
         print(f"벤더 필터링 검색 결과가 없어 전체 문서 검색을 시도합니다: {query}")
         try:
+            # 메타데이터 필터 적용 (있는 경우)
+            version_where = where_clause.copy() if where_clause else {}
+            
+            # 가이드 버전 필터 특별 처리 - 특정 버전 또는 최신 버전
+            version_specified = False
+            if "guide_version" in version_where and version_where["guide_version"] != "latest":
+                version_specified = True
+                print(f"특정 버전 가이드 검색: {version_where['guide_version']}")
+            
             results = collection.query(
                 query_texts=[query],
-                n_results=top_k
+                n_results=top_k,
+                where=version_where if version_where else None
             )
+            
+            # 만약 특정 버전 검색 결과가 없으면 최신 버전으로 대체 검색
+            if version_specified and (not results or 'documents' not in results or not results['documents'] or not results['documents'][0]):
+                print(f"특정 버전({version_where['guide_version']})에서 결과를 찾지 못해 최신 버전으로 검색합니다")
+                
+                # guide_version을 'latest'로 변경하여 다시 검색
+                version_where["guide_version"] = "latest"
+                results = collection.query(
+                    query_texts=[query],
+                    n_results=top_k,
+                    where=version_where if version_where else None
+                )
             
             # 결과 처리
             if results and 'documents' in results and results['documents'] and results['documents'][0]:

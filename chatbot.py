@@ -46,8 +46,49 @@ def retrieve_relevant_documents(query: str, top_k: int = 5) -> Tuple[List[Any], 
         (문서 리스트, 컨텍스트 문자열) 튜플
     """
     try:
+        # 키워드 추출 (간단한 방식으로 구현)
+        keywords = extract_keywords_from_query(query)
+        print(f"추출된 키워드: {keywords}")
+        
+        # 절차 가이드 전용 검색을 위한 필터링
+        procedure_guide_filter = None
+        
+        # 특정 버전의 가이드를 요청하는지 확인 (예: "2025년 5월 19일 업무 가이드에서...")
+        version_pattern = re.search(r'(\d{4}[.년\-_]\s?\d{1,2}[.월\-_]\s?\d{1,2})', query)
+        guide_version = None
+        
+        if version_pattern:
+            # 버전 정보 추출 및 정규화
+            raw_version = version_pattern.group(1)
+            
+            # 공백 제거
+            normalized_version = raw_version.replace(' ', '')
+            
+            # yyyy년mm월dd일 형식 -> yyyy.mm.dd 형식으로 변환 
+            normalized_version = re.sub(r'(\d{4})년(\d{1,2})월(\d{1,2})일', r'\1.\2.\3', normalized_version)
+            
+            # yyyy-mm-dd 형식도 유지 (ChromaDB 검색에서는 원본 형식 그대로 사용)
+            guide_version = normalized_version
+            
+            print(f"특정 버전 가이드 요청 감지: {raw_version} -> {guide_version}")
+        
+        # 절차 가이드 필터링 적용
+        if any(keyword in query for keyword in ['어떻게', '방법', '절차', '신청', '신규', '변경']):
+            procedure_guide_filter = {"content_type": "procedure_guide"}
+            
+            # 특정 버전이 요청된 경우 해당 버전으로 필터링 추가
+            if guide_version:
+                procedure_guide_filter["guide_version"] = guide_version
+            
+            print(f"절차 가이드 우선 검색 활성화됨 - 필터: {procedure_guide_filter}")
+        
         # 관련 문서 검색
-        docs = search_similar_docs(query, top_k=top_k)
+        docs = search_similar_docs(query, top_k=top_k, filter=procedure_guide_filter)
+        
+        # 가이드 문서가 없고 필터가 적용된 경우 다시 필터 없이 검색
+        if (not docs or len(docs) == 0) and procedure_guide_filter:
+            print("절차 가이드에서 결과를 찾지 못해 전체 문서에서 검색합니다")
+            docs = search_similar_docs(query, top_k=top_k)
         
         # 문서가 없으면 빈 컨텍스트 반환
         if not docs or len(docs) == 0:
@@ -55,8 +96,34 @@ def retrieve_relevant_documents(query: str, top_k: int = 5) -> Tuple[List[Any], 
         
         # 검색된 문서를 컨텍스트 문자열로 포맷팅
         context_str = "Context:\n"
+        
+        # 업무 안내 가이드 문서는 특별한 포맷으로 표시
         for i, doc in enumerate(docs):
-            context_str += f"- ({i+1}) \"{doc.page_content}\"\n\n"
+            # 메타데이터에서 업무 가이드 정보 확인
+            metadata = getattr(doc, 'metadata', {})
+            content_type = metadata.get('content_type', '')
+            
+            if content_type == 'procedure_guide':
+                # 업무 가이드 형식으로 포맷 (버전 정보 포함)
+                guide_version = metadata.get('guide_version', 'latest')
+                version_text = f" (버전: {guide_version})" if guide_version != 'latest' else ""
+                context_str += f"- ({i+1}) 업무 안내{version_text}: "
+                
+                # 질문 예시와 상세 안내 부분 강조
+                if '질문 예시' in metadata:
+                    context_str += f"[질문: {metadata['질문 예시']}] "
+                
+                if '요약 응답' in metadata:
+                    context_str += f"[요약: {metadata['요약 응답']}] "
+                    
+                if '상세 안내' in metadata:
+                    context_str += f"[안내: {metadata['상세 안내']}] "
+                
+                # 일반 내용도 포함
+                context_str += f"\n  원본내용: \"{doc.page_content}\"\n\n"
+            else:
+                # 일반 문서 형식으로 포맷
+                context_str += f"- ({i+1}) \"{doc.page_content}\"\n\n"
         
         return docs, context_str
     except Exception as e:
