@@ -1032,20 +1032,15 @@ def get_chatbot_response(
         return "Error: OpenAI API key is not set. Please set the OPENAI_API_KEY environment variable."
     
     try:
-        # 먼저 키워드 기반 분기 확인 - FAQ 키워드가 포함된 질문이고 Fine-tuned 모델이 활성화되어 있으면 Fine-tuned 모델 사용
+        # 파인튜닝 기능 비활성화 (사용자 요청에 따라)
+        # 이전에는 FAQ 키워드가 포함된 질문이면 Fine-tuned 모델을 사용했으나,
+        # 현재는 RAG 시스템과 기능이 겹쳐 응답이 마음에 들지 않아 비활성화함
         use_fine_tuned = False
         
-        if FINE_TUNED_MODEL["enabled"] and check_keyword_match(query, FAQ_KEYWORDS):
-            print(f"FAQ 키워드 매치됨: {query} - Fine-tuned 모델 사용")
-            use_fine_tuned = True
-            fine_tuned_response = get_fine_tuned_response(query, chat_history)
-            
-            # Fine-tuned 모델 응답이 성공적으로 생성되면 해당 응답 반환
-            if fine_tuned_response:
-                return fine_tuned_response
-            
-            # 실패 시 자동으로 RAG 시스템으로 폴백 (아래 코드 계속 실행)
-            print("Fine-tuned 모델 응답 생성 실패, RAG 시스템으로 전환")
+        # config.py에서 enabled 값을 False로 설정했으므로 아래 코드는 실행되지 않음
+        # 코드는 향후 재활성화 가능성을 위해 유지함
+        if False and FINE_TUNED_MODEL["enabled"] and check_keyword_match(query, FAQ_KEYWORDS):
+            print("Fine-tuned 모델이 비활성화되어 있어 사용하지 않음")
         
         # 다음으로 엑셀 기반 처리 시도
         excel_result = process_excel_query(query)

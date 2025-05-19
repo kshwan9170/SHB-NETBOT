@@ -2,7 +2,7 @@
 
 # Fine-tuned 모델 설정
 FINE_TUNED_MODEL = {
-    "enabled": True,
+    "enabled": False,  # 사용자 요청에 따라 비활성화함
     "model_id": "ft:gpt-3.5-turbo-0125:personal:shb-faq-v1:BYwj2K2G",  # 훈련 완료된 실제 모델 ID
     "temperature": 0.3,
     "max_tokens": 500
