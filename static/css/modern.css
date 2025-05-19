@@ -2181,3 +2181,124 @@ textarea.form-control {
 .btn-primary:hover {
     background-color: var(--primary-hover);
 }
+
+/* 피드백 UI 스타일 개선 */
+.message-feedback {
+    margin-top: 12px;
+    padding: 10px;
+    border-top: 1px solid var(--border-color);
+    transition: opacity 0.5s ease;
+}
+
+.feedback-question {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.feedback-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.feedback-button {
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    background-color: var(--card-bg);
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.feedback-button:hover {
+    background-color: rgba(10, 116, 218, 0.1);
+    border-color: #0A74DA;
+}
+
+.like-button:hover {
+    background-color: rgba(52, 168, 83, 0.1);
+    border-color: #34A853;
+    color: #34A853;
+}
+
+.dislike-button:hover {
+    background-color: rgba(234, 67, 53, 0.1);
+    border-color: #EA4335;
+    color: #EA4335;
+}
+
+.more-info-button:hover {
+    background-color: rgba(66, 133, 244, 0.1);
+    border-color: #4285F4;
+    color: #4285F4;
+}
+
+.feedback-form {
+    margin-top: 10px;
+}
+
+.feedback-form-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.feedback-comment {
+    width: 100%;
+    min-height: 80px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background-color: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 14px;
+    margin-bottom: 10px;
+    resize: vertical;
+}
+
+.feedback-submit {
+    padding: 6px 15px;
+    border-radius: 20px;
+    border: none;
+    background-color: #0A74DA;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    float: right;
+}
+
+.feedback-submit:hover {
+    background-color: #0964B8;
+}
+
+.feedback-success {
+    padding: 10px 15px;
+    border-radius: 8px;
+    background-color: rgba(52, 168, 83, 0.1);
+    color: #34A853;
+    font-size: 14px;
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+}
+
+.feedback-error {
+    padding: 10px 15px;
+    border-radius: 8px;
+    background-color: rgba(234, 67, 53, 0.1);
+    color: #EA4335;
+    font-size: 14px;
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
