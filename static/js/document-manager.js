@@ -163,15 +163,32 @@ document.addEventListener('DOMContentLoaded', function() {
                             <span>${file.file_type ? file.file_type.toUpperCase() : "?"}</span>
                         </div>
                     </div>
-                    <button class="document-delete-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            <line x1="10" y1="11" x2="10" y2="17"></line>
-                            <line x1="14" y1="11" x2="14" y2="17"></line>
-                        </svg>
-                        <span>삭제</span>
-                    </button>
+                    <div class="document-actions" style="display: flex; gap: 5px;">
+                        <button class="document-view-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}" style="background-color: #4caf50; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                            <span>보기</span>
+                        </button>
+                        ${file.file_type.toLowerCase() === 'txt' ? `
+                        <button class="document-edit-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}" style="background-color: #2196f3; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                            </svg>
+                            <span>편집</span>
+                        </button>` : ''}
+                        <button class="document-delete-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}" style="background-color: #f44336; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                            <span>삭제</span>
+                        </button>
+                    </div>
                 </div>
             `;
             
@@ -184,6 +201,39 @@ document.addEventListener('DOMContentLoaded', function() {
                     const systemFilename = this.getAttribute('data-filename');
                     const displayFilename = this.getAttribute('data-displayname');
                     deleteFile(systemFilename, displayFilename, fileCard);
+                });
+            }
+            
+            // 보기 버튼에 이벤트 리스너 추가
+            const viewBtn = fileCard.querySelector('.document-view-btn');
+            if (viewBtn) {
+                viewBtn.addEventListener('click', function() {
+                    const systemFilename = this.getAttribute('data-filename');
+                    const displayFilename = this.getAttribute('data-displayname');
+                    viewDocument(systemFilename, displayFilename);
+                });
+            }
+            
+            // 편집 버튼에 이벤트 리스너 추가 (txt 파일만 해당)
+            const editBtn = fileCard.querySelector('.document-edit-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', function() {
+                    const systemFilename = this.getAttribute('data-filename');
+                    const displayFilename = this.getAttribute('data-displayname');
+                    // 먼저 문서 내용을 가져온 후 편집기 열기
+                    fetch(`/api/documents/view/${systemFilename}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                editDocument(systemFilename, displayFilename, data.content);
+                            } else {
+                                alert(data.message || '문서 내용을 불러오는 중 오류가 발생했습니다.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('문서 내용 로드 중 오류 발생:', error);
+                            alert('서버 연결 중 오류가 발생했습니다.');
+                        });
                 });
             }
         });
@@ -403,5 +453,393 @@ document.addEventListener('DOMContentLoaded', function() {
         const i = Math.floor(Math.log(bytes) / Math.log(1024));
         
         return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    /**
+     * 문서 내용 보기 기능
+     * @param {string} systemFilename - 시스템 내부 파일명
+     * @param {string} displayFilename - 화면에 표시되는 파일명
+     */
+    async function viewDocument(systemFilename, displayFilename) {
+        try {
+            const response = await fetch(`/api/documents/view/${systemFilename}`);
+            const data = await response.json();
+            
+            if (response.ok && data.status === 'success') {
+                // 모달 생성
+                const modal = document.createElement('div');
+                modal.className = 'document-modal';
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    z-index: 1000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                `;
+                
+                // 문서 내용을 표시할 모달 컨텐츠
+                const modalContent = document.createElement('div');
+                modalContent.className = 'document-modal-content';
+                modalContent.style.cssText = `
+                    background-color: white;
+                    width: 80%;
+                    max-width: 800px;
+                    max-height: 80vh;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+                `;
+                
+                // 모달 헤더
+                const modalHeader = document.createElement('div');
+                modalHeader.className = 'document-modal-header';
+                modalHeader.style.cssText = `
+                    padding: 15px 20px;
+                    border-bottom: 1px solid #eee;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    background-color: #0046FF;
+                    color: white;
+                `;
+                
+                // 헤더 타이틀
+                const headerTitle = document.createElement('h3');
+                headerTitle.textContent = `${displayFilename}`;
+                headerTitle.style.cssText = `
+                    margin: 0;
+                    font-size: 18px;
+                    font-weight: 500;
+                `;
+                
+                // 닫기 버튼
+                const closeButton = document.createElement('button');
+                closeButton.textContent = '×';
+                closeButton.style.cssText = `
+                    background: none;
+                    border: none;
+                    font-size: 24px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    color: white;
+                    padding: 0 5px;
+                `;
+                closeButton.onclick = () => {
+                    document.body.removeChild(modal);
+                };
+                
+                // 모달 바디
+                const modalBody = document.createElement('div');
+                modalBody.className = 'document-modal-body';
+                modalBody.style.cssText = `
+                    padding: 20px;
+                    overflow-y: auto;
+                    flex-grow: 1;
+                    font-family: monospace;
+                    white-space: pre-wrap;
+                    line-height: 1.5;
+                    background-color: #f9f9f9;
+                    border: 1px solid #eee;
+                    border-radius: 4px;
+                    margin: 15px;
+                `;
+                modalBody.textContent = data.content;
+                
+                // 모달 푸터
+                const modalFooter = document.createElement('div');
+                modalFooter.className = 'document-modal-footer';
+                modalFooter.style.cssText = `
+                    padding: 15px 20px;
+                    border-top: 1px solid #eee;
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 10px;
+                `;
+                
+                // 편집 버튼 (txt 파일만)
+                if (data.file_type === 'txt') {
+                    const editButton = document.createElement('button');
+                    editButton.textContent = '편집';
+                    editButton.style.cssText = `
+                        padding: 8px 16px;
+                        background-color: #0046FF;
+                        color: white;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        font-weight: 500;
+                    `;
+                    editButton.onclick = () => {
+                        document.body.removeChild(modal);
+                        editDocument(systemFilename, displayFilename, data.content);
+                    };
+                    modalFooter.appendChild(editButton);
+                }
+                
+                // 닫기 버튼
+                const closeBtn = document.createElement('button');
+                closeBtn.textContent = '닫기';
+                closeBtn.style.cssText = `
+                    padding: 8px 16px;
+                    background-color: #f2f2f2;
+                    color: #333;
+                    border: none;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-weight: 500;
+                `;
+                closeBtn.onclick = () => {
+                    document.body.removeChild(modal);
+                };
+                modalFooter.appendChild(closeBtn);
+                
+                // 모달 요소 조립
+                modalHeader.appendChild(headerTitle);
+                modalHeader.appendChild(closeButton);
+                
+                modalContent.appendChild(modalHeader);
+                modalContent.appendChild(modalBody);
+                modalContent.appendChild(modalFooter);
+                
+                modal.appendChild(modalContent);
+                
+                // 모달을 body에 추가
+                document.body.appendChild(modal);
+                
+                // ESC 키로 모달 닫기
+                document.addEventListener('keydown', function escHandler(e) {
+                    if (e.key === 'Escape') {
+                        document.body.removeChild(modal);
+                        document.removeEventListener('keydown', escHandler);
+                    }
+                });
+            } else {
+                alert(data.message || '문서 내용을 불러오는 중 오류가 발생했습니다.');
+            }
+        } catch (error) {
+            console.error('문서 조회 중 오류 발생:', error);
+            alert('서버 연결 중 오류가 발생했습니다.');
+        }
+    }
+    
+    /**
+     * 문서 내용 편집 기능
+     * @param {string} systemFilename - 시스템 내부 파일명
+     * @param {string} displayFilename - 화면에 표시되는 파일명
+     * @param {string} content - 초기 문서 내용
+     */
+    async function editDocument(systemFilename, displayFilename, content) {
+        // 모달 생성
+        const modal = document.createElement('div');
+        modal.className = 'document-modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        `;
+        
+        // 문서 내용을 편집할 모달 컨텐츠
+        const modalContent = document.createElement('div');
+        modalContent.className = 'document-modal-content';
+        modalContent.style.cssText = `
+            background-color: white;
+            width: 80%;
+            max-width: 800px;
+            height: 80vh;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        `;
+        
+        // 모달 헤더
+        const modalHeader = document.createElement('div');
+        modalHeader.className = 'document-modal-header';
+        modalHeader.style.cssText = `
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #0046FF;
+            color: white;
+        `;
+        
+        // 헤더 타이틀
+        const headerTitle = document.createElement('h3');
+        headerTitle.textContent = `${displayFilename} 편집`;
+        headerTitle.style.cssText = `
+            margin: 0;
+            font-size: 18px;
+            font-weight: 500;
+        `;
+        
+        // 닫기 버튼
+        const closeButton = document.createElement('button');
+        closeButton.textContent = '×';
+        closeButton.style.cssText = `
+            background: none;
+            border: none;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            padding: 0 5px;
+        `;
+        closeButton.onclick = () => {
+            if (confirm('편집 내용이 저장되지 않습니다. 정말 닫으시겠습니까?')) {
+                document.body.removeChild(modal);
+            }
+        };
+        
+        // 모달 바디 (편집기)
+        const modalBody = document.createElement('div');
+        modalBody.className = 'document-modal-body';
+        modalBody.style.cssText = `
+            padding: 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        `;
+        
+        // 텍스트 편집기
+        const editor = document.createElement('textarea');
+        editor.value = content;
+        editor.style.cssText = `
+            width: 100%;
+            height: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            line-height: 1.5;
+            resize: none;
+            flex-grow: 1;
+            min-height: 350px;
+        `;
+        
+        // 모달 푸터
+        const modalFooter = document.createElement('div');
+        modalFooter.className = 'document-modal-footer';
+        modalFooter.style.cssText = `
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        `;
+        
+        // 저장 버튼
+        const saveButton = document.createElement('button');
+        saveButton.textContent = '저장 및 동기화';
+        saveButton.style.cssText = `
+            padding: 8px 16px;
+            background-color: #0046FF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        `;
+        saveButton.onclick = async () => {
+            // 저장 중 로딩 표시
+            saveButton.disabled = true;
+            saveButton.textContent = '저장 중...';
+            
+            try {
+                const response = await fetch(`/api/documents/edit/${systemFilename}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        content: editor.value
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'success') {
+                    alert(data.message || '문서가 성공적으로 저장되었습니다.');
+                    document.body.removeChild(modal);
+                    // 파일 목록을 새로고침하여 변경사항 반영
+                    loadDocuments();
+                } else {
+                    alert(data.message || '문서 저장 중 오류가 발생했습니다.');
+                    saveButton.disabled = false;
+                    saveButton.textContent = '저장 및 동기화';
+                }
+            } catch (error) {
+                console.error('문서 저장 중 오류 발생:', error);
+                alert('서버 연결 중 오류가 발생했습니다.');
+                saveButton.disabled = false;
+                saveButton.textContent = '저장 및 동기화';
+            }
+        };
+        
+        // 취소 버튼
+        const cancelButton = document.createElement('button');
+        cancelButton.textContent = '취소';
+        cancelButton.style.cssText = `
+            padding: 8px 16px;
+            background-color: #f2f2f2;
+            color: #333;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        `;
+        cancelButton.onclick = () => {
+            if (confirm('편집 내용이 저장되지 않습니다. 정말 취소하시겠습니까?')) {
+                document.body.removeChild(modal);
+            }
+        };
+        
+        // 모달 요소 조립
+        modalHeader.appendChild(headerTitle);
+        modalHeader.appendChild(closeButton);
+        
+        modalBody.appendChild(editor);
+        
+        modalFooter.appendChild(saveButton);
+        modalFooter.appendChild(cancelButton);
+        
+        modalContent.appendChild(modalHeader);
+        modalContent.appendChild(modalBody);
+        modalContent.appendChild(modalFooter);
+        
+        modal.appendChild(modalContent);
+        
+        // 모달을 body에 추가
+        document.body.appendChild(modal);
+        
+        // 포커스 지정
+        editor.focus();
+        
+        // ESC 키로 모달 닫기
+        document.addEventListener('keydown', function escHandler(e) {
+            if (e.key === 'Escape') {
+                if (confirm('편집 내용이 저장되지 않습니다. 정말 닫으시겠습니까?')) {
+                    document.body.removeChild(modal);
+                    document.removeEventListener('keydown', escHandler);
+                }
+            }
+        });
     }
 });

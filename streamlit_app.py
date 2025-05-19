@@ -240,6 +240,12 @@ def document_management():
     """Handle document upload and management"""
     st.markdown("<h2 class='shinhan-heading'>문서 관리</h2>", unsafe_allow_html=True)
     
+    # 세션 상태 변수 초기화
+    if "editing_file" not in st.session_state:
+        st.session_state.editing_file = None
+    if "file_content" not in st.session_state:
+        st.session_state.file_content = ""
+    
     col1, col2 = st.columns([2, 3])
     
     with col1:
@@ -284,6 +290,62 @@ def document_management():
                     st.success(f"문서 '{filename}'이(가) 성공적으로 업로드되었습니다.")
                 except Exception as e:
                     st.error(f"문서 '{filename}' 처리 중 오류가 발생했습니다: {str(e)}")
+        
+        # 문서 편집 영역 (현재 편집 중인 파일이 있을 경우)
+        if st.session_state.editing_file:
+            file_info = st.session_state.editing_file
+            st.markdown(f"""
+            <div style="background-color: rgba(240, 242, 246, 0.7); padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 4px solid #0046FF;">
+                <h3>문서 편집: {file_info['filename']}</h3>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # 텍스트 에디터 영역 (TXT 파일만 지원)
+            text_content = st.text_area("문서 내용", 
+                                         value=st.session_state.file_content, 
+                                         height=400,
+                                         key="document_editor")
+            
+            col_cancel, col_save = st.columns(2)
+            
+            with col_cancel:
+                if st.button("편집 취소", key="cancel_edit"):
+                    # 편집 세션 초기화
+                    st.session_state.editing_file = None
+                    st.session_state.file_content = ""
+                    st.rerun()
+            
+            with col_save:
+                if st.button("저장 및 동기화", key="save_document"):
+                    try:
+                        # 1. 파일 내용 저장
+                        file_path = os.path.join(UPLOAD_FOLDER, file_info['system_filename'])
+                        with open(file_path, 'w', encoding='utf-8') as f:
+                            f.write(text_content)
+                        
+                        # 2. 벡터 DB 업데이트
+                        doc_id = file_info['system_filename'].split('_')[0]
+                        file_type = file_info['filename'].split('.')[-1].lower()
+                        
+                        # 텍스트 처리 및 청크 생성
+                        chunks = document_processor.process_text(
+                            text=text_content, 
+                            doc_id=doc_id, 
+                            filename=file_info['filename'],
+                            file_type=file_type
+                        )
+                        
+                        # DB 업데이트
+                        database.update_document_embeddings(doc_id, chunks)
+                        
+                        st.success(f"문서 '{file_info['filename']}'이(가) 성공적으로 저장되고 벡터 DB에 동기화되었습니다.")
+                        
+                        # 편집 세션 초기화
+                        st.session_state.editing_file = None
+                        st.session_state.file_content = ""
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"문서 저장 및 동기화 중 오류가 발생했습니다: {str(e)}")
     
     with col2:
         st.subheader("업로드된 문서 목록")
@@ -313,7 +375,7 @@ def document_management():
             
             # Display files
             for file in files:
-                col_file, col_delete = st.columns([5, 1])
+                col_file, col_action, col_edit, col_delete = st.columns([4, 0.8, 0.8, 0.8])
                 
                 with col_file:
                     file_type = file['file_type'].upper()
@@ -327,6 +389,57 @@ def document_management():
                     </div>
                     """, unsafe_allow_html=True)
                 
+                # "보기" 버튼 추가
+                with col_action:
+                    if st.button("보기", key=f"view_{file['system_filename']}"):
+                        try:
+                            file_path = os.path.join(UPLOAD_FOLDER, file['system_filename'])
+                            file_type = file['filename'].split('.')[-1].lower()
+                            
+                            # 텍스트 파일만 표시 가능
+                            if file_type == 'txt':
+                                with open(file_path, 'r', encoding='utf-8') as f:
+                                    file_content = f.read()
+                                st.code(file_content, language='text')
+                            else:
+                                st.warning(f"'{file_type}' 형식의 파일은 웹 브라우저에서 직접 볼 수 없습니다.")
+                        except UnicodeDecodeError:
+                            try:
+                                with open(file_path, 'r', encoding='cp949') as f:
+                                    file_content = f.read()
+                                st.code(file_content, language='text')
+                            except Exception as e:
+                                st.error(f"파일 보기 중 오류가 발생했습니다: {str(e)}")
+                        except Exception as e:
+                            st.error(f"파일 보기 중 오류가 발생했습니다: {str(e)}")
+                
+                # "편집" 버튼 추가
+                with col_edit:
+                    if st.button("편집", key=f"edit_{file['system_filename']}"):
+                        # 텍스트 파일만 편집 가능
+                        file_type = file['filename'].split('.')[-1].lower()
+                        if file_type != 'txt':
+                            st.warning(f"'{file_type}' 형식의 파일은 현재 편집이 지원되지 않습니다. TXT 파일만 편집할 수 있습니다.")
+                        else:
+                            try:
+                                file_path = os.path.join(UPLOAD_FOLDER, file['system_filename'])
+                                try:
+                                    with open(file_path, 'r', encoding='utf-8') as f:
+                                        file_content = f.read()
+                                except UnicodeDecodeError:
+                                    with open(file_path, 'r', encoding='cp949') as f:
+                                        file_content = f.read()
+                                
+                                # 세션 상태에 저장
+                                st.session_state.editing_file = file
+                                st.session_state.file_content = file_content
+                                
+                                # 페이지 리로드하여 편집기 표시
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"파일 편집 준비 중 오류가 발생했습니다: {str(e)}")
+                
+                # "삭제" 버튼
                 with col_delete:
                     if st.button("삭제", key=f"delete_{file['system_filename']}"):
                         try:
@@ -338,6 +451,12 @@ def document_management():
                             # Delete from vector database
                             file_uuid = file['system_filename'].split('_')[0]
                             database.delete_document(file_uuid)
+                            
+                            # 편집 중이던 파일이 삭제되었다면 편집 상태 초기화
+                            if (st.session_state.editing_file and 
+                                st.session_state.editing_file['system_filename'] == file['system_filename']):
+                                st.session_state.editing_file = None
+                                st.session_state.file_content = ""
                             
                             st.success(f"파일 '{file['filename']}'이(가) 삭제되었습니다.")
                             st.rerun()

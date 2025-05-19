@@ -6,7 +6,7 @@ packages = ["glibcLocales"]
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["streamlit", "run", "app.py", "--server.port", "5000"]
+run = ["sh", "-c", "streamlit run streamlit_app.py --server.address=0.0.0.0 --server.port=8501 --server.enableCORS=false"]
 
 [workflows]
 runButton = "Project"
@@ -20,6 +20,10 @@ author = "agent"
 task = "workflow.run"
 args = "SHB-NetBot"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "SHB-NetBot-Streamlit"
+
 [[workflows.workflow]]
 name = "SHB-NetBot"
 author = "agent"
@@ -29,14 +33,28 @@ task = "shell.exec"
 args = "python app.py"
 waitForPort = 5000
 
-[[ports]]
-localPort = 3000
-externalPort = 3000
+[[workflows.workflow]]
+name = "Run Streamlit"
+author = 42686162
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "streamlit run streamlit_app.py --server.address=0.0.0.0 --server.port=8501 --server.enableCORS=false"
+
+[[workflows.workflow]]
+name = "SHB-NetBot-Streamlit"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "streamlit run streamlit_app.py --server.port 5000 --server.address 0.0.0.0 --server.headless true"
+waitForPort = 5000
 
 [[ports]]
 localPort = 5000
-externalPort = 80
+externalPort = 5000
 
 [[ports]]
-localPort = 8080
-externalPort = 8080
+localPort = 8501
+externalPort = 80

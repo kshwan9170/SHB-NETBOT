@@ -229,6 +229,40 @@ def extract_text_from_excel(file_path: str) -> List[str]:
     
     return text_chunks
 
+def process_text(text: str, doc_id: str, filename: str, file_type: str = "txt") -> List[Dict[str, Any]]:
+    """
+    주어진 텍스트를 처리하고 청크로 분할하여 벡터 DB 형식으로 반환합니다.
+    
+    Args:
+        text: 처리할 텍스트 내용
+        doc_id: 문서 고유 ID
+        filename: 원본 파일명
+        file_type: 파일 형식 (기본값: txt)
+        
+    Returns:
+        메타데이터가 포함된 청크 목록
+    """
+    chunks = []
+    
+    # 텍스트를 청크로 분할
+    raw_chunks = chunk_text(text)
+    
+    # 각 청크에 메타데이터 추가
+    for i, chunk in enumerate(raw_chunks):
+        chunks.append({
+            "doc_id": doc_id,
+            "chunk_id": f"{doc_id}-{i}",
+            "text": chunk,
+            "metadata": {
+                "filename": filename,
+                "file_type": file_type,
+                "chunk_index": i,
+                "source": filename
+            }
+        })
+    
+    return chunks
+
 def chunk_text(text: str, chunk_size: int = 500, overlap: int = 100) -> List[str]:
     """
     Split text into overlapping chunks of approximately chunk_size characters
