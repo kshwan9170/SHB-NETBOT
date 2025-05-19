@@ -185,8 +185,6 @@ def main():
     
     for prompt in test_prompts:
         test_fine_tuned_model(fine_tuned_model, prompt)
-    
-    print("\nFine-tuning process completed successfully.")
     print(f"Your fine-tuned model ID: {fine_tuned_model}")
     print("\nExample curl command to use the model:")
     print(f"""
