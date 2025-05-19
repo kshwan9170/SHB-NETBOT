@@ -230,6 +230,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadingIndicator.classList.add('active');
                 
                 try {
+                    // 현재 질문 저장 (피드백 기능용)
+                    lastUserQuestion = message;
+                    
                     // 서버에 메시지 전송 및 응답 받기
                     const response = await fetch('/api/chat', {
                         method: 'POST',
@@ -315,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // 메시지 추가 함수
-    function addMessage(content, sender) {
+    function addMessage(content, sender, questionText = '') {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${sender}-message`;
         
@@ -325,22 +328,142 @@ document.addEventListener('DOMContentLoaded', function() {
         // 봇 메시지는 마크다운으로 처리, 사용자 메시지는 일반 텍스트
         if (sender === 'bot') {
             messageContent.innerHTML = convertMarkdownToHtml(content);
+            
+            // 봇 메시지에만 피드백 UI 추가
+            const feedbackContainer = document.createElement('div');
+            feedbackContainer.className = 'message-feedback';
+            
+            // 피드백 질문 
+            const feedbackQuestion = document.createElement('div');
+            feedbackQuestion.className = 'feedback-question';
+            feedbackQuestion.textContent = '도움이 되었나요?';
+            
+            // 피드백 버튼 컨테이너
+            const feedbackButtons = document.createElement('div');
+            feedbackButtons.className = 'feedback-buttons';
+            
+            // 좋아요 버튼
+            const likeButton = document.createElement('button');
+            likeButton.className = 'feedback-button like-button';
+            likeButton.innerHTML = '👍 도움 됨';
+            likeButton.onclick = function() {
+                submitFeedback(questionText, content, '👍 도움 됨', feedbackContainer);
+            };
+            
+            // 싫어요 버튼
+            const dislikeButton = document.createElement('button');
+            dislikeButton.className = 'feedback-button dislike-button';
+            dislikeButton.innerHTML = '👎 부족함';
+            dislikeButton.onclick = function() {
+                // 부족함 피드백일 때는 추가 코멘트 입력 UI 표시
+                showDislikeFeedbackForm(questionText, content, feedbackContainer);
+            };
+            
+            // 버튼 추가
+            feedbackButtons.appendChild(likeButton);
+            feedbackButtons.appendChild(dislikeButton);
+            
+            // 피드백 UI 구성
+            feedbackContainer.appendChild(feedbackQuestion);
+            feedbackContainer.appendChild(feedbackButtons);
+            
+            // 메시지 아래에 피드백 UI 추가
+            messageDiv.appendChild(messageContent);
+            messageDiv.appendChild(feedbackContainer);
         } else {
             messageContent.textContent = content;
+            messageDiv.appendChild(messageContent);
         }
         
-        messageDiv.appendChild(messageContent);
         chatContainer.appendChild(messageDiv);
         
         // 스크롤을 최신 메시지로 이동
         scrollToBottom();
     }
     
+    // 부족함 피드백 폼 표시
+    function showDislikeFeedbackForm(question, answer, container) {
+        // 기존 버튼 제거
+        container.innerHTML = '';
+        
+        // 피드백 입력 폼 생성
+        const feedbackForm = document.createElement('div');
+        feedbackForm.className = 'feedback-form';
+        
+        // 안내 메시지
+        const formLabel = document.createElement('div');
+        formLabel.className = 'feedback-form-label';
+        formLabel.textContent = '어떤 부분이 부족했나요? (선택 사항)';
+        
+        // 코멘트 텍스트 영역
+        const commentInput = document.createElement('textarea');
+        commentInput.className = 'feedback-comment';
+        commentInput.placeholder = '의견을 남겨주세요...';
+        
+        // 제출 버튼
+        const submitButton = document.createElement('button');
+        submitButton.className = 'feedback-submit';
+        submitButton.textContent = '제출';
+        submitButton.onclick = function() {
+            submitFeedback(question, answer, '👎 부족함', container, commentInput.value);
+        };
+        
+        // 폼 구성
+        feedbackForm.appendChild(formLabel);
+        feedbackForm.appendChild(commentInput);
+        feedbackForm.appendChild(submitButton);
+        
+        // 컨테이너에 폼 추가
+        container.appendChild(feedbackForm);
+    }
+    
+    // 피드백 서버 제출
+    async function submitFeedback(question, answer, feedbackType, container, comment = '') {
+        try {
+            // 서버에 피드백 전송
+            const response = await fetch('/api/chat/feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    question: question, 
+                    answer: answer,
+                    feedback_type: feedbackType,
+                    feedback_comment: comment
+                })
+            });
+            
+            const data = await response.json();
+            
+            // 피드백 UI 감사 메시지로 교체
+            container.innerHTML = '';
+            const thankYouMessage = document.createElement('div');
+            thankYouMessage.className = 'feedback-thanks';
+            thankYouMessage.textContent = '피드백 감사합니다!';
+            container.appendChild(thankYouMessage);
+            
+        } catch (error) {
+            console.error('피드백 제출 중 오류 발생:', error);
+            
+            // 오류 메시지 표시
+            container.innerHTML = '';
+            const errorMessage = document.createElement('div');
+            errorMessage.className = 'feedback-error';
+            errorMessage.textContent = '피드백 제출 중 오류가 발생했습니다.';
+            container.appendChild(errorMessage);
+        }
+    }
+    
+    // 전역 변수로 마지막 사용자 질문 저장
+    let lastUserQuestion = '';
+    
     // 봇 메시지는 마크다운으로 즉시 표시 (타이핑 효과 없음)
     function addMessageWithTypingEffect(content, sender) {
         if (sender === 'bot') {
             // 봇 메시지는 마크다운으로 렌더링
-            addMessage(content, sender);
+            // 피드백을 위해 저장된 마지막 사용자 질문 전달
+            addMessage(content, sender, lastUserQuestion);
         } else {
             // 사용자 메시지는 타이핑 효과 사용 (원래 함수)
             const messageDiv = document.createElement('div');

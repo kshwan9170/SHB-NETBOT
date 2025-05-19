@@ -11,7 +11,7 @@ import openai
 from openai import OpenAI
 
 # 게시판 모델 임포트
-from models import init_db, get_db, close_db, InquiryBoard, FeedbackBoard, ReportBoard
+from models import init_db, get_db, close_db, InquiryBoard, FeedbackBoard, ReportBoard, ChatFeedbackModel
 
 # Custom modules
 import database
@@ -147,11 +147,45 @@ You are SHB-NetBot. Use the Context to answer precisely.
             else:
                 reply = "Sorry, an error occurred while generating a response. Please try again later."
         
-        return jsonify({'reply': reply})
+        return jsonify({'reply': reply, 'question': user_message})
     
     except Exception as e:
         print(f"Error in chat API: {str(e)}")
-        return jsonify({'error': f'오류가 발생했습니다: {str(e)}'}), 500
+        return jsonify({'error': f'오류가 발생했습니다: {str(e)}', 'question': user_message}), 500
+
+@app.route('/api/chat/feedback', methods=['POST'])
+def chat_feedback():
+    """채팅 피드백 API"""
+    try:
+        data = request.get_json()
+        
+        # 필수 파라미터 확인
+        if not data or 'question' not in data or 'answer' not in data or 'feedback_type' not in data:
+            return jsonify({'error': '필수 정보가 누락되었습니다.'}), 400
+        
+        question = data['question']
+        answer = data['answer']
+        feedback_type = data['feedback_type']
+        feedback_comment = data.get('feedback_comment', '')  # 선택적 파라미터
+        
+        # 데이터베이스에 저장
+        feedback_model = ChatFeedbackModel()
+        feedback_id = feedback_model.create_feedback(
+            question=question, 
+            answer=answer,
+            feedback_type=feedback_type,
+            feedback_comment=feedback_comment
+        )
+        
+        return jsonify({
+            'success': True,
+            'message': '피드백이 성공적으로 저장되었습니다.',
+            'feedback_id': feedback_id
+        })
+        
+    except Exception as e:
+        print(f"Error in chat feedback API: {str(e)}")
+        return jsonify({'error': f'피드백 저장 중 오류가 발생했습니다: {str(e)}'}), 500
         
 @app.route('/api/upload', methods=['POST'])
 def upload_file():

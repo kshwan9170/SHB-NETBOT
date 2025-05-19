@@ -637,6 +637,106 @@ img {
     z-index: 1;
 }
 
+/* 피드백 UI 스타일 */
+.message-feedback {
+    margin-top: 8px;
+    padding: 8px;
+    border-radius: 8px;
+    background-color: var(--light);
+    font-size: 0.9rem;
+}
+
+.feedback-question {
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.feedback-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.feedback-button {
+    padding: 4px 12px;
+    border: 1px solid var(--primary);
+    background-color: var(--white);
+    color: var(--primary);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    font-size: 0.85rem;
+}
+
+.feedback-button:hover {
+    background-color: var(--primary-light);
+}
+
+.like-button {
+    border-color: #4CAF50;
+    color: #4CAF50;
+}
+
+.like-button:hover {
+    background-color: rgba(76, 175, 80, 0.1);
+}
+
+.dislike-button {
+    border-color: #F44336;
+    color: #F44336;
+}
+
+.dislike-button:hover {
+    background-color: rgba(244, 67, 54, 0.1);
+}
+
+.feedback-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.feedback-form-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.feedback-comment {
+    padding: 8px;
+    border: 1px solid var(--light-medium);
+    border-radius: 4px;
+    resize: vertical;
+    min-height: 60px;
+}
+
+.feedback-submit {
+    align-self: flex-end;
+    padding: 6px 16px;
+    background-color: var(--primary);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.feedback-submit:hover {
+    background-color: var(--primary-hover);
+}
+
+.feedback-thanks {
+    color: var(--text-secondary);
+    font-style: italic;
+    text-align: center;
+    padding: 8px;
+}
+
+.feedback-error {
+    color: #F44336;
+    text-align: center;
+    padding: 8px;
+}
+
 /* Markdown 스타일 */
 .message-content h2 {
     font-size: 1.8rem;
