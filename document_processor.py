@@ -42,6 +42,21 @@ def process_document(file_path: str) -> List[Dict[str, Any]]:
     
     chunks = []
     
+    # Check for procedure guide Excel file and extract additional metadata
+    is_procedure_guide = False
+    guide_version = 'latest'
+    
+    # For Excel files, check if it's a procedure guide and extract version info
+    if (file_extension == '.xlsx' or file_extension == '.xls') and \
+       any(keyword in filename for keyword in ['업무 안내', '업무_안내', '업무안내', '가이드', '매뉴얼', '절차']):
+        is_procedure_guide = True
+        
+        # Extract date pattern from filename (e.g., 업무 안내 가이드_2025.05.19.xlsx)
+        date_pattern = re.search(r'_(\d{4}[.년\-_]\d{1,2}[.월\-_]\d{1,2})', filename)
+        if date_pattern:
+            guide_version = date_pattern.group(1)
+    
+    # Extract text based on file type
     if file_extension == '.pdf':
         raw_chunks = extract_text_from_pdf(file_path)
     elif file_extension == '.docx':
@@ -57,15 +72,38 @@ def process_document(file_path: str) -> List[Dict[str, Any]]:
     
     # Add metadata to each chunk
     for i, chunk in enumerate(raw_chunks):
+        # Setup basic metadata
+        metadata = {
+            "filename": filename,
+            "file_type": file_extension[1:],  # Remove the dot
+            "chunk_index": i
+        }
+        
+        # Enhanced metadata for procedure guide Excel files
+        if is_procedure_guide:
+            # Try to extract information about the Excel row if it's contained in the chunk
+            if chunk.startswith("[업무 안내]"):
+                # Parse sheet name from the source
+                source_match = re.search(r'출처: .+ - (.+) 시트', chunk)
+                if source_match:
+                    metadata["sheet_name"] = source_match.group(1)
+                
+                # Extract row fields for better searchability
+                for field in ["업무 유형", "질문 예시", "요약 응답", "상세 안내", "키워드"]:
+                    field_match = re.search(f"{field}: ([^|]+)", chunk)
+                    if field_match:
+                        field_value = field_match.group(1).strip()
+                        metadata[field] = field_value
+                
+                # Mark as procedure guide for special handling in retrieval
+                metadata["content_type"] = "procedure_guide"
+                metadata["guide_version"] = guide_version
+        
         chunks.append({
             "doc_id": doc_id,
             "chunk_id": f"{doc_id}-{i}",
             "text": chunk,
-            "metadata": {
-                "filename": filename,
-                "file_type": file_extension[1:],  # Remove the dot
-                "chunk_index": i
-            }
+            "metadata": metadata
         })
     
     return chunks
@@ -188,48 +226,92 @@ def extract_text_from_txt(file_path: str) -> List[str]:
     return text_chunks
 
 def extract_text_from_excel(file_path: str) -> List[str]:
-    """Extract text from Excel files"""
+    """
+    Extract text from Excel files with special handling for procedure guide sheets.
+    Specifically processes sheets like '절차_안내' (procedure guide) to create
+    better chunks for RAG retrieval.
+    """
     if pd is None:
         raise ImportError("pandas and openpyxl are required for Excel processing")
     
     text_chunks = []
+    filename = os.path.basename(file_path)
     
     try:
         # Read all sheets
         excel_file = pd.ExcelFile(file_path)
+        procedure_sheet_found = False
         
+        # First pass - look for procedure guide sheets
         for sheet_name in excel_file.sheet_names:
-            df = pd.read_excel(file_path, sheet_name=sheet_name)
-            
-            # Convert DataFrame to string representations
-            sheet_text = f"--- Sheet: {sheet_name} ---\n"
-            
-            # Add header row
-            header_row = " | ".join([str(col) for col in df.columns])
-            sheet_text += header_row + "\n"
-            
-            # Add separator
-            sheet_text += "-" * len(header_row) + "\n"
-            
-            # Add data rows
-            for _, row in df.iterrows():
-                row_text = " | ".join([str(val) if not pd.isna(val) else "" for val in row])
-                sheet_text += row_text + "\n"
-            
-            # Add empty line between sheets
-            sheet_text += "\n"
-            
-            # Chunk the sheet text
-            chunks = chunk_text(sheet_text)
-            for chunk in chunks:
-                if len(chunk.strip()) > 20:
-                    text_chunks.append(chunk)
+            # Check if this is a procedure guide sheet
+            if "절차_안내" in sheet_name or "절차안내" in sheet_name:
+                procedure_sheet_found = True
+                df = pd.read_excel(file_path, sheet_name=sheet_name)
+                
+                # Process each row in the procedure guide as a separate chunk for better retrieval
+                for idx, row in df.iterrows():
+                    # Skip empty rows
+                    if row.isna().all():
+                        continue
+                    
+                    # Format as a structured knowledge snippet
+                    row_chunk_text = f"[업무 안내] "
+                    
+                    # Add all non-NA fields with their column names
+                    for col_name, value in row.items():
+                        if not pd.isna(value) and str(value).strip():
+                            # Clean the value
+                            clean_value = str(value).strip().replace('\n', ' ')
+                            row_chunk_text += f"{col_name}: {clean_value} | "
+                    
+                    # Remove trailing separator and add source reference
+                    row_chunk_text = row_chunk_text.rstrip(" | ")
+                    row_chunk_text += f"\n출처: {filename} - {sheet_name} 시트"
+                    
+                    if len(row_chunk_text.strip()) > 20:  # Only keep meaningful chunks
+                        text_chunks.append(row_chunk_text)
+        
+        # Second pass - process all sheets normally if no procedure guide was found,
+        # or process non-procedure sheets in addition to procedure guides
+        if not procedure_sheet_found or len(excel_file.sheet_names) > 1:
+            for sheet_name in excel_file.sheet_names:
+                # Skip re-processing procedure guide sheets that were already processed
+                if procedure_sheet_found and ("절차_안내" in sheet_name or "절차안내" in sheet_name):
+                    continue
+                
+                df = pd.read_excel(file_path, sheet_name=sheet_name)
+                
+                # Convert DataFrame to string representations
+                sheet_text = f"--- Sheet: {sheet_name} ---\n"
+                
+                # Add header row
+                header_row = " | ".join([str(col) for col in df.columns])
+                sheet_text += header_row + "\n"
+                
+                # Add separator
+                sheet_text += "-" * len(header_row) + "\n"
+                
+                # Add data rows
+                for _, row in df.iterrows():
+                    row_text = " | ".join([str(val) if not pd.isna(val) else "" for val in row])
+                    sheet_text += row_text + "\n"
+                
+                # Add empty line between sheets
+                sheet_text += "\n"
+                
+                # Split the sheet text into chunks manually using the function
+                from_function_chunks = chunk_text(sheet_text)
+                for chunk in from_function_chunks:
+                    if len(chunk.strip()) > 20:
+                        text_chunks.append(chunk)
+                        
     except Exception as e:
         print(f"Error extracting text from Excel: {e}")
     
     return text_chunks
 
-def process_text(text: str, doc_id: str, filename: str, file_type: str = "txt") -> List[Dict[str, Any]]:
+def process_text(text: str, doc_id: str, filename: str, file_type: str = "txt", additional_metadata: dict = None) -> List[Dict[str, Any]]:
     """
     주어진 텍스트를 처리하고 청크로 분할하여 벡터 DB 형식으로 반환합니다.
     
@@ -238,27 +320,38 @@ def process_text(text: str, doc_id: str, filename: str, file_type: str = "txt") 
         doc_id: 문서 고유 ID
         filename: 원본 파일명
         file_type: 파일 형식 (기본값: txt)
+        additional_metadata: 추가할 메타데이터 (선택 사항)
         
     Returns:
         메타데이터가 포함된 청크 목록
     """
     chunks = []
     
+    # 기본 메타데이터 설정
+    if additional_metadata is None:
+        additional_metadata = {}
+    
     # 텍스트를 청크로 분할
     raw_chunks = chunk_text(text)
     
     # 각 청크에 메타데이터 추가
     for i, chunk in enumerate(raw_chunks):
+        # 기본 메타데이터
+        metadata = {
+            "filename": filename,
+            "file_type": file_type,
+            "chunk_index": i,
+            "source": filename
+        }
+        
+        # 추가 메타데이터 병합
+        metadata.update(additional_metadata)
+        
         chunks.append({
             "doc_id": doc_id,
             "chunk_id": f"{doc_id}-{i}",
             "text": chunk,
-            "metadata": {
-                "filename": filename,
-                "file_type": file_type,
-                "chunk_index": i,
-                "source": filename
-            }
+            "metadata": metadata
         })
     
     return chunks
