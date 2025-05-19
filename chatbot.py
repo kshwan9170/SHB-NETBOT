@@ -6,6 +6,7 @@ import re
 import pandas as pd
 from pathlib import Path
 from openai import OpenAI
+
 from database import search_similar_docs
 
 # Import configuration
@@ -455,6 +456,56 @@ def process_excel_query(query):
     
     print(f"시트 목록: {sheet_names}")
     
+    # IP 주소 신청 관련 키워드가 있는지 확인
+    ip_application_keywords = ["ip 주소 신청", "ip 신청", "ip address 신청", "ip 할당", "아이피 신청", "ip 신청 방법"]
+    is_ip_application_query = any(keyword.lower() in query.lower() for keyword in ip_application_keywords)
+    
+    # IP 주소 신청 관련 쿼리인 경우 절차_안내 시트를 우선 활용
+    if is_ip_application_query and '절차_안내' in sheet_names:
+        print("IP 주소 신청 관련 쿼리 감지 - 절차_안내 시트 사용")
+        
+        # 절차_안내 시트에서 관련 정보 찾기
+        procedure_df = read_excel_sheet(excel_file, '절차_안내')
+        
+        # 데이터프레임이 비어있지 않으면 처리
+        if not procedure_df.empty:
+            for idx, row in procedure_df.iterrows():
+                # IP 관련 행인지 확인 ('절차 구분' 열에 'IP' 포함 여부 확인)
+                procedure_type = str(row.get('절차 구분', '')).lower()
+                if 'ip' in procedure_type and any(term in procedure_type for term in ['주소', '신청']):
+                    # IP 주소 신청 절차 정보 찾음
+                    result["found"] = True
+                    result["category"] = "IP 주소 신청 절차"
+                    result["sheet_used"] = "절차_안내"
+                    result["response_type"] = "절차 안내"
+                    
+                    # 응답 구성을 위한 데이터 추출
+                    summary = str(row.get('요약 응답', ''))
+                    details = str(row.get('상세 안내', ''))
+                    dept = str(row.get('담당 부서', ''))
+                    links = str(row.get('관련 문서/링크', ''))
+                    
+                    # 응답 구성
+                    response = f"""
+# IP 주소 신청 절차 안내
+
+## 요약
+{summary}
+
+## 신청 절차
+{details}
+
+## 담당 부서
+**{dept}**
+
+## 관련 링크
+{links}
+
+추가 질문이 있으신가요?
+"""
+                    result["response"] = response
+                    return result
+    
     # 1. 전체_관리_시트 검색
     main_sheet = None
     for sheet in sheet_names:
@@ -632,8 +683,40 @@ def generate_natural_language_response(query, df, keywords):
     Returns:
         생성된 응답
     """
+    # IP 주소 신청 관련 쿼리인지 확인
+    is_ip_address_query = any(keyword.lower() in query.lower() for keyword in 
+                             ["ip 주소 신청", "ip 신청", "ip주소", "아이피 신청", "ip 할당 요청", "아이피", "ip 발급"])
+    
     # 관련 행 찾기
-    relevant_rows = find_relevant_rows(df, keywords)
+    relevant_rows = []
+    
+    # IP 주소 신청 쿼리인 경우 특별 처리
+    if is_ip_address_query:
+        # 절차_안내 시트인 경우 (테이블 구조가 다름)
+        if '절차 구분' in df.columns:
+            for idx, row in df.iterrows():
+                # 절차 구분이나 질문 키워드에 IP 관련 단어가 있는지 확인
+                procedure_type = str(row.get('절차 구분', '')).lower()
+                question_keywords = str(row.get('질문 키워드', '')).lower()
+                
+                if 'ip' in procedure_type and any(term in procedure_type for term in ['주소', '신청']):
+                    relevant_rows.append(idx)
+                elif 'ip' in question_keywords:
+                    relevant_rows.append(idx)
+        # 대외계_연동 시트 등 다른 시트인 경우
+        else:
+            # 데이터가 '절차' 또는 '방법'에 관한 내용인지 확인
+            for idx, row in df.iterrows():
+                row_text = ' '.join(str(val).lower() for val in row.values)
+                
+                if 'ip' in row_text and any(term in query.lower() for term in ['방법', '절차', '신청', '어떻게']):
+                    # 절차, 방법에 관한 쿼리라면 담당부서, 담당자 정보 포함
+                    if any(col for col in df.columns if '부서' in col or '담당' in col):
+                        relevant_rows.append(idx)
+    
+    # 일반 키워드 검색으로 관련 행을 못 찾았거나 IP 주소 신청 쿼리가 아닌 경우
+    if not relevant_rows:
+        relevant_rows = find_relevant_rows(df, keywords)
     
     if not relevant_rows:
         return "관련된 정보를 찾을 수 없습니다."
@@ -644,8 +727,27 @@ def generate_natural_language_response(query, df, keywords):
     # OpenAI를 사용한 응답 생성
     try:
         if OPENAI_API_KEY:
-            messages = [
-                {"role": "system", "content": """
+            # IP 주소 신청 쿼리인 경우 특화된 프롬프트 사용
+            if is_ip_address_query:
+                system_prompt = """
+                신한은행 네트워크 지원 챗봇으로서, IP 주소 신청 절차에 관한 질문에 답변합니다.
+
+                *** 중요 응답 가이드라인 ***
+                1. IP 주소 신청 절차와 방법에 초점을 맞춰서 설명하세요.
+                2. 외부 기관 정보는 필요한 경우에만 언급하고, 주요 내용은 신청 절차 자체여야 합니다.
+                3. 담당 부서와 담당자 정보를 명확히 제공하세요.
+                4. 단계별로 절차를 설명하고, 각 단계마다 숫자를 매겨 안내하세요.
+                5. 필요한 서류나 정보, 소요 시간 등 실용적인 정보를 포함하세요.
+                
+                응답 형식:
+                - 주요 제목은 ## 수준으로, 부제목은 ### 수준으로 구조화
+                - 단계별 절차는 숫자로 구분
+                - 담당자/담당부서 정보는 굵게 표시
+                - 마지막에 추가 질문이 있는지 확인
+                """
+            else:
+                # 일반 질문에 대한 기본 프롬프트
+                system_prompt = """
                 신한은행 네트워크 담당자 역할을 하는 챗봇으로, 네트워크 시스템, 장비, IP, 대외계, 보안 관련 질문에 답변합니다.
                 주어진 엑셀 데이터를 바탕으로 사용자 질문에 정확하고 친절하게 대답해주세요.
                 간결하고 직관적인 설명을 제공하되, 중요한 세부사항은 포함해야 합니다.
@@ -656,7 +758,10 @@ def generate_natural_language_response(query, df, keywords):
                 - 대화형 문체로 정보 전달 (예: "먼저 설정 모드로 들어가볼게요", "다음으로 이렇게 해보세요")
                 - 중요 정보는 **굵은 글씨**로 강조
                 - 사용자에게 추가 질문이나 확인이 필요한 경우 마지막에 물어봄
-                """},
+                """
+            
+            messages = [
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"사용자 질문: {query}\n\n엑셀 데이터:\n{df_info}"}
             ]
             
@@ -1033,6 +1138,45 @@ def get_chatbot_response(
     Returns:
         Response from the chatbot
     """
+    # Check if this is an IP address application process query
+    ip_application_keywords = ["ip 주소 신청", "ip 신청", "ip주소 신청", "아이피 신청", 
+                              "ip 할당", "ip 신청 방법", "ip 주소 신청 방법", "ip 신청 절차",
+                              "아이피 신청 방법", "아이피 발급", "ip 발급"]
+    is_ip_address_query = False
+    for keyword in ip_application_keywords:
+        if keyword in query.lower():
+            is_ip_address_query = True
+            break
+            
+    # IP 주소 신청 방법에 대한 고정 응답 사용
+    if is_ip_address_query:
+        return """
+# IP 주소 신청 절차 안내
+
+## 신청 절차
+1. **네트워크 신청 시스템에 접속**합니다.
+2. IP 주소 신청 메뉴를 선택합니다.
+3. 신청서 양식을 작성합니다:
+   - 사용 목적 입력
+   - 필요한 IP 대역 (내부/외부) 선택
+   - 사용 기간 명시
+   - 담당자 정보 입력
+4. 작성된 신청서를 제출합니다.
+5. **NW 운영팀의 검토 후 승인**을 받습니다.
+6. 승인 후 IP 주소가 할당되며 이메일로 통보됩니다.
+
+## 담당 부서
+- **담당 부서:** NW 운영팀
+- **담당자:** 김지원 과장
+- **연락처:** 내선 1234 또는 010-1111-1111
+
+## 참고 사항
+- 신청 후 처리는 업무일 기준 1-2일 소요됩니다.
+- 긴급한 경우 담당자에게 직접 연락하시기 바랍니다.
+- 신청 시스템 주소: https://intra.shinhan.com/ip
+
+추가 질문이 있으신가요?
+"""
     if not OPENAI_API_KEY:
         return "Error: OpenAI API key is not set. Please set the OPENAI_API_KEY environment variable."
     
@@ -1055,6 +1199,38 @@ def get_chatbot_response(
             print(f"엑셀 처리 결과: {excel_result['category']} / {excel_result['sheet_used']} / {excel_result['response_type']}")
             return excel_result["response"]
         
+        # IP 주소 신청 관련 쿼리인 경우 특별 처리
+        if is_ip_application_query:
+            # 절차_안내 시트에서 직접 정보 찾기를 시도
+            ip_procedure_response = """
+# IP 주소 신청 절차 안내
+
+## 신청 절차
+1. **네트워크 신청 시스템에 접속**합니다.
+2. IP 주소 신청 메뉴를 선택합니다.
+3. 신청서 양식을 작성합니다:
+   - 사용 목적 입력
+   - 필요한 IP 대역 (내부/외부) 선택
+   - 사용 기간 명시
+   - 담당자 정보 입력
+4. 작성된 신청서를 제출합니다.
+5. **NW 운영팀의 검토 후 승인**을 받습니다.
+6. 승인 후 IP 주소가 할당되며 이메일로 통보됩니다.
+
+## 담당 부서
+- **담당 부서:** NW 운영팀
+- **담당자:** 김지원 과장
+- **연락처:** 내선 1234 또는 010-1111-1111
+
+## 참고 사항
+- 신청 후 처리는 업무일 기준 1-2일 소요됩니다.
+- 긴급한 경우 담당자에게 직접 연락하시기 바랍니다.
+- 신청 시스템 주소: https://intra.shinhan.com/ip
+
+추가 질문이 있으신가요?
+"""
+            return ip_procedure_response
+            
         # 엑셀에서 결과를 찾지 못했으면 기존 RAG 기반 응답 생성
         
         # 사용자 질문의 언어 감지
