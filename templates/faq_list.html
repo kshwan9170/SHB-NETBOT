@@ -50,27 +50,39 @@
     </nav>
 
 
-<div class="container mt-4">
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h2><i class="fas fa-question-circle"></i> 자주 묻는 질문 (FAQ)</h2>
-            <p class="text-muted">신한은행 네트워크 지원 서비스에 관한 자주 묻는 질문과 답변입니다.</p>
-        </div>
-        <div class="col-md-4 text-right">
-            <!-- 검색 폼 -->
-            <form action="{{ url_for('faq_list') }}" method="GET" class="form-inline justify-content-end">
-                <div class="input-group">
-                    <input type="text" name="search" class="form-control" placeholder="검색어 입력" value="{{ search }}">
-                    {% if is_admin %}
-                    <input type="hidden" name="admin" value="1">
-                    {% endif %}
-                    <div class="input-group-append">
-                        <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i></button>
-                    </div>
+<div class="container mt-5">
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-7">
+                    <h2><i class="fas fa-book text-primary"></i> 자주 묻는 질문 (FAQ)</h2>
+                    <p class="text-muted">신한은행 네트워크 지원 서비스에 관한 자주 묻는 질문과 답변입니다.</p>
                 </div>
-            </form>
+                <div class="col-lg-5">
+                    <!-- 검색 폼 -->
+                    <form action="{{ url_for('faq_list') }}" method="GET" class="mt-2">
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control form-control-lg" placeholder="질문 또는 키워드 검색" value="{{ search }}">
+                            {% if is_admin %}
+                            <input type="hidden" name="admin" value="1">
+                            {% endif %}
+                            <div class="input-group-append">
+                                <button class="btn btn-primary btn-lg" type="submit"><i class="fas fa-search"></i></button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
+    
+    <!-- 검색 결과 표시 (검색어가 있을 경우) -->
+    {% if search %}
+    <div class="alert alert-info mb-4">
+        <i class="fas fa-info-circle"></i> '<strong>{{ search }}</strong>'에 대한 검색 결과입니다.
+        <a href="{{ url_for('faq_list', admin=1 if is_admin else 0) }}" class="btn btn-sm btn-outline-secondary ml-2">전체 목록 보기</a>
+    </div>
+    {% endif %}
 
     {% if is_admin %}
     <div class="row mb-4">
@@ -110,13 +122,19 @@
     {% if categories %}
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
+            <div class="card shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">카테고리</h5>
-                    <div class="btn-group category-filter">
-                        <button type="button" class="btn btn-outline-primary category-btn active" data-category="all">전체</button>
+                    <h5 class="card-title d-flex align-items-center">
+                        <i class="fas fa-tags text-primary mr-2"></i>카테고리 선택
+                    </h5>
+                    <div class="category-filter">
+                        <button type="button" class="btn btn-lg btn-outline-primary category-btn active m-1" data-category="all">
+                            <i class="fas fa-border-all mr-1"></i> 전체
+                        </button>
                         {% for category in categories %}
-                        <button type="button" class="btn btn-outline-primary category-btn" data-category="{{ category }}">{{ category }}</button>
+                        <button type="button" class="btn btn-lg btn-outline-primary category-btn m-1" data-category="{{ category }}">
+                            <i class="fas fa-tag mr-1"></i> {{ category }}
+                        </button>
                         {% endfor %}
                     </div>
                 </div>
@@ -128,17 +146,18 @@
     {% if faqs %}
     <div class="row">
         <div class="col-12">
+            <h4 class="mb-3 text-primary"><i class="fas fa-list"></i> 질문 목록</h4>
             <div class="accordion" id="faqAccordion">
                 {% for faq in faqs %}
                 <div class="card faq-item mb-3 shadow-sm" data-category="{{ faq.category }}">
                     <div class="card-header d-flex justify-content-between align-items-center" id="heading{{ faq.id }}" style="background-color: rgba(0, 123, 255, 0.05);">
-                        <h5 class="mb-0">
-                            <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse{{ faq.id }}" aria-expanded="false" aria-controls="collapse{{ faq.id }}">
+                        <h5 class="mb-0 w-75">
+                            <button class="btn btn-link collapsed text-left w-100" type="button" data-toggle="collapse" data-target="#collapse{{ faq.id }}" aria-expanded="false" aria-controls="collapse{{ faq.id }}">
                                 <i class="fas fa-question-circle text-primary mr-2"></i>
                                 {{ faq.question }}
                             </button>
                         </h5>
-                        <span class="badge badge-primary">{{ faq.category }}</span>
+                        <span class="badge badge-primary p-2">{{ faq.category }}</span>
                     </div>
                     <div id="collapse{{ faq.id }}" class="collapse" aria-labelledby="heading{{ faq.id }}" data-parent="#faqAccordion">
                         <div class="card-body">
