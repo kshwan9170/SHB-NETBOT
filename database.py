@@ -311,39 +311,81 @@ def delete_document(doc_id: str):
     문서 ID에 해당하는 모든 청크를 벡터 DB에서 삭제합니다
     
     Args:
-        doc_id: 삭제할 문서의 ID (UUID)
+        doc_id: 삭제할 문서의 ID (UUID 또는 파일명의 첫 부분)
+    Returns:
+        삭제 성공 여부 (True/False)
     """
     try:
         collection = initialize_database()
+        deleted_chunks = 0
         
-        # 문서 ID로 관련 청크 찾기 - 메타데이터에서 doc_id 필드 검색
-        results = collection.get(
-            where={"doc_id": doc_id}
-        )
+        # 1단계: 메타데이터에서 doc_id 필드로 검색
+        try:
+            results = collection.get(
+                where={"doc_id": doc_id}
+            )
+            
+            if results and results['ids'] and len(results['ids']) > 0:
+                # 해당 ID의 모든 청크 삭제
+                chunk_ids = results['ids']
+                collection.delete(ids=chunk_ids)
+                deleted_chunks += len(chunk_ids)
+                print(f"Deleted {len(chunk_ids)} chunks for document ID: {doc_id}")
+        except Exception as metadata_err:
+            print(f"메타데이터 검색 중 오류: {str(metadata_err)}")
         
-        if results and results['ids'] and len(results['ids']) > 0:
-            # 해당 ID의 모든 청크 삭제
-            collection.delete(ids=results['ids'])
-            print(f"Deleted {len(results['ids'])} chunks for document ID: {doc_id}")
-            return True
-        else:
-            # 이전 버전 호환성: chunk_id에서 doc_id 형식으로 검색
+        # 2단계: 메타데이터에서 source 필드에 doc_id가 포함된 항목 검색
+        try:
+            # source 필드가 있는 모든 메타데이터 가져오기
+            all_data = collection.get()
+            if all_data and 'metadatas' in all_data and all_data['metadatas']:
+                source_match_ids = []
+                
+                for i, metadata in enumerate(all_data['metadatas']):
+                    # 메타데이터에 source가 있고 doc_id가 포함된 경우
+                    if metadata and 'source' in metadata and isinstance(metadata['source'], str):
+                        source = metadata['source']
+                        if doc_id in source:
+                            # 해당 청크 ID 추가
+                            if i < len(all_data['ids']):
+                                source_match_ids.append(all_data['ids'][i])
+                
+                if source_match_ids:
+                    collection.delete(ids=source_match_ids)
+                    deleted_chunks += len(source_match_ids)
+                    print(f"Deleted {len(source_match_ids)} chunks with source containing: {doc_id}")
+        except Exception as source_err:
+            print(f"소스 필드 검색 중 오류: {str(source_err)}")
+        
+        # 3단계: 이전 버전 호환성 - 청크 ID에서 doc_id 형식으로 검색
+        try:
             all_chunks = collection.get()
             target_ids = []
             
             if all_chunks and 'ids' in all_chunks and all_chunks['ids']:
-                for i, chunk_id in enumerate(all_chunks['ids']):
+                for chunk_id in all_chunks['ids']:
                     # 청크 ID가 "doc_id-번호" 형식이므로 doc_id로 시작하는지 확인
-                    if chunk_id.startswith(f"{doc_id}-"):
+                    if isinstance(chunk_id, str) and (
+                        chunk_id.startswith(f"{doc_id}-") or 
+                        chunk_id.startswith(f"{doc_id}_")
+                    ):
                         target_ids.append(chunk_id)
             
             if target_ids:
                 collection.delete(ids=target_ids)
+                deleted_chunks += len(target_ids)
                 print(f"Deleted {len(target_ids)} chunks with IDs starting with: {doc_id}")
-                return True
-            else:
-                print(f"No chunks found for document ID: {doc_id}")
-                return False
+        except Exception as chunk_err:
+            print(f"청크 ID 검색 중 오류: {str(chunk_err)}")
+        
+        # 삭제 결과 반환
+        if deleted_chunks > 0:
+            print(f"총 {deleted_chunks}개의 청크가 문서 ID {doc_id}와 관련하여 삭제되었습니다.")
+            return True
+        else:
+            print(f"문서 ID {doc_id}에 해당하는 청크를 찾을 수 없습니다.")
+            return False
+            
     except Exception as e:
         print(f"Error deleting document from database: {e}")
         return False

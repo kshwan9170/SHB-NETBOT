@@ -16,6 +16,8 @@ from models import init_db, get_db, close_db, InquiryBoard, FeedbackBoard, Repor
 # Custom modules
 import database
 import document_processor
+import chatbot
+from config import FAQ_KEYWORDS, FINE_TUNED_MODEL, RAG_SYSTEM
 
 app = Flask(__name__)
 
@@ -79,79 +81,29 @@ def chat():
         return jsonify({'error': '메시지가 비어 있습니다.'}), 400
     
     try:
-        # 벡터 DB에서 관련 문서 검색 (요구사항에 맞게 top_k=5로 수정)
-        relevant_docs = database.search_similar_docs(user_message, top_k=5)
+        # 챗봇 모듈을 활용하여 응답 생성
+        # 이 함수는 키워드 기반 분기 처리, Fine-tuned 모델 사용, RAG 시스템 활용을 모두 포함합니다
+        reply = chatbot.get_chatbot_response(
+            query=user_message,
+            model=RAG_SYSTEM["model"],
+            use_rag=True
+        )
         
-        # 검색된 문서가 없는 경우 예외 처리
-        if not relevant_docs:
-            print(f"관련 문서를 찾지 못했습니다. 쿼리: {user_message}")
-            
-            # 사용자 언어에 맞게 안내 메시지 전달
-            if re.search(r'[가-힣]', user_message):
-                return jsonify({'reply': "현재 관련된 문서를 찾을 수 없습니다.\n\n추가 지원이 필요하실 경우,\n**네트워크 운영 담당자(XX-XXX-XXXX)**로 연락해 주시면 신속히 도와드리겠습니다."})
-            else:
-                return jsonify({'reply': "Currently, we cannot find any related documents.\n\nFor additional support,\nPlease contact the **Network Operations Team (XX-XXX-XXXX)** for prompt assistance."})
-        
-        # Context 형식 요구사항대로 변경 (번호를 붙여 각 문서 표시)
-        context = "Context:\n"
-        for i, doc in enumerate(relevant_docs):
-            context += f"- ({i+1}) \"{doc.page_content}\"\n\n"
-        
-        # 시스템 프롬프트 구성
-        system_prompt = """[SYSTEM]
-You are SHB-NetBot. Use the Context to answer precisely.
-
-모든 응답은 다음 Markdown 형식 규칙을 따라야 해:
-
-1. 주요 주제는 ## 또는 ### 헤딩으로 구분하기
-2. 주제별로 짧은 설명 문단으로 배경이나 목적을 덧붙이기
-3. 단계가 있는 경우 번호 매기기(1., 2. 등)와 각 단계에 대한 설명 제공하기
-4. 설정, 명령어는 ```bash 또는 ```plaintext 코드 블록으로 표시하기
-5. 중요 키워드는 **굵은 텍스트**로 강조하기
-6. 순서 없는 목록은 - 또는 * 사용하기
-7. 각 주요 섹션 사이에 한 줄 이상의 빈 줄 삽입하기
-
-[CONTEXT]
-"""
-        
-        # Context 추가
-        system_prompt += context
-        
-        # 사용자 질문을 프롬프트에 추가
-        user_prompt = f"[USER]\n{user_message}"
-        
-        # OpenAI API를 호출하여 응답 생성
-        try:
-            response = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                max_tokens=800,  # 응답 길이 늘림
-                temperature=0.7,
-            )
-            
-            # API 응답에서 텍스트 추출
-            reply = response.choices[0].message.content
-            
-            # 로그 기록 (디버깅용)
-            print(f"RAG 검색 성공: {len(relevant_docs)}개 문서 검색됨")
-            
-        except Exception as api_error:
-            print(f"ERROR: RAG pipeline failed during OpenAI API call: {str(api_error)}")
-            
-            # 사용자 언어에 맞게 오류 메시지
-            if re.search(r'[가-힣]', user_message):
-                reply = "죄송합니다. 답변 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
-            else:
-                reply = "Sorry, an error occurred while generating a response. Please try again later."
+        # 로그 기록 (디버깅용)
+        print(f"챗봇 응답 생성 완료: {len(user_message)}자 질문 / {len(reply) if reply else 0}자 응답")
         
         return jsonify({'reply': reply, 'question': user_message})
     
     except Exception as e:
         print(f"Error in chat API: {str(e)}")
-        return jsonify({'error': f'오류가 발생했습니다: {str(e)}', 'question': user_message}), 500
+        
+        # 사용자 언어에 맞게 오류 메시지
+        if re.search(r'[가-힣]', user_message):
+            reply = "죄송합니다. 답변 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+        else:
+            reply = "Sorry, an error occurred while generating a response. Please try again later."
+            
+        return jsonify({'reply': reply, 'question': user_message}), 500
 
 @app.route('/api/chat/feedback', methods=['POST'])
 def chat_feedback():
@@ -997,6 +949,34 @@ def sync_documents():
             # 빠른 검사: 이미 모든 파일이 처리되었는지 확인
             # 문서 ID 목록 가져오기
             existing_doc_ids = database.get_all_document_ids()
+            
+            # 1. 파일 시스템과 벡터 DB 동기화 체크
+            # 현재 파일 시스템에 있는 문서 ID 목록
+            filesystem_doc_ids = set(file_info['doc_id'] for file_info in files)
+            
+            # 벡터 DB에는 있지만 파일 시스템에는 없는 문서 ID 찾기
+            orphaned_doc_ids = existing_doc_ids - filesystem_doc_ids
+            
+            # 더 이상 존재하지 않는 문서의 임베딩 제거
+            if orphaned_doc_ids:
+                orphaned_count = len(orphaned_doc_ids)
+                yield json.dumps({
+                    'progress': 5,
+                    'message': f'🔍 파일 시스템에 더 이상 존재하지 않는 {orphaned_count}개의 문서 데이터 정리 중...'
+                }) + '\n'
+                
+                # 각 고아 문서 제거
+                removed_count = 0
+                for doc_id in orphaned_doc_ids:
+                    if database.delete_document(doc_id):
+                        removed_count += 1
+                
+                yield json.dumps({
+                    'progress': 10,
+                    'message': f'✅ 삭제된 문서 {removed_count}개의 정보가 벡터 DB에서 제거되었습니다. 이 정보는 더 이상 챗봇 응답에 사용되지 않습니다.'
+                }) + '\n'
+            
+            # 2. 새로운 문서 처리
             files_to_process = []
             
             # 처리가 필요한 파일만 필터링
@@ -1005,17 +985,24 @@ def sync_documents():
                 if doc_id not in existing_doc_ids:
                     files_to_process.append(file_info)
             
-            # 모든 파일이 이미 처리되었으면 동기화 필요 없음
-            if not files_to_process:
+            # 새롭게 처리할 파일이 없고 삭제된 파일도 없으면 동기화 필요 없음
+            if not files_to_process and not orphaned_doc_ids:
                 yield json.dumps({
                     'progress': 100,
                     'message': f'🛈 동기화할 항목이 없습니다. 현재 모든 파일은 최신 상태입니다.'
                 }) + '\n'
                 return
-                
-            # 처리가 필요한 파일로 목록 갱신
-            files = files_to_process
-            total_files = len(files)
+            
+            # 새롭게 처리가 필요한 파일로 목록 갱신
+            if files_to_process:
+                files = files_to_process
+                total_files = len(files)
+            else:
+                yield json.dumps({
+                    'progress': 100,
+                    'message': f'🛈 새롭게 추가할 문서가 없습니다. 삭제된 문서 정보 정리가 완료되었습니다.'
+                }) + '\n'
+                return
             
             for file_info in files:
                 try:
