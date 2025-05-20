@@ -1199,6 +1199,16 @@ def get_chatbot_response(
             print(f"엑셀 처리 결과: {excel_result['category']} / {excel_result['sheet_used']} / {excel_result['response_type']}")
             return excel_result["response"]
         
+        # IP 주소 신청 관련 쿼리인지 확인
+        ip_application_keywords = ["ip 주소 신청", "ip 신청", "ip주소 신청", "아이피 신청", 
+                                  "ip 할당", "ip 신청 방법", "ip 주소 신청 방법", "ip 신청 절차",
+                                  "아이피 신청 방법", "아이피 발급", "ip 발급"]
+        is_ip_application_query = False
+        for keyword in ip_application_keywords:
+            if keyword in query.lower():
+                is_ip_application_query = True
+                break
+                
         # IP 주소 신청 관련 쿼리인 경우 특별 처리
         if is_ip_application_query:
             # 절차_안내 시트에서 직접 정보 찾기를 시도

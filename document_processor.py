@@ -65,6 +65,8 @@ def process_document(file_path: str) -> List[Dict[str, Any]]:
         raw_chunks = extract_text_from_pptx(file_path)
     elif file_extension == '.xlsx' or file_extension == '.xls':
         raw_chunks = extract_text_from_excel(file_path)
+    elif file_extension == '.csv':
+        raw_chunks = extract_text_from_csv(file_path)
     elif file_extension == '.txt':
         raw_chunks = extract_text_from_txt(file_path)
     else:
@@ -222,6 +224,73 @@ def extract_text_from_txt(file_path: str) -> List[str]:
             print(f"Error extracting text from TXT with cp949 encoding: {e}")
     except Exception as e:
         print(f"Error extracting text from TXT: {e}")
+    
+    return text_chunks
+
+def extract_text_from_csv(file_path: str) -> List[str]:
+    """
+    Extract text from CSV files with appropriate formatting for search.
+    Treats CSV files similar to Excel but with a single sheet structure.
+    """
+    text_chunks = []
+    
+    try:
+        # Read CSV file using pandas
+        df = pd.read_csv(file_path)
+        
+        # Get the filename for reference
+        filename = os.path.basename(file_path)
+        
+        # Check if this might be a procedure guide CSV
+        is_procedure_guide = any(keyword in filename for keyword in ['업무 안내', '업무_안내', '업무안내', '가이드', '매뉴얼', '절차'])
+        
+        # For procedure guides, process each row as separate knowledge chunk
+        if is_procedure_guide:
+            for idx, row in df.iterrows():
+                # Skip empty rows
+                if row.isna().all():
+                    continue
+                
+                # Format as a structured knowledge snippet
+                row_chunk_text = f"[업무 안내] "
+                
+                # Add all non-NA fields with their column names
+                for col_name, value in row.items():
+                    if not pd.isna(value) and str(value).strip():
+                        # Clean the value
+                        clean_value = str(value).strip().replace('\n', ' ')
+                        row_chunk_text += f"{col_name}: {clean_value} | "
+                
+                # Remove trailing separator and add source reference
+                row_chunk_text = row_chunk_text.rstrip(" | ")
+                row_chunk_text += f"\n출처: {filename}"
+                
+                if len(row_chunk_text.strip()) > 20:  # Only keep meaningful chunks
+                    text_chunks.append(row_chunk_text)
+        else:
+            # For regular CSV files, convert to plain text format
+            csv_text = f"--- CSV: {filename} ---\n"
+            
+            # Add header row
+            header_row = " | ".join([str(col) for col in df.columns])
+            csv_text += header_row + "\n"
+            
+            # Add separator
+            csv_text += "-" * len(header_row) + "\n"
+            
+            # Add data rows
+            for _, row in df.iterrows():
+                row_text = " | ".join([str(val) if not pd.isna(val) else "" for val in row])
+                csv_text += row_text + "\n"
+            
+            # Split the CSV text into chunks
+            from_function_chunks = chunk_text(csv_text)
+            for chunk in from_function_chunks:
+                if len(chunk.strip()) > 20:
+                    text_chunks.append(chunk)
+    
+    except Exception as e:
+        print(f"Error extracting text from CSV: {e}")
     
     return text_chunks
 
