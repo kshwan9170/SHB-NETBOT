@@ -462,7 +462,15 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     async function viewDocument(systemFilename, displayFilename) {
         try {
-            const response = await fetch(`/api/documents/view/${systemFilename}`);
+            console.log(`Viewing document: ${systemFilename}`);
+            const response = await fetch(`/api/documents/view/${encodeURIComponent(systemFilename)}`);
+            console.log('Response status:', response.status);
+            
+            if (!response.ok) {
+                console.error('Error viewing document:', response.statusText);
+                throw new Error(`서버 응답 오류: ${response.status} ${response.statusText}`);
+            }
+            
             const data = await response.json();
             
             if (response.ok && data.status === 'success') {
@@ -632,8 +640,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert(data.message || '문서 내용을 불러오는 중 오류가 발생했습니다.');
             }
         } catch (error) {
-            console.error('문서 조회 중 오류 발생:', error);
-            alert('서버 연결 중 오류가 발생했습니다.');
+            console.error('문서 내용 로드 중 오류 발생:', error);
+            alert(`문서 내용 조회 중 오류가 발생했습니다: ${error.message}`);
         }
     }
     

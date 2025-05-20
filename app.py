@@ -389,6 +389,70 @@ def view_document(system_filename):
                     'message': f'CSV 파일을 읽는 중 오류가 발생했습니다: {str(e)}'
                 }), 500
         
+        # JSON 파일 처리
+        elif file_extension == 'json':
+            try:
+                # JSON 파일 읽기
+                try:
+                    # UTF-8로 시도
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        json_content = f.read()
+                except UnicodeDecodeError:
+                    # CP949로 시도 (한글 파일명 대응)
+                    with open(file_path, 'r', encoding='cp949') as f:
+                        json_content = f.read()
+                
+                # JSON 포맷팅 처리
+                import json  # 여기서 임포트해야 함
+                try:
+                    parsed_json = json.loads(json_content)
+                    formatted_json = json.dumps(parsed_json, indent=2, ensure_ascii=False)
+                    
+                    # HTML로 표시하기 위한 처리
+                    content = f"""
+                    <div class="json-container">
+                        <div style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                            <h3 style="margin: 0; color: #333;">JSON 파일 내용</h3>
+                            <p style="margin: 5px 0 0;">파일명: {original_filename}</p>
+                        </div>
+                        <pre style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; overflow: auto; white-space: pre-wrap; font-family: monospace; line-height: 1.5;">{formatted_json}</pre>
+                    </div>
+                    """
+                    
+                    # HTML 콘텐츠로 반환
+                    return jsonify({
+                        'status': 'success',
+                        'html_content': True,
+                        'content': content,
+                        'file_type': 'json'
+                    })
+                    
+                except json.JSONDecodeError as je:
+                    # 유효하지 않은 JSON인 경우 오류 메시지와 함께 원본 텍스트로 표시
+                    content = f"""
+                    <div class="json-container">
+                        <div style="background-color: #fff0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px; border: 1px solid #ffcccc;">
+                            <h3 style="margin: 0; color: #cc0000;">유효하지 않은 JSON 파일</h3>
+                            <p style="margin: 5px 0 0;">오류: {str(je)}</p>
+                        </div>
+                        <pre style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; overflow: auto; white-space: pre-wrap; font-family: monospace; line-height: 1.5;">{json_content}</pre>
+                    </div>
+                    """
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'html_content': True,
+                        'content': content,
+                        'file_type': 'json'
+                    })
+                    
+            except Exception as e:
+                print(f"JSON 파일 처리 중 오류: {str(e)}")
+                return jsonify({
+                    'status': 'error',
+                    'message': f'JSON 파일을 읽는 중 오류가 발생했습니다: {str(e)}'
+                }), 500
+
         # PDF 파일 처리
         elif file_extension == 'pdf':
             import base64
