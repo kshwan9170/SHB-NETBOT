@@ -354,7 +354,7 @@ def view_document(system_filename):
                     if os.path.exists(metadata_path):
                         try:
                             with open(metadata_path, 'r', encoding='utf-8') as meta_file:
-                                metadata = global_json.load(meta_file)
+                                metadata = json.load(meta_file)
                                 
                                 content += '<div class="csv-metadata">'
                                 content += '<h4>CSV 파일 메타데이터</h4>'
@@ -430,7 +430,7 @@ def view_document(system_filename):
                         'file_type': 'json'
                     })
                     
-                except global_json.JSONDecodeError as je:
+                except json.JSONDecodeError as je:
                     # 유효하지 않은 JSON인 경우 오류 메시지와 함께 원본 텍스트로 표시
                     content = f"""
                     <div class="json-container">
@@ -509,7 +509,7 @@ def view_document(system_filename):
                     if os.path.exists(metadata_path):
                         try:
                             with open(metadata_path, 'r', encoding='utf-8') as meta_file:
-                                metadata = global_json.load(meta_file)
+                                metadata = json.load(meta_file)
                                 
                                 content += '<div class="csv-metadata">'
                                 content += '<h4>CSV 파일 메타데이터</h4>'
@@ -1157,7 +1157,7 @@ def sync_documents():
         def generate_progress():
             """진행 상황을 스트리밍하는 제너레이터 함수"""
             
-            yield global_json.dumps({
+            yield json.dumps({
                 'progress': 0,
                 'message': '문서 동기화를 시작합니다...'
             }) + '\n'
@@ -1189,21 +1189,21 @@ def sync_documents():
                             'modified_time': file_stats.st_mtime
                         })
                 
-                yield global_json.dumps({
+                yield json.dumps({
                     'progress': 10,
                     'message': f'{len(files)}개 문서를 확인했습니다.'
                 }) + '\n'
                 
             except Exception as e:
                 print(f"파일 목록 수집 오류: {str(e)}")
-                yield global_json.dumps({
+                yield json.dumps({
                     'progress': 10,
                     'message': f'파일 목록 수집 중 오류: {str(e)}'
                 }) + '\n'
                 return
             
             if not files:
-                yield global_json.dumps({
+                yield json.dumps({
                     'progress': 100,
                     'message': '동기화할 문서가 없습니다.'
                 }) + '\n'
@@ -1231,7 +1231,7 @@ def sync_documents():
             # 더 이상 존재하지 않는 문서의 임베딩 제거
             if orphaned_doc_ids:
                 orphaned_count = len(orphaned_doc_ids)
-                yield global_json.dumps({
+                yield json.dumps({
                     'progress': 5,
                     'message': f'🔍 파일 시스템에 더 이상 존재하지 않는 {orphaned_count}개의 문서 데이터 정리 중...'
                 }) + '\n'
@@ -1242,7 +1242,7 @@ def sync_documents():
                     if database.delete_document(doc_id):
                         removed_count += 1
                 
-                yield global_json.dumps({
+                yield json.dumps({
                     'progress': 10,
                     'message': f'✅ 삭제된 문서 {removed_count}개의 정보가 벡터 DB에서 제거되었습니다. 이 정보는 더 이상 챗봇 응답에 사용되지 않습니다.'
                 }) + '\n'
@@ -1258,7 +1258,7 @@ def sync_documents():
             
             # 새롭게 처리할 파일이 없고 삭제된 파일도 없으면 동기화 필요 없음
             if not files_to_process and not orphaned_doc_ids:
-                yield global_json.dumps({
+                yield json.dumps({
                     'progress': 100,
                     'message': f'🛈 동기화할 항목이 없습니다. 현재 모든 파일은 최신 상태입니다.'
                 }) + '\n'
@@ -1269,7 +1269,7 @@ def sync_documents():
                 files = files_to_process
                 total_files = len(files)
             else:
-                yield global_json.dumps({
+                yield json.dumps({
                     'progress': 100,
                     'message': f'🛈 새롭게 추가할 문서가 없습니다. 삭제된 문서 정보 정리가 완료되었습니다.'
                 }) + '\n'
@@ -1283,7 +1283,7 @@ def sync_documents():
                     
                     # 현재 파일 처리 시작 메시지
                     current_progress = 10 + int((processed_files / total_files) * 80)
-                    yield global_json.dumps({
+                    yield json.dumps({
                         'progress': current_progress,
                         'message': f'({processed_files+1}/{total_files}) {display_filename} 동기화 중...'
                     }) + '\n'
@@ -1306,7 +1306,7 @@ def sync_documents():
                             
                             if any(keyword in display_filename for keyword in guide_keywords):
                                 excel_procedure_file = True
-                                yield global_json.dumps({
+                                yield json.dumps({
                                     'progress': current_progress,
                                     'message': f'✨ {display_filename} - 업무 안내 가이드 파일로 인식되었습니다. 절차 안내 시트를 세부 항목별로 분리하여 처리합니다. (버전: {file_date})'
                                 }) + '\n'
@@ -1316,7 +1316,7 @@ def sync_documents():
                         
                         # 청크가 없으면 다음 파일로
                         if not chunks:
-                            yield global_json.dumps({
+                            yield json.dumps({
                                 'progress': current_progress + 5,
                                 'message': f'{display_filename} 처리 중 청크를 추출할 수 없습니다.'
                             }) + '\n'
@@ -1334,12 +1334,12 @@ def sync_documents():
                         if deleted or added:
                             sync_needed = True
                         
-                        yield global_json.dumps({
+                        yield json.dumps({
                             'progress': current_progress + 5,
                             'message': f'{display_filename} 처리 완료 (청크 {len(chunks)}개)'
                         }) + '\n'
                     else:
-                        yield global_json.dumps({
+                        yield json.dumps({
                             'progress': current_progress,
                             'message': f'{display_filename}은 지원되지 않는 파일 형식입니다.'
                         }) + '\n'
@@ -1348,7 +1348,7 @@ def sync_documents():
                     error_filename = file_info.get('display_filename', '알 수 없는 파일')
                     error_progress = 10 + int((processed_files / total_files) * 80)
                     print(f"파일 처리 오류 ({error_filename}): {str(e)}")
-                    yield global_json.dumps({
+                    yield json.dumps({
                         'progress': error_progress,
                         'message': f'{error_filename} 처리 중 오류 발생: {str(e)}'
                     }) + '\n'
@@ -1359,12 +1359,12 @@ def sync_documents():
             db_status = database.get_database_status()
             
             if not sync_needed:
-                yield global_json.dumps({
+                yield json.dumps({
                     'progress': 100,
                     'message': f'🛈 동기화할 항목이 없습니다. 현재 모든 파일은 최신 상태입니다.'
                 }) + '\n'
             else:
-                yield global_json.dumps({
+                yield json.dumps({
                     'progress': 100,
                     'message': f'동기화 완료! 현재 문서 {db_status.get("document_count", 0)}개, 청크 {db_status.get("chunk_count", 0)}개'
                 }) + '\n'
