@@ -303,63 +303,51 @@ def view_document(system_filename):
         # CSV 파일 처리
         elif file_extension == 'csv':
             import pandas as pd
-            import base64
-            
             try:
-                # CSV 파일 읽기 시도 (다양한 인코딩 순차적으로 시도)
-                encodings = ['utf-8', 'cp949', 'latin1']
-                df = None
+                # 간단한 방식으로 CSV 읽기
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    csv_content = f.read()
                 
-                for encoding in encodings:
-                    try:
-                        df = pd.read_csv(file_path, dtype=str, na_filter=False, encoding=encoding)
-                        print(f"CSV 파일 '{original_filename}' {encoding} 인코딩으로 성공적으로 읽음")
-                        break
-                    except Exception as e:
-                        print(f"{encoding} 인코딩으로 읽기 실패: {str(e)}")
-                        continue
-                
-                # 모든 인코딩 시도 후에도 실패한 경우
-                if df is None:
-                    return jsonify({
-                        'status': 'error',
-                        'message': f'CSV 파일을 읽을 수 없습니다. 지원되지 않는 인코딩입니다.'
-                    }), 500
-                
-                # 간단한 HTML 테이블 생성
-                content = '<div class="csv-container" style="width:100%; overflow-x:auto;">'
-                content += '<h3>CSV 파일 미리보기</h3>'
-                
-                # 테이블로 내용 표시
-                content += '<table class="table table-striped table-bordered" border="1" style="width:100%;">'
-                
-                # 헤더 행
-                content += '<thead><tr>'
-                for col in df.columns:
-                    content += f'<th>{col}</th>'
-                content += '</tr></thead>'
-                
-                # 데이터 행 (최대 100행까지만 표시)
-                content += '<tbody>'
-                for _, row in df.head(100).iterrows():
-                    content += '<tr>'
-                    for val in row:
-                        content += f'<td>{val if val else ""}</td>'
-                    content += '</tr>'
-                content += '</tbody></table>'
-                
-                if len(df) > 100:
-                    content += f'<p><em>참고: 전체 {len(df)}행 중 처음 100행만 표시됩니다.</em></p>'
-                
-                content += '</div>'
+                # 간단한 HTML 테이블로 내용 표시
+                html = f"""
+                <div style="padding: 20px; max-width: 100%; overflow-x: auto;">
+                    <h3>CSV 파일: {original_filename}</h3>
+                    <pre style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; white-space: pre-wrap; word-break: break-all;">{csv_content}</pre>
+                </div>
+                """
                 
                 return jsonify({
                     'status': 'success',
                     'html_content': True,
                     'file_type': 'csv',
-                    'content': content
+                    'content': html
                 })
                 
+            except UnicodeDecodeError:
+                try:
+                    # UTF-8 실패 시 CP949 시도
+                    with open(file_path, 'r', encoding='cp949') as f:
+                        csv_content = f.read()
+                    
+                    html = f"""
+                    <div style="padding: 20px; max-width: 100%; overflow-x: auto;">
+                        <h3>CSV 파일: {original_filename}</h3>
+                        <pre style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; white-space: pre-wrap; word-break: break-all;">{csv_content}</pre>
+                    </div>
+                    """
+                    
+                    return jsonify({
+                        'status': 'success',
+                        'html_content': True,
+                        'file_type': 'csv',
+                        'content': html
+                    })
+                except Exception as e:
+                    print(f"CSV 파일 처리 중 오류: {str(e)}")
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'CSV 파일을 읽는 중 오류가 발생했습니다: {str(e)}'
+                    }), 500
             except Exception as e:
                 print(f"CSV 파일 처리 중 오류: {str(e)}")
                 return jsonify({

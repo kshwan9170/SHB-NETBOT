@@ -527,13 +527,18 @@ document.addEventListener('DOMContentLoaded', function() {
             // HTML 콘텐츠인지 일반 텍스트인지 확인
             try {
                 console.log('콘텐츠 타입:', data.html_content ? 'HTML' : '텍스트');
+                console.log('파일 유형:', data.file_type || '알 수 없음');
                 console.log('콘텐츠 길이:', data.content ? data.content.length : 0);
                 
                 // 안전하게 콘텐츠 처리
                 const content = data.content || '';
                 
-                if (data.html_content) {
-                    // CSV, 엑셀 등 HTML로 포맷된 내용
+                if (data.file_type === 'csv' || data.file_type === 'json') {
+                    // CSV 또는 JSON 파일 콘텐츠 표시 (HTML 형식으로 반환됨)
+                    console.log('CSV/JSON 파일 표시');
+                    modalBody.innerHTML = content;
+                } else if (data.html_content) {
+                    // HTML로 포맷된 내용
                     modalBody.innerHTML = content;
                 } else {
                     // 일반 텍스트 (TXT 파일 등)
