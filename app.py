@@ -280,6 +280,95 @@ def view_document(system_filename):
                         'message': f'파일을 읽는 중 오류가 발생했습니다: {str(e)}'
                     }), 500
         
+        # CSV 파일 처리
+        elif file_extension == 'csv':
+            import pandas as pd
+            import base64
+            
+            try:
+                # CSV 파일을 데이터프레임으로 읽기 (UTF-8 먼저 시도, 실패 시 다른 인코딩 시도)
+                try:
+                    df = pd.read_csv(file_path, dtype=str, na_filter=False)
+                except UnicodeDecodeError:
+                    try:
+                        df = pd.read_csv(file_path, dtype=str, na_filter=False, encoding='cp949')
+                    except Exception:
+                        df = pd.read_csv(file_path, dtype=str, na_filter=False, encoding='latin1')
+                
+                # 데이터프레임이 비어있는 경우
+                if df.empty:
+                    content = '<div class="csv-empty">CSV 파일에 데이터가 없습니다.</div>'
+                else:
+                    # 원본 CSV 다운로드 링크 제공
+                    with open(file_path, 'rb') as csv_file:
+                        csv_data = csv_file.read()
+                        csv_base64 = base64.b64encode(csv_data).decode('utf-8')
+                    
+                    # CSV 표시를 위한 HTML 생성
+                    content = '<div class="csv-container">'
+                    content += f'''
+                    <div class="csv-download">
+                        <a href="data:text/csv;base64,{csv_base64}" 
+                           download="{original_filename}" class="csv-download-btn">
+                            원본 CSV 파일 다운로드
+                        </a>
+                    </div>
+                    <div class="csv-preview">
+                        <h3>CSV 파일 미리보기</h3>
+                    '''
+                    
+                    # 테이블 HTML 생성
+                    content += df.to_html(
+                        index=False,
+                        classes='table table-striped table-bordered',
+                        na_rep='',
+                        escape=False,
+                        border=1
+                    )
+                    
+                    # 메타데이터 표시 (있는 경우)
+                    metadata_path = os.path.join(os.path.dirname(file_path), f"{os.path.splitext(os.path.basename(file_path))[0]}_metadata.json")
+                    if os.path.exists(metadata_path):
+                        try:
+                            with open(metadata_path, 'r', encoding='utf-8') as meta_file:
+                                metadata = json.load(meta_file)
+                                
+                                content += '<div class="csv-metadata">'
+                                content += '<h4>CSV 파일 메타데이터</h4>'
+                                content += '<table class="table table-sm">'
+                                content += '<tbody>'
+                                
+                                # 기본 메타데이터
+                                content += f'<tr><td>행 수</td><td>{metadata.get("row_count", "N/A")}</td></tr>'
+                                content += f'<tr><td>열 수</td><td>{metadata.get("column_count", "N/A")}</td></tr>'
+                                content += f'<tr><td>처리 일시</td><td>{metadata.get("processing_date", "N/A")}</td></tr>'
+                                
+                                # 컬럼 정보 (있는 경우)
+                                if "columns" in metadata:
+                                    content += '<tr><td colspan="2"><strong>컬럼 정보</strong></td></tr>'
+                                    for col_name, col_type in metadata["columns"].items():
+                                        content += f'<tr><td>{col_name}</td><td>{col_type}</td></tr>'
+                                
+                                content += '</tbody></table></div>'
+                        except Exception as e:
+                            print(f"메타데이터 로딩 실패: {str(e)}")
+                    
+                    content += '</div></div>'
+                    
+                # content 변수에 HTML이 들어있으므로 추가 처리 없이 그대로 응답
+                return jsonify({
+                    'status': 'success',
+                    'html_content': True,
+                    'content': content
+                })
+                
+            except Exception as e:
+                print(f"CSV 파일 처리 중 오류: {str(e)}")
+                return jsonify({
+                    'status': 'error',
+                    'message': f'CSV 파일을 읽는 중 오류가 발생했습니다: {str(e)}'
+                }), 500
+        
         # PDF 파일 처리
         elif file_extension == 'pdf':
             import base64
