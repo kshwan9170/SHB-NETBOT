@@ -97,12 +97,23 @@ def initialize_database():
                     else:
                         metadatas.append(metadata)
                 
-                # 새 컬렉션에 데이터 추가
-                collection.add(
-                    documents=old_data['documents'],
-                    ids=old_data['ids'],
-                    metadatas=metadatas
-                )
+                # 새 컬렉션에 데이터 추가 (배치 처리)
+                batch_size = 100  # 한 번에 처리할 문서 수 (토큰 제한 문제 해결)
+                total_docs = len(old_data['documents'])
+                
+                for i in range(0, total_docs, batch_size):
+                    end_idx = min(i + batch_size, total_docs)
+                    print(f"Adding batch {i//batch_size + 1}/{(total_docs + batch_size - 1)//batch_size}: documents {i} to {end_idx-1}")
+                    
+                    try:
+                        collection.add(
+                            documents=old_data['documents'][i:end_idx],
+                            ids=old_data['ids'][i:end_idx],
+                            metadatas=metadatas[i:end_idx]
+                        )
+                    except Exception as e:
+                        print(f"Error adding batch {i//batch_size + 1}: {str(e)}")
+                        # 오류가 발생해도 계속 진행
                 
                 print(f"Successfully migrated data to '{COLLECTION_NAME}'")
                 MIGRATION_DONE = True
