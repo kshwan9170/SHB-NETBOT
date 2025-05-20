@@ -289,6 +289,80 @@ def view_document(system_filename):
                 pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
                 content = f"data:application/pdf;base64,{pdf_base64}"
         
+        # CSV 파일 처리
+        elif file_extension == 'csv':
+            import pandas as pd
+            import base64
+            try:
+                # CSV 파일을 데이터프레임으로 읽기
+                df = pd.read_csv(file_path, dtype=str, na_filter=False)
+                
+                # 데이터프레임이 비어있는 경우
+                if df.empty:
+                    content = '<div class="csv-empty">CSV 파일에 데이터가 없습니다.</div>'
+                else:
+                    # 원본 CSV 다운로드 링크 제공
+                    with open(file_path, 'rb') as csv_file:
+                        csv_data = csv_file.read()
+                        csv_base64 = base64.b64encode(csv_data).decode('utf-8')
+                    
+                    # CSV 표시를 위한 HTML 생성
+                    content = '<div class="csv-container">'
+                    content += f'''
+                    <div class="csv-download">
+                        <a href="data:text/csv;base64,{csv_base64}" 
+                           download="{original_filename}" class="csv-download-btn">
+                            원본 CSV 파일 다운로드
+                        </a>
+                    </div>
+                    <div class="csv-preview">
+                        <h3>CSV 파일 미리보기</h3>
+                    '''
+                    
+                    # 테이블 HTML 생성
+                    content += df.to_html(
+                        index=False,
+                        classes='table table-striped table-bordered',
+                        na_rep='',
+                        escape=False,
+                        border=1
+                    )
+                    
+                    # 메타데이터 표시 (있는 경우)
+                    metadata_path = os.path.join(os.path.dirname(file_path), f"{os.path.splitext(os.path.basename(file_path))[0]}_metadata.json")
+                    if os.path.exists(metadata_path):
+                        try:
+                            with open(metadata_path, 'r', encoding='utf-8') as meta_file:
+                                metadata = json.load(meta_file)
+                                
+                                content += '<div class="csv-metadata">'
+                                content += '<h4>CSV 파일 메타데이터</h4>'
+                                content += '<table class="table table-sm">'
+                                content += '<tbody>'
+                                
+                                # 기본 메타데이터
+                                content += f'<tr><td>행 수</td><td>{metadata.get("row_count", "N/A")}</td></tr>'
+                                content += f'<tr><td>열 수</td><td>{metadata.get("column_count", "N/A")}</td></tr>'
+                                content += f'<tr><td>처리 일시</td><td>{metadata.get("processing_date", "N/A")}</td></tr>'
+                                
+                                # 컬럼 정보 (있는 경우)
+                                if "columns" in metadata:
+                                    content += '<tr><td colspan="2"><strong>컬럼 정보</strong></td></tr>'
+                                    for col_name, col_type in metadata["columns"].items():
+                                        content += f'<tr><td>{col_name}</td><td>{col_type}</td></tr>'
+                                
+                                content += '</tbody></table></div>'
+                        except Exception as e:
+                            print(f"메타데이터 로딩 실패: {str(e)}")
+                    
+                    content += '</div></div>'
+            except Exception as e:
+                print(f"CSV 파일 처리 중 오류: {str(e)}")
+                return jsonify({
+                    'status': 'error',
+                    'message': f'CSV 파일을 읽는 중 오류가 발생했습니다: {str(e)}'
+                })
+
         # Excel 파일 처리
         elif file_extension in ['xlsx', 'xls']:
             import pandas as pd
@@ -486,17 +560,38 @@ def upload_chunk():
             # 문서 처리 및 벡터 DB에 추가
             try:
                 print(f"Processing document: {final_path}")
-                chunks = document_processor.process_document(final_path)
+                
+                # CSV 또는 Excel 파일인 경우 자동 전처리 수행
+                file_extension = Path(final_path).suffix.lower()
+                processed_file_path = final_path
+                
+                if file_extension in ['.csv', '.xlsx', '.xls']:
+                    # 자동 전처리 모듈 임포트
+                    from auto_processor import auto_process_file
+                    
+                    # 전처리 수행
+                    success, processed_path = auto_process_file(final_path)
+                    if success and processed_path:
+                        print(f"자동 전처리 완료: {final_path} -> {processed_path}")
+                        processed_file_path = processed_path
+                        response_data['auto_processed'] = True
+                    else:
+                        print(f"자동 전처리 실패, 원본 파일을 사용합니다: {final_path}")
+                        response_data['auto_processed'] = False
+                
+                # 문서 처리 (원본 또는 전처리된 파일)
+                chunks = document_processor.process_document(processed_file_path)
                 
                 # 벡터 DB에 청크 추가
                 if chunks:
-                    print(f"Adding {len(chunks)} chunks to vector database")
+                    print(f"벡터 DB에 {len(chunks)}개 청크 저장 중...")
                     database.add_document_embeddings(chunks)
+                    print(f"벡터 DB에 {len(chunks)}개 청크 저장 완료: {safe_filename}")
                 
                 # 파일 완성 정보 추가
                 response_data['fileComplete'] = True
                 response_data['finalFilename'] = safe_filename
-                response_data['size'] = os.path.getsize(final_path)
+                response_data['size'] = os.path.getsize(processed_file_path)
                 response_data['doc_id'] = chunks[0]['doc_id'] if chunks else None
                 response_data['chunk_count'] = len(chunks) if chunks else 0
                 print(f"File upload and processing complete for {safe_filename}")
