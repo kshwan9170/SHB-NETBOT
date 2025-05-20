@@ -1,8 +1,8 @@
 import os
-import json
 import uuid
 import shutil
 import re
+import json as global_json  # 전역 JSON 모듈에 별칭 부여
 import urllib.parse
 from pathlib import Path
 from datetime import datetime
@@ -309,11 +309,14 @@ def view_document(system_filename):
                 # CSV 파일을 데이터프레임으로 읽기 (UTF-8 먼저 시도, 실패 시 다른 인코딩 시도)
                 try:
                     df = pd.read_csv(file_path, dtype=str, na_filter=False)
+                    print(f"CSV 파일 '{original_filename}' UTF-8 인코딩으로 성공적으로 읽음")
                 except UnicodeDecodeError:
                     try:
                         df = pd.read_csv(file_path, dtype=str, na_filter=False, encoding='cp949')
+                        print(f"CSV 파일 '{original_filename}' CP949 인코딩으로 성공적으로 읽음")
                     except Exception:
                         df = pd.read_csv(file_path, dtype=str, na_filter=False, encoding='latin1')
+                        print(f"CSV 파일 '{original_filename}' Latin1 인코딩으로 성공적으로 읽음")
                 
                 # 데이터프레임이 비어있는 경우
                 if df.empty:
@@ -403,10 +406,10 @@ def view_document(system_filename):
                         json_content = f.read()
                 
                 # JSON 포맷팅 처리
-                import json  # 여기서 임포트해야 함
+                import json as json_module  # 이름 충돌을 피하기 위해 별칭 사용
                 try:
-                    parsed_json = json.loads(json_content)
-                    formatted_json = json.dumps(parsed_json, indent=2, ensure_ascii=False)
+                    parsed_json = json_module.loads(json_content)
+                    formatted_json = json_module.dumps(parsed_json, indent=2, ensure_ascii=False)
                     
                     # HTML로 표시하기 위한 처리
                     content = f"""
