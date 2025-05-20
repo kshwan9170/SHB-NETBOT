@@ -821,6 +821,13 @@
                                 });
                                 break;
                                 
+                            case 'csv':
+                            case 'json':
+                                // CSV 또는 JSON 파일 처리
+                                modalBody.style.cssText = bodyStyle;
+                                modalBody.innerHTML = data.content;
+                                break;
+                                
                             default:
                                 // 기타 지원되지 않는 형식
                                 modalBody.style.cssText = bodyStyle + `
