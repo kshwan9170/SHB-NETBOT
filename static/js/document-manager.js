@@ -542,15 +542,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     padding: 20px;
                     overflow-y: auto;
                     flex-grow: 1;
-                    font-family: monospace;
-                    white-space: pre-wrap;
                     line-height: 1.5;
                     background-color: #f9f9f9;
                     border: 1px solid #eee;
                     border-radius: 4px;
                     margin: 15px;
                 `;
-                modalBody.textContent = data.content;
+                
+                // HTML 콘텐츠인지 일반 텍스트인지 확인
+                if (data.html_content) {
+                    // CSV, 엑셀 등 HTML로 포맷된 내용
+                    modalBody.innerHTML = data.content;
+                } else {
+                    // 일반 텍스트 (TXT 파일 등)
+                    modalBody.style.fontFamily = 'monospace';
+                    modalBody.style.whiteSpace = 'pre-wrap';
+                    modalBody.textContent = data.content;
+                }
                 
                 // 모달 푸터
                 const modalFooter = document.createElement('div');

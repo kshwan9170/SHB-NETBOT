@@ -3,6 +3,7 @@ import json
 import uuid
 import shutil
 import re
+import urllib.parse
 from pathlib import Path
 from datetime import datetime
 from werkzeug.utils import secure_filename
@@ -248,18 +249,37 @@ def get_documents():
 def view_document(system_filename):
     """문서 내용 조회 API - 다양한 파일 형식 지원"""
     try:
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], system_filename)
+        # 파일명에 특수문자가 있을 경우 처리 (URL 디코딩)
+        decoded_filename = urllib.parse.unquote(system_filename)
+        print(f"Attempting to view document: {decoded_filename}")
         
-        # 파일 존재 여부 확인
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], decoded_filename)
+        print(f"File path: {file_path}")
+        
+        # 파일이 존재하지 않는 경우 파일명 기반으로 다시 검색
         if not os.path.exists(file_path):
-            return jsonify({
-                'status': 'error',
-                'message': '요청한 파일을 찾을 수 없습니다.'
-            }), 404
+            # 시스템에 존재하는 모든 파일 확인
+            all_files = os.listdir(app.config['UPLOAD_FOLDER'])
+            matching_files = [f for f in all_files if decoded_filename in f]
+            
+            if matching_files:
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], matching_files[0])
+                print(f"Found similar file: {matching_files[0]}")
+            else:
+                return jsonify({
+                    'status': 'error',
+                    'message': f'요청한 파일을 찾을 수 없습니다: {decoded_filename}'
+                }), 404
+        
+        print(f"File exists: {os.path.exists(file_path)}")
         
         # 원본 파일명 추출 및 파일 형식 확인
-        original_filename = "_".join(system_filename.split("_")[1:])
-        file_extension = original_filename.split('.')[-1].lower()
+        basename = os.path.basename(file_path)
+        parts = basename.split("_", 1)
+        original_filename = parts[1] if len(parts) > 1 else basename
+        file_extension = os.path.splitext(original_filename)[1][1:].lower()
+        
+        print(f"Original filename: {original_filename}, Extension: {file_extension}")
         
         # 파일 형식별 처리
         content = ""
