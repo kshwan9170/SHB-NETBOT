@@ -417,17 +417,28 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 응답 데이터 처리
             const responseText = await response.text();
+            console.log('응답 데이터 길이:', responseText.length);
+            console.log('응답 데이터 미리보기:', responseText.substring(0, 200));
+            
             let data;
             
             try {
                 data = JSON.parse(responseText);
+                console.log('파싱된 데이터 상태:', data.status);
+                console.log('HTML 콘텐츠 여부:', data.html_content);
+                console.log('콘텐츠 길이:', data.content ? data.content.length : 0);
+                
+                if (data.status !== 'success') {
+                    throw new Error(data.message || '문서 내용을 불러오는 중 오류가 발생했습니다');
+                }
+                
+                // 콘텐츠 유효성 검사
+                if (data.content === undefined || data.content === null) {
+                    throw new Error('문서 내용이 비어 있습니다');
+                }
             } catch (parseError) {
                 console.error('JSON 파싱 오류:', parseError);
-                throw new Error('응답 데이터를 처리할 수 없습니다');
-            }
-            
-            if (data.status !== 'success') {
-                throw new Error(data.message || '문서 내용을 불러오는 중 오류가 발생했습니다');
+                throw new Error('응답 데이터를 처리할 수 없습니다: ' + parseError.message);
             }
             
             // 모달 생성
@@ -514,14 +525,29 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             
             // HTML 콘텐츠인지 일반 텍스트인지 확인
-            if (data.html_content) {
-                // CSV, 엑셀 등 HTML로 포맷된 내용
-                modalBody.innerHTML = data.content;
-            } else {
-                // 일반 텍스트 (TXT 파일 등)
-                modalBody.style.fontFamily = 'monospace';
-                modalBody.style.whiteSpace = 'pre-wrap';
-                modalBody.textContent = data.content;
+            try {
+                console.log('콘텐츠 타입:', data.html_content ? 'HTML' : '텍스트');
+                console.log('콘텐츠 길이:', data.content ? data.content.length : 0);
+                
+                // 안전하게 콘텐츠 처리
+                const content = data.content || '';
+                
+                if (data.html_content) {
+                    // CSV, 엑셀 등 HTML로 포맷된 내용
+                    modalBody.innerHTML = content;
+                } else {
+                    // 일반 텍스트 (TXT 파일 등)
+                    modalBody.style.fontFamily = 'monospace';
+                    modalBody.style.whiteSpace = 'pre-wrap';
+                    modalBody.textContent = content;
+                }
+            } catch(err) {
+                console.error('문서 내용 표시 중 오류 발생:', err);
+                modalBody.innerHTML = `<div style="color: red; padding: 20px;">
+                    <h3>문서 표시 중 오류가 발생했습니다</h3>
+                    <p>죄송합니다. 문서를 표시하는 중 오류가 발생했습니다.</p>
+                    <p>오류 내용: ${err.message || '알 수 없는 오류'}</p>
+                </div>`;
             }
             
             // 모달 푸터
