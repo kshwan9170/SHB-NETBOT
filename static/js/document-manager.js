@@ -463,7 +463,12 @@ document.addEventListener('DOMContentLoaded', function() {
     async function viewDocument(systemFilename, displayFilename) {
         try {
             console.log(`Viewing document: ${systemFilename}`);
-            const response = await fetch(`/api/documents/view/${encodeURIComponent(systemFilename)}`);
+            
+            // 파일명에 특수문자가 포함된 경우 제대로 인코딩
+            const encodedFilename = encodeURIComponent(systemFilename);
+            console.log(`Encoded filename: ${encodedFilename}`);
+            
+            const response = await fetch(`/api/documents/view/${encodedFilename}`);
             console.log('Response status:', response.status);
             
             if (!response.ok) {
@@ -471,6 +476,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error(`서버 응답 오류: ${response.status} ${response.statusText}`);
             }
             
+            // 응답이 너무 큰 경우 시간이 걸릴 수 있으므로 사용자에게 알림
+            console.log('Parsing response...');
             const data = await response.json();
             
             if (response.ok && data.status === 'success') {
@@ -641,7 +648,19 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } catch (error) {
             console.error('문서 내용 로드 중 오류 발생:', error);
-            alert(`문서 내용 조회 중 오류가 발생했습니다: ${error.message}`);
+            
+            // 더 자세한 오류 메시지 제공
+            let errorMessage = '문서 내용을 불러오는 중 오류가 발생했습니다.';
+            
+            if (error.message) {
+                if (error.message.includes('서버 응답 오류')) {
+                    errorMessage = `${error.message}. 페이지를 새로고침하거나 나중에 다시 시도하세요.`;
+                } else {
+                    errorMessage = `오류 내용: ${error.message}`;
+                }
+            }
+            
+            alert(errorMessage);
         }
     }
     
