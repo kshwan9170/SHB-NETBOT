@@ -32,7 +32,7 @@ def close_connection(exception):
 # 파일 업로드 설정
 UPLOAD_FOLDER = 'uploaded_files'
 TEMP_CHUNK_FOLDER = 'temp_chunks'  # 청크 파일 임시 저장 폴더
-ALLOWED_EXTENSIONS = {'pdf', 'docx', 'pptx', 'xlsx', 'xls', 'txt'}
+ALLOWED_EXTENSIONS = {'pdf', 'docx', 'pptx', 'xlsx', 'xls', 'txt', 'csv'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['TEMP_CHUNK_FOLDER'] = TEMP_CHUNK_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max upload size (for chunks)

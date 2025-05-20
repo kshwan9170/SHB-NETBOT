@@ -27,15 +27,16 @@ embedding_function = embedding_functions.OpenAIEmbeddingFunction(
     model_name="text-embedding-3-small"
 )
 
-# Flag to track migration status
-MIGRATION_DONE = False
+# 마이그레이션 상태를 저장할 파일 경로
+MIGRATION_STATUS_FILE = os.path.join(CHROMA_DB_DIRECTORY, "migration_completed.flag")
 
 def initialize_database():
     """Initialize or connect to the ChromaDB vector database"""
-    global MIGRATION_DONE
-    
     # Make sure the directory exists
     Path(CHROMA_DB_DIRECTORY).mkdir(parents=True, exist_ok=True)
+    
+    # 마이그레이션 완료 여부 확인 (파일 기반)
+    migration_completed = os.path.exists(MIGRATION_STATUS_FILE)
     
     # Create or connect to the database
     chroma_client = chromadb.PersistentClient(
@@ -46,8 +47,9 @@ def initialize_database():
     # 마이그레이션이 필요한지 확인 (이전 컬렉션 존재 여부)
     old_collection_name = "shinhan_documents"
     migrate_data = False
+    old_collection = None
     
-    if not MIGRATION_DONE:
+    if not migration_completed:
         try:
             # 이전 컬렉션 확인
             old_collection = chroma_client.get_collection(
@@ -56,12 +58,17 @@ def initialize_database():
             )
             
             # 이전 컬렉션에 데이터가 있는지 확인
-            old_data = old_collection.get()
-            if old_data and 'documents' in old_data and len(old_data['documents']) > 0:
-                print(f"Found {len(old_data['documents'])} documents in old collection '{old_collection_name}'")
-                migrate_data = True
+            try:
+                old_data = old_collection.get()
+                if old_data and 'documents' in old_data and old_data['documents'] and len(old_data['documents']) > 0:
+                    print(f"Found {len(old_data['documents'])} documents in old collection '{old_collection_name}'")
+                    migrate_data = True
+            except Exception as e:
+                print(f"Error checking old collection: {e}")
+                migrate_data = False
         except Exception:
             # 이전 컬렉션이 없으면 마이그레이션 필요 없음
+            print("이전 컬렉션이 없습니다. 마이그레이션 불필요.")
             migrate_data = False
     
     # 새 컬렉션 생성 또는 연결
@@ -79,13 +86,13 @@ def initialize_database():
         print(f"Created new collection: {COLLECTION_NAME}")
     
     # 마이그레이션 실행 (필요한 경우)
-    if migrate_data and not MIGRATION_DONE:
+    if migrate_data and not migration_completed and old_collection is not None:
         try:
             old_data = old_collection.get()
             
             # 문서, ID, 메타데이터가 모두 존재하는지 확인
             if ('documents' in old_data and 'ids' in old_data and
-                'metadatas' in old_data and len(old_data['documents']) > 0):
+                'metadatas' in old_data and old_data['documents'] and len(old_data['documents']) > 0):
                 
                 print(f"Migrating {len(old_data['documents'])} documents to new collection '{COLLECTION_NAME}'")
                 
@@ -103,7 +110,7 @@ def initialize_database():
                 
                 for i in range(0, total_docs, batch_size):
                     end_idx = min(i + batch_size, total_docs)
-                    print(f"Adding batch {i//batch_size + 1}/{(total_docs + batch_size - 1)//batch_size}: documents {i} to {end_idx-1}")
+                    print(f"마이그레이션 배치 {i//batch_size + 1}/{(total_docs + batch_size - 1)//batch_size}: 문서 {i} ~ {end_idx-1}")
                     
                     try:
                         collection.add(
@@ -112,14 +119,18 @@ def initialize_database():
                             metadatas=metadatas[i:end_idx]
                         )
                     except Exception as e:
-                        print(f"Error adding batch {i//batch_size + 1}: {str(e)}")
+                        print(f"배치 {i//batch_size + 1} 마이그레이션 중 오류 발생: {str(e)}")
                         # 오류가 발생해도 계속 진행
                 
-                print(f"Successfully migrated data to '{COLLECTION_NAME}'")
-                MIGRATION_DONE = True
+                print(f"마이그레이션이 성공적으로 완료되었습니다: '{COLLECTION_NAME}'")
+                
+                # 마이그레이션 완료 표시 (파일 생성)
+                with open(MIGRATION_STATUS_FILE, 'w') as f:
+                    f.write("Migration completed")
+                print("마이그레이션 완료 플래그 설정됨")
             
         except Exception as e:
-            print(f"Migration error: {str(e)}")
+            print(f"마이그레이션 오류: {str(e)}")
     
     return collection
 
@@ -142,17 +153,39 @@ def add_document_embeddings(
     # Initialize the database
     collection = initialize_database()
     
-    # Extract data from chunks
-    texts = [chunk["text"] for chunk in chunks]
-    ids = [chunk["chunk_id"] for chunk in chunks]
-    metadatas = [chunk["metadata"] for chunk in chunks]
+    # 배치 처리를 위한 설정
+    batch_size = 100  # 한 번에 처리할 문서 수 (토큰 제한 문제 해결)
     
-    # Add documents to the collection
-    collection.add(
-        documents=texts,
-        ids=ids,
-        metadatas=metadatas
-    )
+    # 전체 청크 수
+    total_chunks = len(chunks)
+    success_count = 0
+    
+    print(f"처리할 총 문서 청크 수: {total_chunks}")
+    
+    # 배치 단위로 처리
+    for i in range(0, total_chunks, batch_size):
+        end_idx = min(i + batch_size, total_chunks)
+        current_batch = chunks[i:end_idx]
+        
+        # 현재 배치에서 데이터 추출
+        texts = [chunk["text"] for chunk in current_batch]
+        ids = [chunk["chunk_id"] for chunk in current_batch]
+        metadatas = [chunk["metadata"] for chunk in current_batch]
+        
+        try:
+            # 현재 배치 추가
+            collection.add(
+                documents=texts,
+                ids=ids,
+                metadatas=metadatas
+            )
+            success_count += len(current_batch)
+            print(f"배치 {i//batch_size + 1}/{(total_chunks + batch_size - 1)//batch_size} 추가 완료: {i}~{end_idx-1} 청크")
+        except Exception as e:
+            print(f"배치 {i//batch_size + 1} 추가 중 오류 발생: {str(e)}")
+            # 오류가 발생해도 계속 진행
+    
+    print(f"총 {success_count}/{total_chunks} 청크가 성공적으로 추가되었습니다.")
     
     print(f"Added {len(chunks)} document chunks to the database")
     return True
