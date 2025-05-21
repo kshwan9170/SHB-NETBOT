@@ -403,9 +403,41 @@ def view_document(system_filename):
                 
                 for encoding in encodings:
                     try:
-                        df = pd.read_csv(file_path, dtype=str, na_filter=False, encoding=encoding)
+                        # 먼저 첫 줄만 읽어서 헤더 확인
+                        header_check = pd.read_csv(file_path, dtype=str, nrows=1, encoding=encoding)
+                        header_count = len(header_check.columns)
+                        
+                        # 헤더가 1개만 있는 경우 (인코딩이 잘못 인식되었을 가능성)
+                        if header_count <= 1:
+                            print(f"{encoding} 인코딩으로 헤더를 읽었으나 열이 {header_count}개밖에 없습니다. 다른 방법 시도...")
+                            # 헤더 없이 읽기
+                            df_raw = pd.read_csv(file_path, header=None, encoding=encoding)
+                            if len(df_raw) > 0 and len(df_raw.columns) > 1:
+                                # 첫 번째 행을 헤더로 사용
+                                df = pd.DataFrame(df_raw.values[1:], columns=df_raw.iloc[0])
+                                print(f"헤더 없이 읽었을 때 열 개수: {len(df.columns)}")
+                            else:
+                                # 첫 번째 행 포함해서 데이터로 사용 (열 구분 문제인 경우)
+                                try:
+                                    sep_options = [',', ';', '\t', '|']
+                                    for sep in sep_options:
+                                        try:
+                                            df_test = pd.read_csv(file_path, sep=sep, encoding=encoding)
+                                            if len(df_test.columns) > 1:
+                                                df = df_test
+                                                print(f"구분자 '{sep}'로 성공적으로 {len(df.columns)}개 열 읽음")
+                                                break
+                                        except:
+                                            continue
+                                except:
+                                    # 모든 방법 실패 시 기본으로 돌아가기
+                                    pass
+                        else:
+                            # 정상적으로 헤더가 여러 개 인식됨
+                            df = pd.read_csv(file_path, dtype=str, na_filter=False, encoding=encoding)
+                        
                         used_encoding = encoding
-                        print(f"CSV 파일 '{original_filename}' {encoding} 인코딩으로 성공적으로 읽음")
+                        print(f"CSV 파일 '{original_filename}' {encoding} 인코딩으로 성공적으로 읽음, 열 개수: {len(df.columns if df is not None else header_check.columns)}")
                         break
                     except Exception as e:
                         print(f"{encoding} 인코딩으로 읽기 실패: {str(e)}")
@@ -417,6 +449,10 @@ def view_document(system_filename):
                         'status': 'error',
                         'message': f'CSV 파일을 읽을 수 없습니다. 지원되지 않는 인코딩입니다.'
                     }), 500
+                    
+                # 데이터 확인
+                print(f"최종 열 목록: {df.columns.tolist()}")
+                print(f"데이터 행 수: {len(df)}")
                 
                 # 메타데이터 생성 및 저장
                 metadata_filename = f"{os.path.splitext(decoded_filename)[0]}_metadata.json"

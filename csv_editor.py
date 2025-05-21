@@ -220,10 +220,43 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
         <h3 style="color: #333; font-size: 20px; margin-bottom: 20px; border-bottom: 2px solid #0064E1; padding-bottom: 10px;">CSV 파일: """ + filename + """</h3>
         
         <div class="csv-controls" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-            <button id="csv-edit-btn" class="btn btn-primary" style="padding: 8px 16px; border-radius: 4px; font-weight: 500;">편집 모드</button>
-            <button id="csv-save-btn" class="btn btn-success" style="display:none; padding: 8px 16px; border-radius: 4px; font-weight: 500;">변경사항 저장</button>
-            <button id="csv-cancel-btn" class="btn btn-secondary" style="display:none; padding: 8px 16px; border-radius: 4px; font-weight: 500;">취소</button>
-            <a href="/api/documents/download/""" + system_filename + """" class="btn btn-info" style="padding: 8px 16px; border-radius: 4px; font-weight: 500; text-decoration: none;">다운로드</a>
+            <button id="csv-edit-btn" class="btn btn-primary" style="padding: 8px 16px; border-radius: 4px; font-weight: 500; display: flex; align-items: center; gap: 5px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/>
+                </svg>
+                편집 모드
+            </button>
+            <button id="csv-save-btn" class="btn btn-success" style="display:none; padding: 8px 16px; border-radius: 4px; font-weight: 500; display: flex; align-items: center; gap: 5px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                </svg>
+                변경사항 저장
+            </button>
+            <button id="csv-cancel-btn" class="btn btn-secondary" style="display:none; padding: 8px 16px; border-radius: 4px; font-weight: 500; display: flex; align-items: center; gap: 5px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                </svg>
+                취소
+            </button>
+            <button id="csv-add-row-btn" class="btn btn-light" style="display:none; padding: 8px 16px; border-radius: 4px; font-weight: 500; display: flex; align-items: center; gap: 5px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 0a.5.5 0 0 1 .5.5v7.5H16a.5.5 0 0 1 0 1H8.5V16a.5.5 0 0 1-1 0V9H0a.5.5 0 0 1 0-1h7.5V.5A.5.5 0 0 1 8 0z"/>
+                </svg>
+                행 추가
+            </button>
+            <button id="csv-add-col-btn" class="btn btn-light" style="display:none; padding: 8px 16px; border-radius: 4px; font-weight: 500; display: flex; align-items: center; gap: 5px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 0a.5.5 0 0 1 .5.5v7.5H16a.5.5 0 0 1 0 1H8.5V16a.5.5 0 0 1-1 0V9H0a.5.5 0 0 1 0-1h7.5V.5A.5.5 0 0 1 8 0z"/>
+                </svg>
+                열 추가
+            </button>
+            <a href="/api/documents/download/""" + system_filename + """" class="btn btn-info" style="padding: 8px 16px; border-radius: 4px; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 5px;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
+                    <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708l3 3z"/>
+                </svg>
+                다운로드
+            </a>
             """ + metadata_button + """
         </div>
         
@@ -301,6 +334,8 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
                 editBtn.style.display = 'none';
                 saveBtn.style.display = 'inline-block';
                 cancelBtn.style.display = 'inline-block';
+                document.getElementById('csv-add-row-btn').style.display = 'inline-flex';
+                document.getElementById('csv-add-col-btn').style.display = 'inline-flex';
             });
         }
         
@@ -314,6 +349,97 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
                 editBtn.style.display = 'inline-block';
                 saveBtn.style.display = 'none';
                 cancelBtn.style.display = 'none';
+                document.getElementById('csv-add-row-btn').style.display = 'none';
+                document.getElementById('csv-add-col-btn').style.display = 'none';
+            });
+        }
+        
+        // 행 추가 버튼 이벤트 리스너
+        const addRowBtn = document.getElementById('csv-add-row-btn');
+        if (addRowBtn) {
+            addRowBtn.addEventListener('click', function() {
+                const table = document.querySelector('.editable-csv-table');
+                if (!table) return;
+                
+                // 컬럼 수 계산
+                const headerCells = table.querySelectorAll('thead th');
+                const columnCount = headerCells.length;
+                
+                // 새 행 생성
+                const tbody = table.querySelector('tbody');
+                const newRow = document.createElement('tr');
+                
+                // 빈 셀 추가
+                for (let i = 0; i < columnCount; i++) {
+                    const cell = document.createElement('td');
+                    cell.contentEditable = true;
+                    cell.style.backgroundColor = '#fffde7';
+                    cell.addEventListener('focus', function() {
+                        this.style.backgroundColor = '#fff9c4';
+                    });
+                    cell.addEventListener('blur', function() {
+                        this.style.backgroundColor = '#fffde7';
+                    });
+                    newRow.appendChild(cell);
+                }
+                
+                // 새 행을 테이블에 추가
+                tbody.appendChild(newRow);
+                
+                // 추가 효과 (깜빡임)
+                newRow.style.transition = 'background-color 0.5s';
+                newRow.style.backgroundColor = '#e3f2fd';
+                setTimeout(() => {
+                    newRow.style.backgroundColor = '';
+                }, 1000);
+            });
+        }
+        
+        // 열 추가 버튼 이벤트 리스너
+        const addColBtn = document.getElementById('csv-add-col-btn');
+        if (addColBtn) {
+            addColBtn.addEventListener('click', function() {
+                // 컬럼 이름 입력 받기
+                const columnName = prompt('새 열의 이름을 입력하세요:', '');
+                if (columnName === null) return; // 취소한 경우
+                
+                const table = document.querySelector('.editable-csv-table');
+                if (!table) return;
+                
+                // 헤더에 새 열 추가
+                const headerRow = table.querySelector('thead tr');
+                const newHeaderCell = document.createElement('th');
+                newHeaderCell.textContent = columnName;
+                headerRow.appendChild(newHeaderCell);
+                
+                // 데이터 행에 새 열 추가
+                const rows = table.querySelectorAll('tbody tr');
+                rows.forEach(row => {
+                    const cell = document.createElement('td');
+                    cell.contentEditable = true;
+                    cell.style.backgroundColor = '#fffde7';
+                    cell.addEventListener('focus', function() {
+                        this.style.backgroundColor = '#fff9c4';
+                    });
+                    cell.addEventListener('blur', function() {
+                        this.style.backgroundColor = '#fffde7';
+                    });
+                    row.appendChild(cell);
+                });
+                
+                // 추가 효과 (깜빡임)
+                const newCells = table.querySelectorAll('td:last-child, th:last-child');
+                newCells.forEach(cell => {
+                    cell.style.transition = 'background-color 0.5s';
+                    cell.style.backgroundColor = '#e3f2fd';
+                    setTimeout(() => {
+                        if (cell.tagName === 'TH') {
+                            cell.style.backgroundColor = '#f2f2f2';
+                        } else {
+                            cell.style.backgroundColor = '';
+                        }
+                    }, 1000);
+                });
             });
         }
         
@@ -332,6 +458,25 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
                     Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim())
                 );
                 
+                // 저장 알림 표시
+                const savingNotice = document.createElement('div');
+                savingNotice.innerHTML = `
+                    <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                                background-color: rgba(0,0,0,0.8); color: white; padding: 20px; 
+                                border-radius: 8px; z-index: 9999; display: flex; align-items: center; gap: 10px;">
+                        <div class="spinner" style="border: 3px solid #f3f3f3; border-top: 3px solid #3498db; 
+                                          border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite;"></div>
+                        <span>변경사항 저장 중...</span>
+                    </div>
+                    <style>
+                        @keyframes spin {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                        }
+                    </style>
+                `;
+                document.body.appendChild(savingNotice);
+                
                 // 데이터 전송
                 fetch('/api/documents/edit/' + csvFilename, {
                     method: 'POST',
@@ -346,20 +491,80 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
                 })
                 .then(response => response.json())
                 .then(data => {
+                    // 저장 알림 제거
+                    document.body.removeChild(savingNotice);
+                    
                     if (data.status === 'success') {
-                        alert('CSV 파일이 성공적으로 저장되었습니다.');
+                        // 성공 메시지 표시
+                        const successNotice = document.createElement('div');
+                        successNotice.innerHTML = `
+                            <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                                        background-color: rgba(25,135,84,0.9); color: white; padding: 20px; 
+                                        border-radius: 8px; z-index: 9999; display: flex; align-items: center; gap: 10px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                                </svg>
+                                <span>CSV 파일이 성공적으로 저장되었습니다</span>
+                            </div>
+                        `;
+                        document.body.appendChild(successNotice);
+                        
+                        // 3초 후에 성공 메시지 제거
+                        setTimeout(() => {
+                            document.body.removeChild(successNotice);
+                        }, 3000);
+                        
                         // 변경된 내용으로 테이블 업데이트
                         document.getElementById('csv-table-container').innerHTML = data.content;
                         // 버튼 상태 변경
                         editBtn.style.display = 'inline-block';
                         saveBtn.style.display = 'none';
                         cancelBtn.style.display = 'none';
+                        document.getElementById('csv-add-row-btn').style.display = 'none';
+                        document.getElementById('csv-add-col-btn').style.display = 'none';
                     } else {
-                        alert('저장 중 오류가 발생했습니다: ' + data.message);
+                        // 오류 메시지 표시
+                        const errorNotice = document.createElement('div');
+                        errorNotice.innerHTML = `
+                            <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                                        background-color: rgba(220,53,69,0.9); color: white; padding: 20px; 
+                                        border-radius: 8px; z-index: 9999; display: flex; align-items: center; gap: 10px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+                                </svg>
+                                <span>저장 중 오류가 발생했습니다: ${data.message}</span>
+                            </div>
+                        `;
+                        document.body.appendChild(errorNotice);
+                        
+                        // 5초 후에 오류 메시지 제거
+                        setTimeout(() => {
+                            document.body.removeChild(errorNotice);
+                        }, 5000);
                     }
                 })
                 .catch(error => {
-                    alert('저장 중 오류가 발생했습니다: ' + error);
+                    // 저장 알림 제거
+                    document.body.removeChild(savingNotice);
+                    
+                    // 오류 메시지 표시
+                    const errorNotice = document.createElement('div');
+                    errorNotice.innerHTML = `
+                        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                                    background-color: rgba(220,53,69,0.9); color: white; padding: 20px; 
+                                    border-radius: 8px; z-index: 9999; display: flex; align-items: center; gap: 10px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+                            </svg>
+                            <span>저장 중 오류가 발생했습니다: ${error}</span>
+                        </div>
+                    `;
+                    document.body.appendChild(errorNotice);
+                    
+                    // 5초 후에 오류 메시지 제거
+                    setTimeout(() => {
+                        document.body.removeChild(errorNotice);
+                    }, 5000);
                 });
             });
         }
