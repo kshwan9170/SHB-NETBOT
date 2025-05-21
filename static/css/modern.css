@@ -206,7 +206,7 @@ body.offline-mode .logo span {
 }
 
 body.offline-mode .logo img {
-    content: url('/static/images/shinhan_logo_offline.svg?v=1') !important;
+    filter: invert(21%) sepia(100%) saturate(7414%) hue-rotate(359deg) brightness(94%) contrast(111%) !important;
 }
 
 .logo.offline::after {
