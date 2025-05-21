@@ -65,7 +65,14 @@ function enableCsvEditing() {
     
     // 현재 파일명 가져오기
     const filenamePath = window.location.pathname;
-    currentFilename = filenamePath.substring(filenamePath.lastIndexOf('/') + 1);
+    const pathSegments = filenamePath.split('/');
+    // URL이 /api/documents/view/filename 형식인지 확인
+    if (pathSegments.includes('view')) {
+        currentFilename = pathSegments[pathSegments.length - 1];
+    } else {
+        currentFilename = filenamePath.substring(filenamePath.lastIndexOf('/') + 1);
+    }
+    console.log("현재 편집 중인 파일명:", currentFilename);
     
     // 테이블 셀을 편집 가능하게 변경
     const table = document.querySelector('.editable-csv-table');
@@ -158,8 +165,16 @@ function saveCsvChanges() {
         return Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim());
     });
     
-    // 서버에 저장 요청
-    fetch('/api/documents/edit/' + currentFilename, {
+    // 서버에 저장 요청 (URL이 이미 /api/documents/view/로 시작하는 경우 처리)
+    // URL 인코딩이 필요한 특수문자 처리
+    const decodedFilename = decodeURIComponent(currentFilename);
+    console.log("파일명 디코딩:", decodedFilename);
+    
+    let apiUrl = '/api/documents/edit/' + decodedFilename;
+    
+    console.log("저장 API URL:", apiUrl);
+    
+    fetch(apiUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -351,6 +366,15 @@ function clearSelection() {
     
     // 컨텍스트 메뉴 닫기
     hideContextMenus();
+}
+
+// 컨텍스트 메뉴 숨기기 함수
+function hideContextMenus() {
+    document.querySelectorAll('.row-context-menu, .column-context-menu, .cell-context-menu').forEach(menu => {
+        if (menu.parentElement) {
+            menu.parentElement.removeChild(menu);
+        }
+    });
 }
 
 // 행 컨텍스트 메뉴 표시
@@ -759,10 +783,47 @@ function insertNewRow(rowIndex) {
     }
     
     // 행 번호 업데이트
-    updateRowNumbers();
+    updateRowNumbers(tableBody);
     
     // 선택 상태 초기화
     clearSelection();
+}
+
+// 행 번호 업데이트 함수
+function updateRowNumbers(tableBody) {
+    if (!tableBody) {
+        const table = document.querySelector('.editable-csv-table');
+        if (table) {
+            tableBody = table.querySelector('tbody');
+        }
+    }
+    
+    if (!tableBody) {
+        console.error("테이블 본문을 찾을 수 없습니다.");
+        return;
+    }
+    
+    const rows = tableBody.querySelectorAll('tr');
+    
+    rows.forEach((row, index) => {
+        const rowHeader = row.querySelector('th');
+        if (rowHeader) {
+            rowHeader.textContent = index + 1;
+            rowHeader.className = 'row-header';
+            rowHeader.style.cssText = `
+                background-color: #e6f2ff;
+                color: #0064E1;
+                font-weight: bold;
+                text-align: center;
+                cursor: pointer;
+            `;
+            
+            // 행 헤더 클릭 이벤트 재설정
+            rowHeader.addEventListener('click', function() {
+                selectRow(index + 1);
+            });
+        }
+    });
 }
 
 // 새 열 삽입 - 특정 위치에

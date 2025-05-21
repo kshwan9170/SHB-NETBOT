@@ -21,6 +21,9 @@ import document_processor
 import chatbot
 from config import FAQ_KEYWORDS, FINE_TUNED_MODEL, RAG_SYSTEM
 
+# CSV 파일 처리 초기화
+chatbot.initialize_csv_narratives()
+
 app = Flask(__name__)
 
 # 데이터베이스 초기화
@@ -76,14 +79,65 @@ def file_manager():
 def serve_static(path):
     return app.send_static_file(path)
 
+@app.route('/api/connection_status', methods=['GET'])
+def connection_status():
+    """
+    현재 OpenAI API 연결 상태를 확인합니다.
+    
+    Returns:
+        JSON: 연결 상태 정보 {'status': 'online'/'offline', 'reason': '이유'}
+    """
+    # OpenAI API 키 확인
+    openai_key = os.getenv("OPENAI_API_KEY")
+    if not openai_key:
+        return jsonify({'status': 'offline', 'reason': 'api_key_missing'}), 200
+    
+    # OpenAI API 연결 확인 (간단한 요청으로 테스트)
+    try:
+        openai_client = OpenAI(api_key=openai_key)
+        response = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": "test"}],
+            max_tokens=5
+        )
+        return jsonify({'status': 'online'}), 200
+    except Exception as e:
+        print(f"OpenAI API 연결 오류: {str(e)}")
+        return jsonify({'status': 'offline', 'reason': 'api_connection_error', 'error': str(e)}), 200
+
 @app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.get_json()
     user_message = data.get('message', '')
+    use_offline_mode = data.get('offline_mode', False)
     
     if not user_message:
         return jsonify({'error': '메시지가 비어 있습니다.'}), 400
     
+    # OpenAI API 키 확인
+    openai_key = os.getenv("OPENAI_API_KEY")
+    
+    # 오프라인 모드 강제 설정 여부 또는 API 키 부재 확인
+    if use_offline_mode or not openai_key:
+        try:
+            # 로컬 데이터 기반 응답 생성
+            reply = chatbot.get_local_response(user_message)
+            offline_message = "[🔴 오프라인 모드] 현재 인터넷 연결이 제한되어 있어 로컬 데이터만 사용합니다.\n\n"
+            
+            return jsonify({
+                'reply': offline_message + reply,
+                'question': user_message,
+                'mode': 'offline'
+            })
+        except Exception as offline_error:
+            print(f"오프라인 응답 생성 중 오류: {str(offline_error)}")
+            return jsonify({
+                'reply': '오프라인 응답 생성 중 오류가 발생했습니다.',
+                'question': user_message,
+                'error': str(offline_error)
+            }), 500
+    
+    # 일반(온라인) 모드
     try:
         # 챗봇 모듈을 활용하여 응답 생성
         # 이 함수는 키워드 기반 분기 처리, Fine-tuned 모델 사용, RAG 시스템 활용을 모두 포함합니다
@@ -96,18 +150,29 @@ def chat():
         # 로그 기록 (디버깅용)
         print(f"챗봇 응답 생성 완료: {len(user_message)}자 질문 / {len(reply) if reply else 0}자 응답")
         
-        return jsonify({'reply': reply, 'question': user_message})
+        return jsonify({'reply': reply, 'question': user_message, 'mode': 'online'})
     
     except Exception as e:
-        print(f"Error in chat API: {str(e)}")
+        print(f"API 응답 생성 중 오류 발생, 오프라인 모드로 전환: {str(e)}")
         
-        # 사용자 언어에 맞게 오류 메시지
-        if re.search(r'[가-힣]', user_message):
-            reply = "죄송합니다. 답변 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
-        else:
-            reply = "Sorry, an error occurred while generating a response. Please try again later."
+        try:
+            # API 오류 시 오프라인 모드로 폴백
+            offline_reply = chatbot.get_local_response(user_message)
+            fallback_message = f"[🔴 API 오류] OpenAI API 연결 중 오류가 발생하여 로컬 데이터만 사용합니다.\n\n"
             
-        return jsonify({'reply': reply, 'question': user_message}), 500
+            return jsonify({
+                'reply': fallback_message + offline_reply,
+                'question': user_message,
+                'mode': 'offline'
+            })
+        except Exception as offline_error:
+            # 사용자 언어에 맞게 오류 메시지
+            if re.search(r'[가-힣]', user_message):
+                reply = "죄송합니다. 답변 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+            else:
+                reply = "Sorry, an error occurred while generating a response. Please try again later."
+                
+            return jsonify({'reply': reply, 'question': user_message}), 500
 
 @app.route('/api/chat/feedback', methods=['POST'])
 def chat_feedback():
