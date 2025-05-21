@@ -111,8 +111,35 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 전역 변수로 페이지네이션 상태 관리
     let currentPage = 1;
-    const filesPerPage = 5;
+    const filesPerPage = 10; // 페이지당 10개 파일 표시
     let allFiles = [];
+    let filteredFiles = [];
+    
+    // 파일 검색 함수
+    function searchFiles(query) {
+        if (!query || query.trim() === '') {
+            filteredFiles = [...allFiles];
+            currentPage = 1;
+            renderDirectFileList(allFiles);
+            return;
+        }
+        
+        query = query.toLowerCase().trim();
+        filteredFiles = allFiles.filter(file => {
+            return file.filename.toLowerCase().includes(query);
+        });
+        
+        currentPage = 1;
+        renderDirectFileList(filteredFiles);
+    }
+    
+    // JSON 파일 필터링 함수
+    function filterJsonFiles(files) {
+        return files.filter(file => {
+            // .json 확장자를 가진 파일 숨기기
+            return file.file_type.toLowerCase() !== 'json';
+        });
+    }
     
     // 새로운 함수: 직접 HTML로 파일 목록 렌더링 (페이지네이션 포함)
     function renderDirectFileList(files) {
@@ -122,16 +149,39 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // 전체 파일 목록 저장
-        allFiles = files;
+        // JSON 파일 필터링
+        const visibleFiles = filterJsonFiles(files);
+        
+        // 전체 파일 목록 저장 (JSON 파일 제외)
+        if (files === allFiles) {
+            filteredFiles = visibleFiles;
+        }
         
         // 파일 목록 컨테이너 초기화
         fileListContainer.innerHTML = '';
         
-        // 현재 페이지에 표시할 파일 계산
+        // 검색창 추가
+        const searchContainer = document.createElement('div');
+        searchContainer.className = 'search-container';
+        searchContainer.style.cssText = 'margin-bottom: 15px; width: 100%;';
+        
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = '파일명 검색...';
+        searchInput.className = 'search-input';
+        searchInput.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;';
+        
+        searchInput.addEventListener('input', function() {
+            searchFiles(this.value);
+        });
+        
+        searchContainer.appendChild(searchInput);
+        fileListContainer.appendChild(searchContainer);
+        
+        // 현재 페이지에 표시할 파일 계산 (JSON 파일 제외)
         const startIndex = (currentPage - 1) * filesPerPage;
-        const endIndex = Math.min(startIndex + filesPerPage, files.length);
-        const currentFiles = files.slice(startIndex, endIndex);
+        const endIndex = Math.min(startIndex + filesPerPage, visibleFiles.length);
+        const currentFiles = visibleFiles.slice(startIndex, endIndex);
         
         // 파일 목록 렌더링
         currentFiles.forEach(file => {
@@ -257,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // 페이지네이션 렌더링
-        renderPagination(files.length);
+        renderPagination(visibleFiles.length);
     }
     
     // 페이지네이션 컨트롤 렌더링 함수
