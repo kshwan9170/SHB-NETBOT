@@ -795,33 +795,10 @@ function saveCsvChanges(filename, encoding = 'utf-8') {
         return;
     }
     
-    // 헤더는 엑셀 스타일 행을 제외한 실제 컬럼명만 가져오기 (첫 번째 열은 인덱스이므로 제외)
-    const headerRow = table.querySelectorAll('thead tr:not(.excel-column-labels)')[0];
-    const headerCells = headerRow.querySelectorAll('th:not(:first-child)');
-    const headers = Array.from(headerCells).map(th => th.textContent.trim());
-    
-    console.log("추출된 헤더:", headers);
-    
-    // 행 데이터는 첫 번째 열(인덱스)을 제외하고 가져오기
-    const rows = [];
-    const dataRows = table.querySelectorAll('tbody tr');
-    
-    dataRows.forEach(tr => {
-        const rowData = [];
-        const cells = tr.querySelectorAll('td');
-        
-        // 헤더 개수에 맞게 데이터만 추출 (인덱스나 추가 셀 제외)
-        for (let i = 0; i < headers.length && i < cells.length; i++) {
-            rowData.push(cells[i].textContent.trim());
-        }
-        
-        // 유효한 데이터가 있는 행만 추가
-        if (rowData.some(cell => cell.trim() !== '')) {
-            rows.push(rowData);
-        }
-    });
-    
-    console.log("추출된 데이터 행:", rows.length);
+    const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+    const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => 
+        Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim())
+    );
     
     // 데이터 전송
     fetch('/api/documents/edit/' + filename, {
