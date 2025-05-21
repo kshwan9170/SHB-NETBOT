@@ -44,9 +44,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 연결 상태 UI 업데이트 함수
     function updateConnectionUI(isOnline) {
-        // 로고 이미지 색상 변경
-        const logoImg = document.querySelector('.logo img');
-        if (logoImg) {
+        // 로고 이미지 색상 변경 (모든 로고 이미지)
+        const logoImages = document.querySelectorAll('img[src*="shinhan_logo"]');
+        logoImages.forEach(logoImg => {
             if (isOnline) {
                 // 온라인 상태: 기본 파란색 로고
                 logoImg.src = '/static/images/shinhan_logo_refined.svg';
@@ -61,19 +61,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 기본 로고로 복원
                 this.src = '/static/images/shinhan_logo_refined.svg';
             };
-        }
+        });
         
-        // 네비게이션 바의 SHB-NetBot 텍스트 색상 변경
-        const navbarTitle = document.querySelector('.logo span');
-        if (navbarTitle) {
+        // 네비게이션 바의 SHB-NetBot 텍스트 색상 변경 (모바일 포함)
+        const navbarTitles = document.querySelectorAll('.logo span, .navbar-brand span, .navbar-title');
+        navbarTitles.forEach(title => {
             if (isOnline) {
                 // 온라인 상태: 기본 색상
-                navbarTitle.style.color = '';
+                title.style.color = '';
             } else {
                 // 오프라인 상태: 빨간색
-                navbarTitle.style.color = 'red';
+                title.style.color = 'red';
             }
-        }
+        });
     }
     
     // SVG 로드 완료 이벤트 처리 추가
