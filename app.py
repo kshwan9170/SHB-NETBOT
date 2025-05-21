@@ -4,13 +4,10 @@ import shutil
 import re
 import json as global_json  # 전역 JSON 모듈에 별칭 부여
 import urllib.parse
-import socket
-import threading
-import time
 from pathlib import Path
 from datetime import datetime
 from werkzeug.utils import secure_filename
-from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, abort, send_file
+from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, abort
 import openai
 from openai import OpenAI
 
@@ -24,63 +21,6 @@ import chatbot
 from config import FAQ_KEYWORDS, FINE_TUNED_MODEL, RAG_SYSTEM
 
 app = Flask(__name__)
-
-# 전역 변수: 연결 상태 저장
-connection_status = {
-    "online": True,  # 기본값은 온라인으로 설정
-    "last_checked": datetime.now().timestamp(),
-    "check_interval": 60  # 60초마다 연결 상태 확인
-}
-
-# 연결 상태 확인 함수
-def check_connection():
-    """
-    인터넷 연결 상태를 확인하는 함수
-    OpenAI API 및 공용 DNS 서버 연결 가능성을 테스트
-    """
-    try:
-        # OpenAI API 서버 연결 테스트
-        socket.create_connection(("api.openai.com", 443), timeout=3)
-        # Google DNS 서버 연결 테스트 (백업 확인)
-        socket.create_connection(("8.8.8.8", 53), timeout=2)
-        return True
-    except (socket.timeout, socket.error, OSError):
-        return False
-
-# 연결 상태 확인 및 업데이트 함수
-def update_connection_status():
-    """
-    주기적으로 연결 상태를 확인하고 업데이트하는 함수
-    """
-    while True:
-        global connection_status
-        is_online = check_connection()
-        connection_status["online"] = is_online
-        connection_status["last_checked"] = datetime.now().timestamp()
-        time.sleep(connection_status["check_interval"])
-
-# 연결 상태 가져오기 함수 (외부 모듈에서 호출 가능)
-def get_connection_status():
-    """
-    현재 연결 상태를 반환하는 함수
-    """
-    return connection_status["online"]
-
-# 연결 상태 API 엔드포인트
-@app.route('/api/connection_status', methods=['GET'])
-def connection_status_api():
-    """
-    연결 상태를 JSON으로 반환하는 API 엔드포인트
-    """
-    return jsonify({
-        "online": connection_status["online"],
-        "last_checked": connection_status["last_checked"],
-        "server_time": datetime.now().timestamp()
-    })
-
-# 연결 상태 모니터링 스레드 시작
-connection_monitor_thread = threading.Thread(target=update_connection_status, daemon=True)
-connection_monitor_thread.start()
 
 # 데이터베이스 초기화
 init_db()
@@ -305,6 +245,96 @@ def get_documents():
         print(f"Error getting documents: {str(e)}")
         return jsonify({'error': str(e)}), 500
         
+# CSV 파일 편집 API 엔드포인트 
+@app.route('/api/documents/edit/<path:system_filename>', methods=['POST'])
+def edit_document(system_filename):
+    """문서 내용 편집 API - CSV 파일 웹 편집 지원"""
+    try:
+        # 파일명에 특수문자가 있을 경우 처리 (URL 디코딩)
+        decoded_filename = urllib.parse.unquote(system_filename)
+        print(f"Attempting to edit document: {decoded_filename}")
+        
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], decoded_filename)
+        
+        # 파일이 존재하지 않는 경우
+        if not os.path.exists(file_path):
+            return jsonify({
+                'status': 'error',
+                'message': f'요청한 파일을 찾을 수 없습니다: {decoded_filename}'
+            }), 404
+        
+        # 원본 파일명 추출 및 파일 형식 확인
+        basename = os.path.basename(file_path)
+        parts = basename.split("_", 1)
+        original_filename = parts[1] if len(parts) > 1 else basename
+        file_extension = os.path.splitext(original_filename)[1][1:].lower()
+        
+        # CSV 파일만 편집 지원
+        if file_extension != 'csv':
+            return jsonify({
+                'status': 'error',
+                'message': f'현재 CSV 파일만 편집을 지원합니다. 파일 형식: {file_extension}'
+            }), 400
+        
+        # 요청 데이터 가져오기
+        request_data = request.get_json()
+        if not request_data or 'headers' not in request_data or 'data' not in request_data:
+            return jsonify({
+                'status': 'error',
+                'message': '유효하지 않은 데이터 형식입니다. headers와 data 필드가 필요합니다.'
+            }), 400
+        
+        headers = request_data['headers']
+        data = request_data['data']
+        encoding = request_data.get('encoding', 'utf-8')
+        
+        # CSV 파일 업데이트
+        from csv_editor import update_csv_file, get_csv_preview_html
+        success = update_csv_file(file_path, headers, data, encoding)
+        
+        if not success:
+            return jsonify({
+                'status': 'error',
+                'message': 'CSV 파일 업데이트 중 오류가 발생했습니다.'
+            }), 500
+        
+        # 업데이트된 CSV 파일 읽기
+        import pandas as pd
+        try:
+            df = pd.read_csv(file_path, encoding=encoding)
+        except UnicodeDecodeError:
+            # 다른 인코딩 시도
+            try:
+                encoding = 'cp949' if encoding == 'utf-8' else 'utf-8'
+                df = pd.read_csv(file_path, encoding=encoding)
+            except Exception as e:
+                return jsonify({
+                    'status': 'error',
+                    'message': f'CSV 파일을 읽는 중 오류가 발생했습니다: {str(e)}'
+                }), 500
+        
+        # 메타데이터 파일 경로
+        metadata_filename = f"{os.path.splitext(decoded_filename)[0]}_metadata.json"
+        metadata_path = os.path.join(app.config['UPLOAD_FOLDER'], metadata_filename)
+        
+        # HTML 테이블 생성 (편집된 내용 표시)
+        table_html = df.to_html(classes='table table-striped table-bordered table-hover editable-csv-table', index=False, na_rep='')
+        
+        # 성공 응답
+        return jsonify({
+            'status': 'success',
+            'message': 'CSV 파일이 성공적으로 업데이트되었습니다.',
+            'content': table_html,
+            'file_type': 'csv'
+        })
+        
+    except Exception as e:
+        print(f"Error editing document: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f'문서 편집 중 오류가 발생했습니다: {str(e)}'
+        }), 500
+
 @app.route('/api/documents/view/<path:system_filename>', methods=['GET'])
 def view_document(system_filename):
     """문서 내용 조회 API - 다양한 파일 형식 지원"""
@@ -363,51 +393,54 @@ def view_document(system_filename):
         # CSV 파일 처리
         elif file_extension == 'csv':
             import pandas as pd
+            from csv_editor import generate_csv_metadata, save_csv_metadata, get_csv_preview_html
+            
             try:
-                # 간단한 방식으로 CSV 읽기
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    csv_content = f.read()
+                # CSV 파일 읽기 시도 (다양한 인코딩 순차적으로 시도)
+                encodings = ['utf-8', 'cp949', 'latin1']
+                df = None
+                used_encoding = None
                 
-                # 간단한 HTML 테이블로 내용 표시
-                html = f"""
-                <div style="padding: 20px; max-width: 100%; overflow-x: auto;">
-                    <h3>CSV 파일: {original_filename}</h3>
-                    <pre style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; white-space: pre-wrap; word-break: break-all;">{csv_content}</pre>
-                </div>
-                """
+                for encoding in encodings:
+                    try:
+                        df = pd.read_csv(file_path, dtype=str, na_filter=False, encoding=encoding)
+                        used_encoding = encoding
+                        print(f"CSV 파일 '{original_filename}' {encoding} 인코딩으로 성공적으로 읽음")
+                        break
+                    except Exception as e:
+                        print(f"{encoding} 인코딩으로 읽기 실패: {str(e)}")
+                        continue
+                
+                # 모든 인코딩 시도 후에도 실패한 경우
+                if df is None:
+                    return jsonify({
+                        'status': 'error',
+                        'message': f'CSV 파일을 읽을 수 없습니다. 지원되지 않는 인코딩입니다.'
+                    }), 500
+                
+                # 메타데이터 생성 및 저장
+                metadata_filename = f"{os.path.splitext(decoded_filename)[0]}_metadata.json"
+                metadata_path = os.path.join(app.config['UPLOAD_FOLDER'], metadata_filename)
+                metadata = generate_csv_metadata(file_path)
+                save_csv_metadata(metadata, metadata_path)
+                
+                # 편집 가능한 HTML 미리보기 생성
+                html_content = get_csv_preview_html(
+                    df=df, 
+                    filename=original_filename, 
+                    system_filename=decoded_filename, 
+                    metadata_filename=os.path.basename(metadata_path)
+                )
                 
                 return jsonify({
                     'status': 'success',
                     'html_content': True,
                     'file_type': 'csv',
-                    'content': html
+                    'content': html_content,
+                    'metadata_generated': True,
+                    'encoding': used_encoding
                 })
                 
-            except UnicodeDecodeError:
-                try:
-                    # UTF-8 실패 시 CP949 시도
-                    with open(file_path, 'r', encoding='cp949') as f:
-                        csv_content = f.read()
-                    
-                    html = f"""
-                    <div style="padding: 20px; max-width: 100%; overflow-x: auto;">
-                        <h3>CSV 파일: {original_filename}</h3>
-                        <pre style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; white-space: pre-wrap; word-break: break-all;">{csv_content}</pre>
-                    </div>
-                    """
-                    
-                    return jsonify({
-                        'status': 'success',
-                        'html_content': True,
-                        'file_type': 'csv',
-                        'content': html
-                    })
-                except Exception as e:
-                    print(f"CSV 파일 처리 중 오류: {str(e)}")
-                    return jsonify({
-                        'status': 'error',
-                        'message': f'CSV 파일을 읽는 중 오류가 발생했습니다: {str(e)}'
-                    }), 500
             except Exception as e:
                 print(f"CSV 파일 처리 중 오류: {str(e)}")
                 return jsonify({
@@ -589,62 +622,14 @@ def view_document(system_filename):
             'message': f'문서 조회 중 오류가 발생했습니다: {str(e)}'
         }), 500
 
-@app.route('/api/documents/download/<path:system_filename>')
-def download_document(system_filename):
-    """문서 다운로드 API - 파일을 직접 다운로드할 수 있게 함"""
-    try:
-        # 파일명에 특수문자가 있을 경우 처리 (URL 디코딩)
-        decoded_filename = urllib.parse.unquote(system_filename)
-        print(f"Attempting to download document: {decoded_filename}")
-        
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], decoded_filename)
-        print(f"File path: {file_path}")
-        
-        # 파일이 존재하지 않는 경우 파일명 기반으로 다시 검색
-        if not os.path.exists(file_path):
-            # 시스템에 존재하는 모든 파일 확인
-            all_files = os.listdir(app.config['UPLOAD_FOLDER'])
-            matching_files = [f for f in all_files if decoded_filename in f]
-            
-            if matching_files:
-                file_path = os.path.join(app.config['UPLOAD_FOLDER'], matching_files[0])
-                print(f"Found similar file: {matching_files[0]}")
-            else:
-                return jsonify({
-                    'status': 'error',
-                    'message': f'요청한 파일을 찾을 수 없습니다: {decoded_filename}'
-                }), 404
-        
-        # 원본 파일명 추출
-        basename = os.path.basename(file_path)
-        parts = basename.split("_", 1)
-        original_filename = parts[1] if len(parts) > 1 else basename
-        
-        # 한글 파일명 처리
-        original_filename = urllib.parse.quote(original_filename.encode('utf-8'))
-        
-        # as_attachment=True는 항상 다운로드 대화 상자를 표시
-        return send_file(
-            file_path, 
-            as_attachment=True,
-            download_name=original_filename,  # 다운로드될 때의 파일명
-            mimetype='application/octet-stream'  # 범용 바이너리 데이터로 전송
-        )
-        
-    except Exception as e:
-        print(f"Error downloading document: {str(e)}")
-        return jsonify({
-            'status': 'error',
-            'message': f'문서 다운로드 중 오류가 발생했습니다: {str(e)}'
-        }), 500
-
-@app.route('/api/documents/edit/<path:system_filename>', methods=['POST'])
-def edit_document(system_filename):
-    """문서 내용 편집 API - 요청에 따라 비활성화됨"""
-    return jsonify({
-        'status': 'error',
-        'message': '편집 기능이 비활성화되었습니다. 모든 문서는 읽기 전용으로 제공됩니다.'
-    }), 403
+# 이전 편집 기능 비활성화 코드 (CSV 편집 기능으로 대체됨)
+# @app.route('/api/documents/edit/<path:system_filename>', methods=['POST'])
+# def edit_document_disabled(system_filename):
+#     """문서 내용 편집 API - 요청에 따라 비활성화됨"""
+#     return jsonify({
+#         'status': 'error',
+#         'message': '편집 기능이 비활성화되었습니다. 모든 문서는 읽기 전용으로 제공됩니다.'
+#     }), 403
         
 @app.route('/api/upload-chunk', methods=['POST'])
 def upload_chunk():
