@@ -38,8 +38,7 @@ def check_connection():
     인터넷 연결 상태를 확인하는 함수
     OpenAI API 및 공용 DNS 서버 연결 가능성을 테스트
     """
-    # 테스트용 임시 설정 - 모바일에서 확인 후 원래대로 복원 예정
-    return False
+    return False # 테스트용 오프라인 모드 강제 활성화
     
     try:
         # OpenAI API 서버 연결 테스트

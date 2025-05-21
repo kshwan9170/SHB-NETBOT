@@ -46,40 +46,60 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateConnectionUI(isOnline) {
         console.log('연결 상태 업데이트:', isOnline ? '온라인' : '오프라인');
         
-        // 모바일 및 데스크탑 모든 로고 이미지를 찾기 위한 확장된 셀렉터
-        const logoImages = document.querySelectorAll('img[src*="shinhan_logo"], .navbar-container img, .logo img');
-        logoImages.forEach(logoImg => {
-            if (isOnline) {
-                // 온라인 상태: 기본 파란색 로고
-                logoImg.src = '/static/images/shinhan_logo_refined.svg';
-            } else {
-                // 오프라인 상태: 빨간색 로고
-                logoImg.src = '/static/images/shinhan_logo_offline.svg';
-            }
+        // 네비게이션 바의 로고와 텍스트 관리
+        function updateNavLogo() {
+            // 모바일 및 데스크탑 로고 이미지 찾기 (여러 다른 방법 시도)
+            const allLogos = document.querySelectorAll('.logo img, .navbar-container img');
+            allLogos.forEach(logo => {
+                try {
+                    if (isOnline) {
+                        logo.setAttribute('src', '/static/images/shinhan_logo_refined.svg');
+                    } else {
+                        logo.setAttribute('src', '/static/images/shinhan_logo_offline.svg');
+                    }
+                    // 혹시 캐시 문제가 있을 수 있으므로 타임스탬프 추가
+                    logo.setAttribute('src', logo.getAttribute('src') + '?t=' + new Date().getTime());
+                    console.log('로고 업데이트:', logo.getAttribute('src'));
+                } catch (e) {
+                    console.error('로고 업데이트 실패:', e);
+                }
+            });
             
-            // 이미지 로드 실패 시 대체 처리
-            logoImg.onerror = function() {
-                console.error('Logo image failed to load:', logoImg.src);
-                // 기본 로고로 복원
-                this.src = '/static/images/shinhan_logo_refined.svg';
-            };
-        });
+            // SHB-NetBot 텍스트 색상 변경
+            const titleSpans = document.querySelectorAll('.logo span, .navbar-container .navbar-brand span');
+            titleSpans.forEach(span => {
+                if (isOnline) {
+                    span.style.color = '';
+                } else {
+                    span.style.color = 'red';
+                }
+            });
+        }
         
-        // 네비게이션 바의 SHB-NetBot 텍스트만 색상 변경 (모바일 포함)
-        // 모바일 네비게이션 바의 모든 가능한 위치에서 텍스트 처리
-        const navbarTitles = document.querySelectorAll('.navbar-container .logo span, .logo span, .navbar-brand span');
-        navbarTitles.forEach(title => {
-            if (isOnline) {
-                title.style.color = '';
-            } else {
-                title.style.color = 'red';
-            }
-        });
+        // 즉시 업데이트 시도
+        updateNavLogo();
         
-        // 로고 변경 디버깅 코드
-        if (!isOnline) {
-            console.log('오프라인 모드 - 로고 이미지 교체 시도:', 
-                document.querySelectorAll('img[src*="shinhan_logo"], .navbar-container img, .logo img').length + '개 이미지 찾음');
+        // 조금 후에 다시 시도 (페이지 로딩 지연 문제 해결)
+        setTimeout(updateNavLogo, 100);
+        setTimeout(updateNavLogo, 500);
+        
+        // 오프라인 상태 전체 클래스 토글
+        if (isOnline) {
+            document.body.classList.remove('offline-mode');
+        } else {
+            document.body.classList.add('offline-mode');
+            
+            // CSS로 스타일링을 위한 인라인 스타일 추가
+            const style = document.createElement('style');
+            style.innerHTML = `
+                .offline-mode .logo img {
+                    content: url('/static/images/shinhan_logo_offline.svg');
+                }
+                .offline-mode .logo span {
+                    color: red !important;
+                }
+            `;
+            document.head.appendChild(style);
         }
     }
     
