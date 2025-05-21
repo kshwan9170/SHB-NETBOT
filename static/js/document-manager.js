@@ -67,6 +67,13 @@ document.addEventListener('DOMContentLoaded', function() {
         loadDocuments();
     }
     
+    // 브라우저 캐시 강제 초기화를 위한 코드
+    document.querySelector('head').innerHTML += `
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+        <meta http-equiv="Pragma" content="no-cache">
+        <meta http-equiv="Expires" content="0">
+    `;
+    
     /**
      * 서버에서 문서 목록을 가져와 화면에 표시
      */
@@ -114,6 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const filesPerPage = 10; // 페이지당 10개 파일 표시
     let allFiles = [];
     let filteredFiles = [];
+    const VERSION = new Date().getTime(); // 캐시 방지용 버전
     
     // 파일 검색 함수
     function searchFiles(query) {
