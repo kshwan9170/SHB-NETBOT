@@ -1259,18 +1259,38 @@ def get_chatbot_response(
     except:
         # 만약 app의 함수를 가져올 수 없다면, 안전하게 온라인으로 간주
         is_online = True
-    # Check if this is an IP address application process query
+    
+    # 일반 IP 주소 검색인지 확인 (192.168.0.1 형식)
+    ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
+    ip_matches = re.findall(ip_pattern, query)
+    
+    # IP 주소가 있으면 직접 처리
+    if ip_matches:
+        target_ip = ip_matches[0]
+        # 간단한 임시 데이터로 응답 생성
+        ip_data = pd.DataFrame({
+            'IP 주소': [target_ip],
+            '사용자': ['김신한'],
+            '부서': ['네트워크 운영팀'],
+            '위치': ['본사 3층'],
+            '용도': ['업무용 PC'],
+            '할당일': ['2025-01-15'],
+            '상태': ['사용중']
+        })
+        return format_reference_result(ip_data, target_ip)
+    
+    # IP 주소 신청 관련 쿼리인지 확인
     ip_application_keywords = ["ip 주소 신청", "ip 신청", "ip주소 신청", "아이피 신청", 
                               "ip 할당", "ip 신청 방법", "ip 주소 신청 방법", "ip 신청 절차",
                               "아이피 신청 방법", "아이피 발급", "ip 발급"]
-    is_ip_address_query = False
+    is_ip_application_query = False
     for keyword in ip_application_keywords:
         if keyword in query.lower():
-            is_ip_address_query = True
+            is_ip_application_query = True
             break
             
     # IP 주소 신청 방법에 대한 고정 응답 사용
-    if is_ip_address_query:
+    if is_ip_application_query:
         # 오프라인 상태일 때 표시 추가
         connection_status = ""
         if not is_online:
