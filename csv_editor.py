@@ -47,7 +47,7 @@ def generate_csv_metadata(file_path: str) -> Dict[str, Any]:
             column_info[str(column)] = {
                 "type": col_type,
                 "sample_values": sample_values,
-                "null_count": df[column].isna().sum(),
+                "null_count": int(df[column].isna().sum()),
             }
         
         # 메타데이터 생성
@@ -170,18 +170,26 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
     metadata_exists = metadata_filename and os.path.exists(metadata_filename)
     
     # HTML 생성
-    html = f"""
+    # 메타데이터 버튼 HTML 생성 (조건부)
+    metadata_button = ''
+    if metadata_exists:
+        metadata_button = f'<button class="btn btn-info" onclick="viewMetadata(\'{metadata_filename}\')">메타데이터 보기</button>'
+    
+    # 테이블 HTML 생성
+    table_html = df.to_html(classes='table table-striped table-bordered table-hover editable-csv-table', index=False, na_rep='')
+    
+    html = """
     <div style="padding: 20px; max-width: 100%; overflow-x: auto;">
-        <h3>CSV 파일: {filename}</h3>
+        <h3>CSV 파일: """ + filename + """</h3>
         <div class="csv-controls" style="margin-bottom: 15px;">
             <button id="csv-edit-btn" class="btn btn-primary" onclick="enableCsvEditing()">편집 모드</button>
-            <button id="csv-save-btn" class="btn btn-success" style="display:none;" onclick="saveCsvChanges('{system_filename}')">변경사항 저장</button>
+            <button id="csv-save-btn" class="btn btn-success" style="display:none;" onclick="saveCsvChanges('""" + system_filename + """')">변경사항 저장</button>
             <button id="csv-cancel-btn" class="btn btn-secondary" style="display:none;" onclick="cancelCsvEditing()">취소</button>
-            <a href="/api/documents/download/{system_filename}" class="btn btn-info">다운로드</a>
-            {f'<button class="btn btn-info" onclick="viewMetadata(\'{metadata_filename}\')">메타데이터 보기</button>' if metadata_exists else ''}
+            <a href="/api/documents/download/""" + system_filename + """" class="btn btn-info">다운로드</a>
+            """ + metadata_button + """
         </div>
         <div id="csv-table-container" style="max-height: 600px; overflow-y: auto;">
-            {df.to_html(classes='table table-striped table-bordered table-hover editable-csv-table', index=False, na_rep='')}
+            """ + table_html + """
         </div>
     </div>
     
