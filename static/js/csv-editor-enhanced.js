@@ -136,7 +136,14 @@ function enableCsvEditing() {
     document.getElementById('csv-save-btn').style.display = 'inline-block';
     document.getElementById('csv-cancel-btn').style.display = 'inline-block';
     document.getElementById('csv-add-row-btn').style.display = 'inline-block';
-    document.getElementById('csv-add-col-btn').style.display = 'inline-block';
+    
+    // 삭제 버튼이 있으면 표시
+    const deleteRowBtn = document.getElementById('csv-delete-row-btn');
+    if (deleteRowBtn) {
+        deleteRowBtn.style.display = 'inline-block';
+        // 이벤트 리스너 추가
+        deleteRowBtn.addEventListener('click', deleteSelectedRow);
+    }
 }
 
 // CSV 편집 취소
@@ -150,7 +157,12 @@ function cancelCsvEditing() {
     document.getElementById('csv-save-btn').style.display = 'none';
     document.getElementById('csv-cancel-btn').style.display = 'none';
     document.getElementById('csv-add-row-btn').style.display = 'none';
-    document.getElementById('csv-add-col-btn').style.display = 'none';
+    
+    // 삭제 버튼 숨기기
+    const deleteRowBtn = document.getElementById('csv-delete-row-btn');
+    if (deleteRowBtn) {
+        deleteRowBtn.style.display = 'none';
+    }
     
     // 선택 상태 초기화
     selectedRow = null;
@@ -185,6 +197,12 @@ function saveCsvChanges() {
     const encodedFilename = encodeURIComponent(decodedFilename);
     let apiUrl = '/api/documents/edit/' + encodedFilename;
     
+    // 저장 시작 알림 표시
+    const saveBtn = document.getElementById('csv-save-btn');
+    const originalText = saveBtn.textContent;
+    saveBtn.textContent = '저장 중...';
+    saveBtn.disabled = true;
+    
     console.log("저장 API URL:", apiUrl);
     
     fetch(apiUrl, {
@@ -200,13 +218,20 @@ function saveCsvChanges() {
     .then(response => response.json())
     .then(data => {
         if (data.status === 'success') {
+            // 저장 성공 알림
             alert('CSV 파일이 성공적으로 저장되었습니다.');
+            
             // 수정 모드 종료
             document.getElementById('csv-edit-btn').style.display = 'inline-block';
             document.getElementById('csv-save-btn').style.display = 'none';
             document.getElementById('csv-cancel-btn').style.display = 'none';
             document.getElementById('csv-add-row-btn').style.display = 'none';
-            document.getElementById('csv-add-col-btn').style.display = 'none';
+            
+            // 삭제 버튼 숨기기
+            const deleteRowBtn = document.getElementById('csv-delete-row-btn');
+            if (deleteRowBtn) {
+                deleteRowBtn.style.display = 'none';
+            }
             
             // 현재 상태를 원본 상태로 업데이트
             originalCsvData = document.getElementById('csv-table-container').innerHTML;
@@ -217,10 +242,16 @@ function saveCsvChanges() {
     .catch(error => {
         console.error('저장 중 오류 발생:', error);
         alert('서버 연결 중 오류가 발생했습니다.');
+    })
+    .finally(() => {
+        // 저장 버튼 상태 복원
+        const saveBtn = document.getElementById('csv-save-btn');
+        saveBtn.textContent = '변경사항 저장';
+        saveBtn.disabled = false;
     });
 }
 
-// 새 행 추가 (버튼 클릭)
+// 새 행 추가 (버튼 클릭) - 항상 맨 아래에 추가
 function addCsvRow() {
     const table = document.querySelector('.editable-csv-table');
     if (!table) {
@@ -228,17 +259,18 @@ function addCsvRow() {
         return;
     }
     
-    // 선택된 셀이 있는지 확인
-    if (selectedRow !== null) {
-        // 선택된 행 다음에 새 행 삽입
-        insertNewRow(selectedRow + 1);
-        return;
-    }
-    
-    // 선택된 행이 없으면 마지막에 행 추가
+    // 항상 마지막에 행 추가
     const tableBody = table.querySelector('tbody');
     const rowCount = tableBody.querySelectorAll('tr').length;
     insertNewRow(rowCount);
+    
+    // 추가된 행으로 스크롤
+    setTimeout(() => {
+        const rows = tableBody.querySelectorAll('tr');
+        if (rows.length > 0) {
+            rows[rows.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, 100);
 }
 
 // 새 열 추가 (버튼 클릭)
@@ -289,6 +321,14 @@ function selectRow(rowIndex) {
     if (rowHeader) {
         rowHeader.style.backgroundColor = '#0064E1';
         rowHeader.style.color = 'white';
+    }
+    
+    // 삭제 버튼 활성화 시각적 표시
+    const deleteRowBtn = document.getElementById('csv-delete-row-btn');
+    if (deleteRowBtn && deleteRowBtn.style.display !== 'none') {
+        deleteRowBtn.style.opacity = '1';
+        deleteRowBtn.style.cursor = 'pointer';
+        deleteRowBtn.title = `${rowIndex}번 행 삭제`;
     }
     
     // 컨텍스트 메뉴 표시 (행 추가/삭제 등)
@@ -376,6 +416,14 @@ function clearSelection() {
     // 선택된 행/열 변수 초기화
     selectedRow = null;
     selectedColumn = null;
+    
+    // 삭제 버튼 비활성화 시각적 표시
+    const deleteRowBtn = document.getElementById('csv-delete-row-btn');
+    if (deleteRowBtn && deleteRowBtn.style.display !== 'none') {
+        deleteRowBtn.style.opacity = '0.6';
+        deleteRowBtn.style.cursor = 'default';
+        deleteRowBtn.title = '행을 선택하면 삭제할 수 있습니다';
+    }
     
     // 컨텍스트 메뉴 닫기
     hideContextMenus();
@@ -968,12 +1016,12 @@ function deleteRow(rowIndex) {
     const rows = tableBody.querySelectorAll('tr');
     
     // 행 번호 유효성 검사
-    if (rowIndex <= 0 || rowIndex > rows.length) return;
+    if (rowIndex < 0 || rowIndex >= rows.length) return;
     
     // 행 삭제 확인
-    if (confirm(`${rowIndex}번 행을 삭제하시겠습니까?`)) {
+    if (confirm(`${rowIndex + 1}번 행을 삭제하시겠습니까?`)) {
         // 행 삭제
-        rows[rowIndex - 1].remove();
+        rows[rowIndex].remove();
         
         // 행 번호 업데이트
         updateRowNumbers();
@@ -981,6 +1029,17 @@ function deleteRow(rowIndex) {
         // 선택 상태 초기화
         clearSelection();
     }
+}
+
+// 선택된 행 삭제 (삭제 버튼 클릭)
+function deleteSelectedRow() {
+    // 선택된 행이 있는지 확인
+    if (selectedRow === null) {
+        alert('삭제할 행을 먼저 선택해주세요.');
+        return;
+    }
+    
+    deleteRow(selectedRow);
 }
 
 // 열 삭제
