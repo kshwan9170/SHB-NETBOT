@@ -181,7 +181,9 @@ function saveCsvChanges() {
     const decodedFilename = decodeURIComponent(currentFilename);
     console.log("파일명 디코딩:", decodedFilename);
     
-    let apiUrl = '/api/documents/edit/' + decodedFilename;
+    // 파일명에 '업무 안내 가이드' 같은 단어가 포함된 경우 인코딩 처리
+    const encodedFilename = encodeURIComponent(decodedFilename);
+    let apiUrl = '/api/documents/edit/' + encodedFilename;
     
     console.log("저장 API URL:", apiUrl);
     

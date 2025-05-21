@@ -366,15 +366,44 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 문서 내용 표시 - 모달 또는 새 페이지
                     const modal = document.createElement('div');
                     modal.className = 'document-modal';
+                    
+                    // CSV 파일인 경우 편집 버튼 추가
+                    const isCSV = systemFilename.toLowerCase().endsWith('.csv');
+                    
                     modal.innerHTML = `
                         <div class="document-modal-content">
                             <div class="document-modal-header">
-                                <h3>${displayFilename}</h3>
+                                <h3 class="file-preview-title" data-system-filename="${systemFilename}">${displayFilename}</h3>
                                 <button class="close-modal-btn">&times;</button>
                             </div>
+                            ${isCSV ? `
+                            <div class="document-actions">
+                                <div class="csv-editor-controls" style="margin-bottom: 15px;">
+                                    <button id="csv-edit-btn" style="background-color: #4caf50; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; margin-right: 10px;">
+                                        편집 모드
+                                    </button>
+                                    <button id="csv-save-btn" style="background-color: #0064E1; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; margin-right: 10px; display: none;">
+                                        변경사항 저장
+                                    </button>
+                                    <button id="csv-cancel-btn" style="background-color: #f44336; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; margin-right: 10px; display: none;">
+                                        취소
+                                    </button>
+                                    <button id="csv-add-row-btn" style="background-color: #4caf50; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; margin-right: 10px; display: none;">
+                                        행 추가
+                                    </button>
+                                    <button id="csv-add-col-btn" style="background-color: #2196f3; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; display: none;">
+                                        열 추가
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="csv-table-container">
+                                ${data.content}
+                            </div>
+                            ` : `
                             <div class="document-modal-body">
                                 ${data.content}
                             </div>
+                            `}
                         </div>
                     `;
                     
