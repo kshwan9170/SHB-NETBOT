@@ -1,0 +1,175 @@
+def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, metadata_filename: str = None) -> str:
+    """
+    CSV 파일을 편집 가능한 HTML 테이블로 변환합니다.
+    
+    Args:
+        df: CSV 데이터프레임
+        filename: 원본 파일명
+        system_filename: 시스템 파일명
+        metadata_filename: 메타데이터 파일명 (선택 사항)
+        
+    Returns:
+        HTML 문자열
+    """
+    # 메타데이터 파일 존재 여부 확인
+    metadata_exists = metadata_filename and os.path.exists(metadata_filename)
+    
+    # HTML 생성
+    # 메타데이터 버튼 HTML 생성 (조건부)
+    metadata_button = ''
+    if metadata_exists:
+        metadata_button = f'<button class="btn btn-info" onclick="viewMetadata(\'{metadata_filename}\')">메타데이터 보기</button>'
+    
+    # 테이블 HTML 생성
+    table_html = df.to_html(classes='table table-striped table-bordered table-hover editable-csv-table', index=False, na_rep='')
+    
+    html = """
+    <div style="padding: 20px; max-width: 100%; overflow-x: auto;">
+        <h3>CSV 파일: """ + filename + """</h3>
+        <div class="csv-controls" style="margin-bottom: 15px;">
+            <button id="csv-edit-btn" class="btn btn-primary">편집 모드</button>
+            <button id="csv-save-btn" class="btn btn-success" style="display:none;">변경사항 저장</button>
+            <button id="csv-cancel-btn" class="btn btn-secondary" style="display:none;">취소</button>
+            <a href="/api/documents/download/""" + system_filename + """" class="btn btn-info">다운로드</a>
+            """ + metadata_button + """
+        </div>
+        <div id="csv-table-container" style="max-height: 600px; overflow-y: auto;">
+            """ + table_html + """
+        </div>
+    </div>
+
+    <script>
+    // 전역 변수
+    const csvFilename = '""" + system_filename + """';
+    let originalCsvData = null;
+    
+    // 문서 로드 완료 후 이벤트 리스너 등록
+    document.addEventListener('DOMContentLoaded', function() {
+        // 버튼 요소 가져오기
+        const editBtn = document.getElementById('csv-edit-btn');
+        const saveBtn = document.getElementById('csv-save-btn');
+        const cancelBtn = document.getElementById('csv-cancel-btn');
+        
+        // 편집 버튼 이벤트 리스너
+        if (editBtn) {
+            editBtn.addEventListener('click', function() {
+                // 현재 테이블 상태 저장
+                originalCsvData = document.getElementById('csv-table-container').innerHTML;
+                
+                // 테이블 셀 편집 가능하게 변경
+                const table = document.querySelector('.editable-csv-table');
+                const cells = table.querySelectorAll('td');
+                
+                cells.forEach(cell => {
+                    cell.contentEditable = true;
+                    cell.style.backgroundColor = '#fffde7';
+                    cell.addEventListener('focus', function() {
+                        this.style.backgroundColor = '#fff9c4';
+                    });
+                    cell.addEventListener('blur', function() {
+                        this.style.backgroundColor = '#fffde7';
+                    });
+                });
+                
+                // 버튼 상태 변경
+                editBtn.style.display = 'none';
+                saveBtn.style.display = 'inline-block';
+                cancelBtn.style.display = 'inline-block';
+            });
+        }
+        
+        // 취소 버튼 이벤트 리스너
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                // 원래 테이블로 복원
+                document.getElementById('csv-table-container').innerHTML = originalCsvData;
+                
+                // 버튼 상태 변경
+                editBtn.style.display = 'inline-block';
+                saveBtn.style.display = 'none';
+                cancelBtn.style.display = 'none';
+            });
+        }
+        
+        // 저장 버튼 이벤트 리스너
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function() {
+                // 테이블에서 데이터 추출
+                const table = document.querySelector('.editable-csv-table');
+                if (!table) {
+                    alert('편집할 테이블을 찾을 수 없습니다.');
+                    return;
+                }
+                
+                const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+                const rows = Array.from(table.querySelectorAll('tbody tr')).map(tr => 
+                    Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim())
+                );
+                
+                // 데이터 전송
+                fetch('/api/documents/edit/' + csvFilename, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        headers: headers,
+                        data: rows,
+                        encoding: 'cp949'  // 한글 파일 지원을 위해 cp949 사용
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('CSV 파일이 성공적으로 저장되었습니다.');
+                        // 변경된 내용으로 테이블 업데이트
+                        document.getElementById('csv-table-container').innerHTML = data.content;
+                        // 버튼 상태 변경
+                        editBtn.style.display = 'inline-block';
+                        saveBtn.style.display = 'none';
+                        cancelBtn.style.display = 'none';
+                    } else {
+                        alert('저장 중 오류가 발생했습니다: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('저장 중 오류가 발생했습니다: ' + error);
+                });
+            });
+        }
+    });
+    
+    // 메타데이터 보기 함수
+    function viewMetadata(metadataFilename) {
+        fetch('/api/documents/view/' + metadataFilename)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // 새 창에 메타데이터 표시
+                const metadataWindow = window.open('', '_blank', 'width=800,height=600');
+                const html = '<html>' + 
+                    '<head>' + 
+                    '<title>메타데이터: ' + metadataFilename + '</title>' + 
+                    '<link rel="stylesheet" href="/static/css/modern.css">' + 
+                    '<style>' + 
+                    'body { padding: 20px; font-family: Arial, sans-serif; }' + 
+                    'pre { background-color: #f5f5f5; padding: 15px; border-radius: 5px; overflow: auto; }' + 
+                    '</style>' + 
+                    '</head>' + 
+                    '<body>' + 
+                    '<h2>메타데이터: ' + metadataFilename + '</h2>' + 
+                    '<pre>' + data.content + '</pre>' + 
+                    '</body>' + 
+                    '</html>';
+                metadataWindow.document.write(html);
+            } else {
+                alert('메타데이터를 불러오는 중 오류가 발생했습니다: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('메타데이터를 불러오는 중 오류가 발생했습니다: ' + error);
+        });
+    }
+    </script>"""
+    
+    return html

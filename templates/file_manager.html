@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/modern.css') }}">
+    <script src="{{ url_for('static', filename='js/csv-editor.js') }}"></script>
     <style>
         body {
             font-family: 'Inter', Arial, sans-serif;
@@ -893,8 +894,37 @@
                                 break;
                                 
                             case 'csv':
+                                // CSV 파일 편집 기능이 포함된 처리
+                                modalBody.style.cssText = bodyStyle + `
+                                    background-color: #ffffff;
+                                    padding: 0;
+                                `;
+                                // CSV 내용 표시 및 편집 버튼 추가
+                                modalBody.innerHTML = data.content;
+                                
+                                // 편집 버튼 이벤트 리스너 추가
+                                setTimeout(() => {
+                                    const editBtn = document.getElementById('csv-edit-btn');
+                                    const saveBtn = document.getElementById('csv-save-btn');
+                                    const cancelBtn = document.getElementById('csv-cancel-btn');
+                                    
+                                    if (editBtn && typeof enableCsvEditing === 'function') {
+                                        editBtn.addEventListener('click', enableCsvEditing);
+                                    }
+                                    
+                                    if (saveBtn && typeof saveCsvChanges === 'function') {
+                                        const filename = editBtn.getAttribute('data-filename') || systemFilename;
+                                        saveBtn.addEventListener('click', () => saveCsvChanges(filename));
+                                    }
+                                    
+                                    if (cancelBtn && typeof cancelCsvEditing === 'function') {
+                                        cancelBtn.addEventListener('click', cancelCsvEditing);
+                                    }
+                                }, 100);
+                                break;
+                                
                             case 'json':
-                                // CSV 또는 JSON 파일 처리
+                                // JSON 파일 처리
                                 modalBody.style.cssText = bodyStyle;
                                 modalBody.innerHTML = data.content;
                                 break;
