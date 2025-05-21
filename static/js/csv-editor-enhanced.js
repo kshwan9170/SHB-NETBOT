@@ -66,9 +66,20 @@ function enableCsvEditing() {
     // 현재 파일명 가져오기
     const filenamePath = window.location.pathname;
     const pathSegments = filenamePath.split('/');
+    
     // URL이 /api/documents/view/filename 형식인지 확인
     if (pathSegments.includes('view')) {
+        // 전체 경로에서 마지막 부분이 파일명
         currentFilename = pathSegments[pathSegments.length - 1];
+    } else if (pathSegments.includes('file-manager')) {
+        // 파일 관리자에서는 별도로 파일명을 가져와야 함
+        const viewingFile = document.querySelector('.file-preview-title');
+        if (viewingFile && viewingFile.dataset.systemFilename) {
+            currentFilename = viewingFile.dataset.systemFilename;
+        } else {
+            alert('편집할 파일을 찾을 수 없습니다.');
+            return;
+        }
     } else {
         currentFilename = filenamePath.substring(filenamePath.lastIndexOf('/') + 1);
     }
