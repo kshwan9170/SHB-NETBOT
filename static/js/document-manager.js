@@ -171,6 +171,14 @@ document.addEventListener('DOMContentLoaded', function() {
                             </svg>
                             <span>보기</span>
                         </button>
+                        <button class="document-download-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}" style="background-color: #0064E1; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>다운로드</span>
+                        </button>
                         ${file.file_type.toLowerCase() === 'txt' ? `
                         <button class="document-edit-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}" style="background-color: #2196f3; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -211,6 +219,16 @@ document.addEventListener('DOMContentLoaded', function() {
                     const systemFilename = this.getAttribute('data-filename');
                     const displayFilename = this.getAttribute('data-displayname');
                     viewDocument(systemFilename, displayFilename);
+                });
+            }
+            
+            // 다운로드 버튼에 이벤트 리스너 추가
+            const downloadBtn = fileCard.querySelector('.document-download-btn');
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', function() {
+                    const systemFilename = this.getAttribute('data-filename');
+                    const displayFilename = this.getAttribute('data-displayname');
+                    downloadDocument(systemFilename, displayFilename);
                 });
             }
             
@@ -366,6 +384,57 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {string} systemFilename - 시스템 내부 파일명
      * @param {string} displayFilename - 화면에 표시되는 파일명
      */
+    /**
+     * 파일 다운로드 함수
+     * @param {string} systemFilename - 시스템 내부 파일명
+     * @param {string} displayFilename - 표시용 파일명 
+     */
+    async function downloadDocument(systemFilename, displayFilename) {
+        try {
+            // 다운로드 시작 알림
+            const toastMsg = document.createElement('div');
+            toastMsg.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: #0064E1;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 4px;
+                z-index: 1000;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            `;
+            toastMsg.textContent = `"${displayFilename}" 다운로드 중...`;
+            document.body.appendChild(toastMsg);
+            
+            // 파일명에 특수문자가 포함된 경우 인코딩
+            const encodedFilename = encodeURIComponent(systemFilename);
+            
+            // 파일 다운로드 링크 생성 및 클릭
+            const downloadLink = document.createElement('a');
+            downloadLink.href = `/api/documents/download/${encodedFilename}`;
+            downloadLink.download = displayFilename; // 다운로드될 때 표시될 파일명
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            
+            // 잠시 후 토스트 메시지 제거
+            setTimeout(() => {
+                toastMsg.textContent = `"${displayFilename}" 다운로드 완료!`;
+                toastMsg.style.backgroundColor = '#4caf50';
+                
+                setTimeout(() => {
+                    document.body.removeChild(toastMsg);
+                }, 2000);
+            }, 1500);
+            
+        } catch (error) {
+            console.error('파일 다운로드 중 오류 발생:', error);
+            alert('파일 다운로드 중 오류가 발생했습니다.');
+        }
+    }
+    
     async function viewDocument(systemFilename, displayFilename) {
         // 로딩 표시기 생성
         const loadingIndicator = document.createElement('div');

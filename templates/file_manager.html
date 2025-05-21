@@ -260,6 +260,9 @@
                             <button class="view-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}" style="background-color: #4caf50; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-weight: 600; min-width: 60px;">
                                 보기
                             </button>
+                            <button class="download-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}" style="background-color: #0064E1; color: white; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-weight: 600; min-width: 60px;">
+                                다운로드
+                            </button>
                             <button class="delete-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}">
                                 DELETE
                             </button>
@@ -284,6 +287,16 @@
                         const systemFilename = this.getAttribute('data-filename');
                         const displayFilename = this.getAttribute('data-displayname');
                         viewDocument(systemFilename, displayFilename);
+                    });
+                }
+                
+                // 다운로드 버튼에 이벤트 리스너 추가
+                const downloadBtn = row.querySelector('.download-btn');
+                if (downloadBtn) {
+                    downloadBtn.addEventListener('click', function() {
+                        const systemFilename = this.getAttribute('data-filename');
+                        const displayFilename = this.getAttribute('data-displayname');
+                        downloadDocument(systemFilename, displayFilename);
                     });
                 }
                 
@@ -491,6 +504,57 @@
             const i = Math.floor(Math.log(bytes) / Math.log(1024));
             
             return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        /**
+         * 파일 다운로드 기능
+         * @param {string} systemFilename - 시스템 내부 파일명
+         * @param {string} displayFilename - 화면에 표시되는 파일명
+         */
+        function downloadDocument(systemFilename, displayFilename) {
+            try {
+                // 다운로드 시작 알림
+                const toastMsg = document.createElement('div');
+                toastMsg.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background-color: #0064E1;
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 4px;
+                    z-index: 1000;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+                `;
+                toastMsg.textContent = `"${displayFilename}" 다운로드 중...`;
+                document.body.appendChild(toastMsg);
+                
+                // 파일명에 특수문자가 포함된 경우 인코딩
+                const encodedFilename = encodeURIComponent(systemFilename);
+                
+                // 파일 다운로드 링크 생성 및 클릭
+                const downloadLink = document.createElement('a');
+                downloadLink.href = `/api/documents/download/${encodedFilename}`;
+                downloadLink.download = displayFilename; // 다운로드될 때 표시될 파일명
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                
+                // 잠시 후 토스트 메시지 제거
+                setTimeout(() => {
+                    toastMsg.textContent = `"${displayFilename}" 다운로드 완료!`;
+                    toastMsg.style.backgroundColor = '#4caf50';
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(toastMsg);
+                    }, 2000);
+                }, 1500);
+                
+            } catch (error) {
+                console.error('파일 다운로드 중 오류 발생:', error);
+                alert('파일 다운로드 중 오류가 발생했습니다.');
+            }
         }
         
         /**

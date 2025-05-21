@@ -10,7 +10,7 @@ import time
 from pathlib import Path
 from datetime import datetime
 from werkzeug.utils import secure_filename
-from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, abort
+from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, abort, send_file
 import openai
 from openai import OpenAI
 
@@ -38,8 +38,6 @@ def check_connection():
     인터넷 연결 상태를 확인하는 함수
     OpenAI API 및 공용 DNS 서버 연결 가능성을 테스트
     """
-    return False # 테스트용 오프라인 모드 강제 활성화
-    
     try:
         # OpenAI API 서버 연결 테스트
         socket.create_connection(("api.openai.com", 443), timeout=3)
@@ -589,6 +587,55 @@ def view_document(system_filename):
         return jsonify({
             'status': 'error',
             'message': f'문서 조회 중 오류가 발생했습니다: {str(e)}'
+        }), 500
+
+@app.route('/api/documents/download/<path:system_filename>')
+def download_document(system_filename):
+    """문서 다운로드 API - 파일을 직접 다운로드할 수 있게 함"""
+    try:
+        # 파일명에 특수문자가 있을 경우 처리 (URL 디코딩)
+        decoded_filename = urllib.parse.unquote(system_filename)
+        print(f"Attempting to download document: {decoded_filename}")
+        
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], decoded_filename)
+        print(f"File path: {file_path}")
+        
+        # 파일이 존재하지 않는 경우 파일명 기반으로 다시 검색
+        if not os.path.exists(file_path):
+            # 시스템에 존재하는 모든 파일 확인
+            all_files = os.listdir(app.config['UPLOAD_FOLDER'])
+            matching_files = [f for f in all_files if decoded_filename in f]
+            
+            if matching_files:
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], matching_files[0])
+                print(f"Found similar file: {matching_files[0]}")
+            else:
+                return jsonify({
+                    'status': 'error',
+                    'message': f'요청한 파일을 찾을 수 없습니다: {decoded_filename}'
+                }), 404
+        
+        # 원본 파일명 추출
+        basename = os.path.basename(file_path)
+        parts = basename.split("_", 1)
+        original_filename = parts[1] if len(parts) > 1 else basename
+        
+        # 한글 파일명 처리
+        original_filename = urllib.parse.quote(original_filename.encode('utf-8'))
+        
+        # as_attachment=True는 항상 다운로드 대화 상자를 표시
+        return send_file(
+            file_path, 
+            as_attachment=True,
+            download_name=original_filename,  # 다운로드될 때의 파일명
+            mimetype='application/octet-stream'  # 범용 바이너리 데이터로 전송
+        )
+        
+    except Exception as e:
+        print(f"Error downloading document: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f'문서 다운로드 중 오류가 발생했습니다: {str(e)}'
         }), 500
 
 @app.route('/api/documents/edit/<path:system_filename>', methods=['POST'])
