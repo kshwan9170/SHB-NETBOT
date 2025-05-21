@@ -6,11 +6,57 @@ import re
 import pandas as pd
 from pathlib import Path
 from openai import OpenAI
+import logging
 
 from database import search_similar_docs
 
 # Import configuration
 from config import FAQ_KEYWORDS, FINE_TUNED_MODEL, RAG_SYSTEM
+
+# CSV 변환 모듈 임포트
+from csv_to_narrative import CsvNarrativeConverter, search_csv_data, process_csv_files
+
+# 오프라인 모드 관련 상수
+OFFLINE_MODE_ENABLED = True
+OFFLINE_FALLBACK_MESSAGE = "[🔴 오프라인 모드] 현재 인터넷 연결이 제한되어 있어 로컬 데이터만 사용합니다."
+
+# 로그 설정
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# CSV 변환기 초기화
+csv_converter = CsvNarrativeConverter()
+
+# 모든 CSV 파일에서 생성된 자연어 문장 캐시
+csv_narratives = []
+
+# CSV 파일 처리 함수 (초기화 시 호출)
+def initialize_csv_narratives():
+    """CSV 파일을 처리하여 자연어 문장 생성 및 캐싱"""
+    global csv_narratives
+    
+    if not os.path.exists(UPLOAD_FOLDER):
+        logger.warning(f"업로드 폴더 '{UPLOAD_FOLDER}'가 존재하지 않습니다.")
+        return
+    
+    # 모든 CSV 파일 처리
+    all_narratives = []
+    csv_files = [f for f in os.listdir(UPLOAD_FOLDER) 
+                if os.path.isfile(os.path.join(UPLOAD_FOLDER, f)) and f.endswith('.csv')]
+    
+    logger.info(f"총 {len(csv_files)}개 CSV 파일 처리 시작")
+    
+    for csv_file in csv_files:
+        filepath = os.path.join(UPLOAD_FOLDER, csv_file)
+        try:
+            file_narratives = csv_converter.csv_to_narratives(filepath)
+            all_narratives.extend(file_narratives)
+            logger.info(f"CSV 파일 처리 완료: {csv_file} ({len(file_narratives)}개 문장 생성)")
+        except Exception as e:
+            logger.error(f"CSV 파일 처리 오류: {csv_file} - {e}")
+    
+    csv_narratives = all_narratives
+    logger.info(f"총 {len(csv_narratives)}개 자연어 문장 생성 완료")
 
 # Initialize OpenAI client
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
@@ -1227,6 +1273,103 @@ def get_fine_tuned_response(query: str, chat_history: Optional[List[Dict[str, st
         print(f"Fine-tuned 모델 응답 생성 중 오류 발생: {str(e)}")
         return None  # 오류 발생 시 None 반환하여 RAG 시스템으로 폴백
 
+def get_local_response(query: str) -> str:
+    """
+    로컬 데이터를 기반으로 오프라인 모드에서 응답을 생성합니다.
+    
+    Args:
+        query: 사용자의 질문
+        
+    Returns:
+        로컬 데이터 기반 응답
+    """
+    logger.info(f"오프라인 모드 로컬 응답 생성 시작: {query}")
+    
+    # IP 주소 패턴 검색 (정규식)
+    ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
+    ip_match = re.search(ip_pattern, query)
+    
+    if ip_match:
+        # IP 주소 검색
+        ip_address = ip_match.group(0)
+        logger.info(f"IP 주소 감지: {ip_address}")
+        
+        # CSV 자연어 캐시에서 IP 주소 검색
+        matched_results = []
+        
+        for narrative in csv_narratives:
+            # 메타데이터에 IP 주소가 있는지 확인
+            if 'metadata' in narrative and narrative['metadata'].get('ip_address') == ip_address:
+                matched_results.append(narrative)
+                continue
+                
+            # 텍스트에 IP 주소가 포함되어 있는지 확인
+            if ip_address in narrative['text']:
+                matched_results.append(narrative)
+        
+        if matched_results:
+            # 결과가 있으면 첫 번째 결과 사용
+            result = matched_results[0]
+            logger.info(f"IP 주소 검색 매치 성공: {ip_address}")
+            
+            # 응답 메시지 생성
+            response = f"## IP 주소 정보 조회 결과\n\n{result['text']}"
+            
+            # 추가 정보가 있으면 포함
+            if len(matched_results) > 1:
+                response += f"\n\n추가로 {len(matched_results)-1}개의 관련 정보가 있습니다."
+                
+            return response
+        
+        # IP 주소에 대한 정보를 찾지 못한 경우
+        logger.info(f"IP 주소 검색 매치 실패: {ip_address}")
+        return f"IP 주소 **{ip_address}**에 대한 정보를 찾을 수 없습니다. 😊\n\n다른 IP 주소로 검색하거나 네트워크 관리자에게 문의해 주세요."
+    
+    # 키워드 검색 (IP 주소가 아닌 경우)
+    # 검색어에서 키워드 추출 (2글자 이상 단어)
+    keywords = [word for word in query.split() if len(word) >= 2]
+    
+    if keywords:
+        # 키워드 매칭 결과 및 점수
+        results_with_scores = []
+        
+        for narrative in csv_narratives:
+            score = 0
+            
+            # 키워드 매칭
+            for keyword in keywords:
+                if keyword in narrative['text']:
+                    score += 1
+            
+            # 점수가 있는 경우만 결과에 추가
+            if score > 0:
+                results_with_scores.append({
+                    'narrative': narrative,
+                    'score': score
+                })
+        
+        # 점수를 기준으로 정렬 (높은 점수가 먼저)
+        results_with_scores.sort(key=lambda x: x['score'], reverse=True)
+        
+        # 상위 결과 선택 (최대 3개)
+        top_results = results_with_scores[:min(3, len(results_with_scores))]
+        
+        if top_results:
+            logger.info(f"키워드 검색 결과: {len(top_results)}개 매치")
+            
+            # 검색 결과를 응답으로 포맷팅
+            response = "## 검색 결과\n\n"
+            
+            for idx, result in enumerate(top_results):
+                narrative = result['narrative']
+                response += f"### 결과 {idx + 1}\n{narrative['text']}\n\n"
+            
+            return response
+    
+    # 매칭되는 결과가 없는 경우
+    logger.info("매칭 결과 없음")
+    return "질문과 관련된 정보를 로컬 데이터베이스에서 찾지 못했습니다. 질문을 더 자세히 작성하거나 IP 주소와 같은 구체적인 정보를 포함해 보세요."
+
 def get_chatbot_response(
     query: str, 
     context: Optional[str] = None, 
@@ -1264,11 +1407,42 @@ def get_chatbot_response(
     ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
     ip_matches = re.findall(ip_pattern, query)
     
-    # IP 주소가 있으면 먼저 엑셀 처리 시도
+    # IP 주소가 있으면 CSV 자연어 변환 데이터에서 먼저 검색
     if ip_matches:
         target_ip = ip_matches[0]
         
-        # 먼저 엑셀 파일에서 IP 관련 시트를 찾아 검색
+        # CSV 자연어 변환 데이터에서 검색 (만약 데이터가 있다면)
+        if csv_narratives:
+            # target_ip로 검색
+            matched_results = csv_converter.search_by_ip(csv_narratives, target_ip)
+            
+            if matched_results:
+                # 결과가 있으면 첫 번째 결과 사용
+                result = matched_results[0]
+                
+                # 응답 메시지 생성
+                response = f"""
+## IP 주소 정보 조회 결과
+
+{result['text']}
+
+"""
+                # 추가 정보가 있으면 포함
+                if len(matched_results) > 1:
+                    response += f"\n\n추가로 {len(matched_results)-1}개의 관련 정보가 있습니다."
+                
+                # 연결 상태 정보 추가
+                try:
+                    from app import get_connection_status
+                    is_online = get_connection_status()
+                    if is_online:
+                        response += "\n\n[🟢 온라인 모드] 인터넷 연결이 정상입니다."
+                except:
+                    pass
+                    
+                return response
+        
+        # 기존 엑셀 처리 방식으로 폴백
         excel_result = process_excel_query(query)
         
         # 엑셀에서 결과를 찾았으면 반환
@@ -1288,8 +1462,9 @@ def get_chatbot_response(
             })
             return format_reference_result(ip_data, target_ip)
             
-        # 임시 안내 메시지
-        return f"안녕하세요! IP 주소 **{target_ip}**에 대한 정보를 찾지 못했습니다. 😊\n\n다른 IP 주소로 검색하거나 네트워크 관리자에게 문의해 주세요."
+        # 매칭 실패 메시지
+        fallback_message = csv_converter.get_fallback_message("IP_사용자_조회")
+        return f"## IP 주소 조회 결과\n\n{fallback_message}\n\nIP 주소 **{target_ip}**에 대한 정보를 찾지 못했습니다. 다른 IP 주소로 검색하거나 네트워크 관리자에게 문의해 주세요."
     
     # IP 주소 신청 관련 쿼리인지 확인
     ip_application_keywords = ["ip 주소 신청", "ip 신청", "ip주소 신청", "아이피 신청", 

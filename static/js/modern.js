@@ -34,7 +34,8 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-            updateConnectionUI(data.online);
+            console.log('서버 연결 상태:', data);
+            updateConnectionUI(data.status === 'online');
         })
         .catch(error => {
             // API 호출 실패하면 브라우저의 navigator.onLine을 사용
@@ -45,6 +46,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // 연결 상태 UI 업데이트 함수
     function updateConnectionUI(isOnline) {
         console.log('연결 상태 업데이트:', isOnline ? '온라인' : '오프라인');
+        
+        // 상태 배지 업데이트
+        const statusBadge = document.getElementById('connection-status');
+        if (statusBadge) {
+            if (isOnline) {
+                statusBadge.textContent = '온라인';
+                statusBadge.className = 'status-badge online';
+            } else {
+                statusBadge.textContent = '오프라인';
+                statusBadge.className = 'status-badge offline';
+            }
+        }
         
         // 네비게이션 바의 로고와 텍스트 관리
         function updateNavLogo() {
@@ -63,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (isOnline) {
                         titleSpan.style.color = '';
                     } else {
-                        titleSpan.style.color = 'red';
+                        titleSpan.style.color = '#ff3333';
                     }
                 }
             }
@@ -93,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // 모바일에서 작동하는 간단한 방식 - 색상 필터 적용
             document.querySelectorAll('.logo img').forEach(img => {
                 // 이미지는 그대로 두고 붉은색 필터 적용
-                img.style.filter = 'invert(21%) sepia(100%) saturate(7414%) hue-rotate(359deg) brightness(94%) contrast(111%)';
+                img.style.filter = 'grayscale(100%) brightness(40%) sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(0.8)';
             });
         }
     }
@@ -114,6 +127,39 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 30초마다 연결 상태 체크
     setInterval(checkConnectionStatus, 30000);
+    
+    // 오프라인 모드 테스트 버튼 이벤트 처리
+    document.addEventListener('DOMContentLoaded', function() {
+        const forceOfflineBtn = document.getElementById('force-offline');
+        if (forceOfflineBtn) {
+            forceOfflineBtn.addEventListener('click', function() {
+                this.classList.toggle('active');
+                if (this.classList.contains('active')) {
+                    this.textContent = '온라인 모드로 전환';
+                    this.style.background = '#00b37e22';
+                    this.style.color = '#00b37e';
+                    this.style.borderColor = '#00b37e';
+                    document.body.classList.add('offline-mode');
+                    
+                    // 상태 배지 업데이트
+                    const statusBadge = document.getElementById('connection-status');
+                    if (statusBadge) {
+                        statusBadge.textContent = '오프라인 (테스트)';
+                        statusBadge.className = 'status-badge offline';
+                    }
+                } else {
+                    this.textContent = '오프라인 모드 테스트';
+                    this.style.background = '#ff333322';
+                    this.style.color = '#ff3333';
+                    this.style.borderColor = '#ff3333';
+                    document.body.classList.remove('offline-mode');
+                    
+                    // 연결 상태 다시 확인하여 배지 업데이트
+                    checkConnectionStatus();
+                }
+            });
+        }
+    });
     
     // 온라인/오프라인 이벤트 리스너
     window.addEventListener('online', () => updateConnectionUI(true));
@@ -332,13 +378,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 현재 질문 저장 (피드백 기능용)
                     lastUserQuestion = message;
                     
+                    // 온라인/오프라인 상태 확인
+                    const isOfflineMode = document.body.classList.contains('offline-mode');
+                    console.log('현재 모드:', isOfflineMode ? '오프라인' : '온라인');
+                    
                     // 서버에 메시지 전송 및 응답 받기
                     const response = await fetch('/api/chat', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ message })
+                        body: JSON.stringify({ 
+                            message,
+                            offline_mode: isOfflineMode 
+                        })
                     });
                     
                     const data = await response.json();
@@ -346,6 +399,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (response.ok) {
                         // 챗봇 응답 UI에 추가 (타이핑 효과)
                         addMessageWithTypingEffect(data.reply, 'bot');
+                        
+                        // 오프라인 모드 응답인 경우 상태 업데이트
+                        if (data.mode === 'offline') {
+                            document.body.classList.add('offline-mode');
+                            
+                            // 상태 배지 업데이트
+                            const statusBadge = document.getElementById('connection-status');
+                            if (statusBadge) {
+                                statusBadge.textContent = '오프라인';
+                                statusBadge.className = 'status-badge offline';
+                            }
+                        }
                     } else {
                         // 오류 처리
                         addMessage(`오류가 발생했습니다: ${data.error || '알 수 없는 오류'}`, 'bot');
