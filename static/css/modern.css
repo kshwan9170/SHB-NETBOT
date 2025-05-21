@@ -198,6 +198,18 @@ img {
     height: 10px;
     background-color: #ff3a55;
     border-radius: 50%;
+}
+
+/* 오프라인 모드 스타일 - 모바일 포함 */
+body.offline-mode .logo span {
+    color: #ff3a55 !important;
+}
+
+body.offline-mode .logo img {
+    content: url('/static/images/shinhan_logo_offline.svg?v=1') !important;
+}
+
+.logo.offline::after {
     box-shadow: 0 0 8px rgba(255, 58, 85, 0.6);
     animation: pulse 2s infinite;
 }
