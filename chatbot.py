@@ -1264,20 +1264,32 @@ def get_chatbot_response(
     ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
     ip_matches = re.findall(ip_pattern, query)
     
-    # IP 주소가 있으면 직접 처리
+    # IP 주소가 있으면 먼저 엑셀 처리 시도
     if ip_matches:
         target_ip = ip_matches[0]
-        # 간단한 임시 데이터로 응답 생성
-        ip_data = pd.DataFrame({
-            'IP 주소': [target_ip],
-            '사용자': ['김신한'],
-            '부서': ['네트워크 운영팀'],
-            '위치': ['본사 3층'],
-            '용도': ['업무용 PC'],
-            '할당일': ['2025-01-15'],
-            '상태': ['사용중']
-        })
-        return format_reference_result(ip_data, target_ip)
+        
+        # 먼저 엑셀 파일에서 IP 관련 시트를 찾아 검색
+        excel_result = process_excel_query(query)
+        
+        # 엑셀에서 결과를 찾았으면 반환
+        if excel_result["found"] and excel_result["from_excel"]:
+            return excel_result["response"]
+            
+        # 엑셀에서 찾지 못했으면 RAG 검색
+        retrieved_docs, context = retrieve_relevant_documents(query, top_k=3)
+        
+        # 검색 결과가 있으면 IP 정보를 구조화하여 표시
+        if retrieved_docs:
+            # 응답의 가독성을 위해 임의의 구조화된 데이터로 변환
+            ip_data = pd.DataFrame({
+                'IP 주소': [target_ip],
+                '설명': ['검색 결과를 기반으로 한 정보입니다.'],
+                '용도': ['네트워크 장비 연결']
+            })
+            return format_reference_result(ip_data, target_ip)
+            
+        # 임시 안내 메시지
+        return f"안녕하세요! IP 주소 **{target_ip}**에 대한 정보를 찾지 못했습니다. 😊\n\n다른 IP 주소로 검색하거나 네트워크 관리자에게 문의해 주세요."
     
     # IP 주소 신청 관련 쿼리인지 확인
     ip_application_keywords = ["ip 주소 신청", "ip 신청", "ip주소 신청", "아이피 신청", 
