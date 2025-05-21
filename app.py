@@ -4,6 +4,7 @@ import shutil
 import re
 import json as global_json  # 전역 JSON 모듈에 별칭 부여
 import urllib.parse
+import time
 from pathlib import Path
 from datetime import datetime
 from werkzeug.utils import secure_filename
@@ -67,7 +68,9 @@ def index():
 @app.route('/file-manager')
 def file_manager():
     """간단한 파일 관리 페이지"""
-    return render_template('file_manager.html')
+    # 캐시 버스팅을 위한 타임스탬프 추가
+    cache_buster = int(time.time())
+    return render_template('file_manager.html', cache_buster=cache_buster)
 
 @app.route('/static/<path:path>')
 def serve_static(path):

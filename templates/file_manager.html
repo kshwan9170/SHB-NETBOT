@@ -4,8 +4,12 @@
     <title>파일 관리자 - SHB-NetBot</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern.css') }}">
-    <script src="{{ url_for('static', filename='js/csv-editor.js') }}"></script>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern.css') }}?v={{ cache_buster }}">
+    <script src="{{ url_for('static', filename='js/csv-editor.js') }}?v={{ cache_buster }}"></script>
+    <script src="{{ url_for('static', filename='js/document-manager-v2.js') }}?v={{ cache_buster }}"></script>
     <style>
         body {
             font-family: 'Inter', Arial, sans-serif;
