@@ -19,6 +19,62 @@ openai_client = OpenAI(api_key=OPENAI_API_KEY)
 # 업로드된 파일 디렉토리 경로
 UPLOAD_FOLDER = 'uploaded_files'
 
+def is_meaningless_query(query: str) -> bool:
+    """
+    무의미한 입력인지 감지합니다.
+    
+    Args:
+        query: 사용자 입력 텍스트
+        
+    Returns:
+        무의미한 입력 여부 (True/False)
+    """
+    # 입력을 정규화
+    query = query.strip().lower()
+    
+    # 너무 짧은 입력 체크
+    if len(query) <= 2:
+        return True
+        
+    # 의미 없는 패턴 목록
+    meaningless_patterns = [
+        r'^[.?!,;:]+$',                 # 기호만 있는 경우 (예: "???", "...", "!!!")
+        r'^(ㅋ|ㅎ|ㅠ|ㅜ)+$',              # 자음/모음 반복 (예: "ㅋㅋㅋ", "ㅎㅎ", "ㅠㅠ")
+        r'^(test|테스트|testing)$',      # 테스트 입력
+        r'^[0-9]+$',                    # 숫자만 있는 경우 (예: "123", "1")
+        r'^[a-z]+$',                    # 알파벳 1-2글자 (예: "a", "ab")
+        r'^(안녕|hello|hi)$',            # 단순 인사만 있는 경우
+    ]
+    
+    # 패턴에 맞는지 확인
+    for pattern in meaningless_patterns:
+        if re.match(pattern, query):
+            return True
+    
+    # 의미 없는 단어 목록
+    meaningless_words = [
+        'test', '테스트', 'asdf', 'qwer', 'zxcv', 'hehe', '흠', '음', 
+        'aaa', 'abc', '가나다', '111', '123'
+    ]
+    
+    # 목록에 있는 단어인지 확인
+    if query in meaningless_words:
+        return True
+        
+    return False
+
+def get_meaningless_response() -> str:
+    """
+    무의미한 입력에 대한 응답을 반환합니다.
+    
+    Returns:
+        응답 메시지
+    """
+    return (
+        "😅 정확한 질문 내용을 알 수 없습니다.\n"
+        "궁금한 내용을 다시 입력해 주시거나, IT 네트워크 담당 부서(02-1234-5678)로 문의해 주세요."
+    )
+
 def detect_language(text: str) -> str:
     """
     텍스트의 언어를 감지합니다.
@@ -352,26 +408,79 @@ def format_reference_result(df, search_term):
         포맷팅된 결과 문자열
     """
     if df.empty:
-        return f"'{search_term}'에 대한 정보를 찾을 수 없습니다."
+        return f"안녕하세요! 죄송합니다만, '{search_term}'에 대한 정보를 찾을 수 없습니다. 다른 검색어로 다시 시도해보시겠어요?"
     
-    # 마크다운 테이블 형식으로 변환
-    md_table = []
+    # IP 주소인지 확인
+    ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
+    is_ip_address = bool(re.match(ip_pattern, search_term))
     
-    # 헤더 추가
-    headers = '| ' + ' | '.join(df.columns) + ' |'
-    md_table.append(headers)
-    
-    # 구분선 추가
-    separator = '| ' + ' | '.join(['---'] * len(df.columns)) + ' |'
-    md_table.append(separator)
-    
-    # 데이터 행 추가
-    for _, row in df.iterrows():
-        row_values = '| ' + ' | '.join(str(val) for val in row.values) + ' |'
-        md_table.append(row_values)
-    
-    result = '\n'.join(md_table)
-    result = f"'{search_term}'에 대한 조회 결과:\n\n{result}"
+    if is_ip_address:
+        # IP 주소 전용 친절한 응답 형식
+        # 중요 필드를 추출하여 구조화된 응답 생성
+        important_fields = ['IP', '주소', '장비', '사용자', '부서', '용도', '위치', '담당', '네트워크', '할당일', '기간', '상태']
+        
+        # 친절한 인사로 시작
+        result = f"안녕하세요! **{search_term}** IP 주소에 대한 정보를 찾았습니다. 😊\n\n"
+        result += "## 📌 IP 정보 요약\n\n"
+        
+        # 테이블 대신 중요 정보를 먼저 구조화하여 표시
+        info_found = False
+        for field in important_fields:
+            for col in df.columns:
+                if field.lower() in col.lower():
+                    # 첫 번째 행의 값만 사용 (중복 결과가 있을 수 있음)
+                    value = str(df.iloc[0][col]).strip()
+                    if value and value.lower() not in ['nan', 'none', '']:
+                        result += f"* **{col}**: {value}\n"
+                        info_found = True
+        
+        # 중요 필드가 없으면 모든 필드 표시
+        if not info_found:
+            result += "### 상세 정보\n\n"
+            for col in df.columns:
+                value = str(df.iloc[0][col]).strip()
+                if value and value.lower() not in ['nan', 'none', '']:
+                    result += f"* **{col}**: {value}\n"
+        
+        # 필요한 경우 전체 데이터 테이블 추가 (많은 데이터가 있을 때)
+        if len(df) > 1 or len(df.columns) > 5:
+            result += "\n### 📊 전체 데이터 테이블\n\n"
+            # 마크다운 테이블 생성
+            md_table = []
+            headers = '| ' + ' | '.join(df.columns) + ' |'
+            md_table.append(headers)
+            separator = '| ' + ' | '.join(['---'] * len(df.columns)) + ' |'
+            md_table.append(separator)
+            
+            for _, row in df.iterrows():
+                row_values = '| ' + ' | '.join(str(val) for val in row.values) + ' |'
+                md_table.append(row_values)
+            
+            result += '\n'.join(md_table)
+        
+        # 친절한 마무리와 추가 도움 제안
+        result += "\n\n다른 IP 주소나 네트워크 정보가 필요하신가요? 언제든 물어봐 주세요! 😊"
+        
+    else:
+        # 일반 검색어에 대한 응답
+        # 마크다운 테이블 형식으로 변환
+        md_table = []
+        
+        # 헤더 추가
+        headers = '| ' + ' | '.join(df.columns) + ' |'
+        md_table.append(headers)
+        
+        # 구분선 추가
+        separator = '| ' + ' | '.join(['---'] * len(df.columns)) + ' |'
+        md_table.append(separator)
+        
+        # 데이터 행 추가
+        for _, row in df.iterrows():
+            row_values = '| ' + ' | '.join(str(val) for val in row.values) + ' |'
+            md_table.append(row_values)
+        
+        table_result = '\n'.join(md_table)
+        result = f"안녕하세요! '{search_term}'에 대한 조회 결과입니다:\n\n{table_result}\n\n추가 정보가 필요하시면 언제든 물어봐 주세요! 😊"
     
     return result
 
@@ -1138,6 +1247,10 @@ def get_chatbot_response(
     Returns:
         Response from the chatbot
     """
+    # 무의미한 입력 감지 (예: "1", "테스트", "???" 등)
+    if is_meaningless_query(query):
+        return get_meaningless_response()
+    
     # 오프라인 상태 감지
     try:
         # app.py의 연결 상태 확인 함수 가져오기
