@@ -46,8 +46,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateConnectionUI(isOnline) {
         console.log('연결 상태 업데이트:', isOnline ? '온라인' : '오프라인');
         
-        // 로고 이미지 색상 변경 (모든 로고 이미지)
-        const logoImages = document.querySelectorAll('img[src*="shinhan_logo"]');
+        // 모바일 및 데스크탑 모든 로고 이미지를 찾기 위한 확장된 셀렉터
+        const logoImages = document.querySelectorAll('img[src*="shinhan_logo"], .navbar-container img, .logo img');
         logoImages.forEach(logoImg => {
             if (isOnline) {
                 // 온라인 상태: 기본 파란색 로고
@@ -65,39 +65,22 @@ document.addEventListener('DOMContentLoaded', function() {
             };
         });
         
-        // SHB-NetBot 텍스트를 모두 찾아서 색상 변경 (모바일 포함)
-        // 모든 span 요소에서 "SHB-NetBot" 텍스트를 포함하는 요소 검색
-        document.querySelectorAll('span').forEach(span => {
-            if (span.textContent.includes('SHB-NetBot')) {
-                if (isOnline) {
-                    span.style.color = '';
-                } else {
-                    span.style.color = 'red';
-                }
-            }
-        });
-        
-        // 직접 className으로 찾아서 처리
-        const navbarTitles = document.querySelectorAll('.logo span, .navbar-brand span, .navbar-title, .logo-text');
+        // 네비게이션 바의 SHB-NetBot 텍스트만 색상 변경 (모바일 포함)
+        // 모바일 네비게이션 바의 모든 가능한 위치에서 텍스트 처리
+        const navbarTitles = document.querySelectorAll('.navbar-container .logo span, .logo span, .navbar-brand span');
         navbarTitles.forEach(title => {
             if (isOnline) {
-                // 온라인 상태: 기본 색상
                 title.style.color = '';
             } else {
-                // 오프라인 상태: 빨간색
                 title.style.color = 'red';
             }
         });
         
-        // 모바일 메뉴 버튼의 색상도 변경
-        const menuBars = document.querySelectorAll('.mobile-menu-btn .bar');
-        menuBars.forEach(bar => {
-            if (isOnline) {
-                bar.style.backgroundColor = '';
-            } else {
-                bar.style.backgroundColor = 'red';
-            }
-        });
+        // 로고 변경 디버깅 코드
+        if (!isOnline) {
+            console.log('오프라인 모드 - 로고 이미지 교체 시도:', 
+                document.querySelectorAll('img[src*="shinhan_logo"], .navbar-container img, .logo img').length + '개 이미지 찾음');
+        }
     }
     
     // SVG 로드 완료 이벤트 처리 추가
