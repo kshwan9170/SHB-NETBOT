@@ -212,8 +212,18 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
     if metadata_exists:
         metadata_button = f'<button class="btn btn-info" style="padding: 8px 16px; border-radius: 4px; font-weight: 500;" onclick="viewMetadata(\'{metadata_filename}\')">메타데이터 보기</button>'
     
-    # 테이블 HTML 생성
-    table_html = df.to_html(classes='editable-csv-table', index=False, na_rep='')
+    # 테이블 HTML 생성 (특수 스타일 적용)
+    # 테이블 스크롤을 고려하여 고정 너비를 제거함
+    table_html = df.to_html(classes='editable-csv-table', index=False, na_rep='', 
+                           border=1, justify='left', 
+                           col_space=120)  # 컬럼 최소 너비 설정
+    
+    # 모든 컬럼이 제대로 표시되는지 확인
+    print(f"CSV 열 목록: {df.columns.tolist()}")
+    print(f"생성된 테이블 HTML 크기: {len(table_html)}")
+    
+    # 모든 열이 표시되도록 스타일 추가
+    table_html = table_html.replace('<table', '<table style="width: 100%; min-width: 1000px;"')
     
     html = """
     <div style="padding: 20px; max-width: 100%; background-color: #f9f9f9; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -260,12 +270,14 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
             """ + metadata_button + """
         </div>
         
-        <div id="csv-table-container" style="max-height: 600px; overflow: auto; background-color: white; border-radius: 4px; border: 1px solid #e0e0e0;">
+        <div id="csv-table-container" style="max-height: 600px; overflow: auto; background-color: white; border-radius: 4px; border: 1px solid #e0e0e0; overflow-x: auto; width: 100%;">
             <style>
                 .editable-csv-table {
-                    width: 100%;
                     border-collapse: collapse;
                     font-size: 14px;
+                    table-layout: auto;
+                    width: 100%;
+                    min-width: 800px;
                 }
                 .editable-csv-table th {
                     background-color: #f2f2f2;
@@ -278,10 +290,15 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
                     top: 0;
                     z-index: 10;
                     box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+                    min-width: 120px;
+                    max-width: 300px;
+                    white-space: normal;
+                    word-break: break-word;
                 }
                 .editable-csv-table td {
                     padding: 10px 15px;
                     border: 1px solid #ddd;
+                    min-width: 120px;
                     max-width: 300px;
                     white-space: normal;
                     word-break: break-word;
