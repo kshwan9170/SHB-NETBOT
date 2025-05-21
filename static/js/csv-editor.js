@@ -5,6 +5,8 @@
 // 전역 변수
 let originalCsvData = null;
 let currentFilename = null;
+let selectedRow = null;
+let selectedColumn = null;
     
 // CSV 편집 모드 활성화
 function enableCsvEditing() {
@@ -143,6 +145,166 @@ function addCsvColumn() {
     
     // 사용자 피드백
     alert(`'${newColumnLabel}' 열이 추가되었습니다.`);
+}
+
+// 행 선택 기능
+function selectRow(rowIndex) {
+    console.log(`행 선택: ${rowIndex}`);
+    
+    // 이전 선택 초기화
+    clearSelection();
+    
+    // 해당 행의 모든 셀 선택
+    const table = document.querySelector('.editable-csv-table');
+    if (!table) return;
+    
+    const rows = table.querySelectorAll('tbody tr');
+    if (rowIndex <= 0 || rowIndex > rows.length) return;
+    
+    // 행 번호는 1부터 시작하므로 인덱스 조정
+    const row = rows[rowIndex - 1];
+    row.style.backgroundColor = '#e6f2ff';
+    
+    // 전역 변수에 현재 선택된 행 저장
+    selectedRow = rowIndex;
+    
+    // 컨텍스트 메뉴 표시 (행 추가/삭제 등)
+    showRowContextMenu(rowIndex);
+}
+
+// 열 선택 기능
+function selectColumn(columnIndex) {
+    console.log(`열 선택: ${columnIndex}`);
+    
+    // 이전 선택 초기화
+    clearSelection();
+    
+    // 모든 행에서 해당 인덱스의 셀 선택
+    const table = document.querySelector('.editable-csv-table');
+    if (!table) return;
+    
+    // 알파벳 열 헤더(A, B, C...) 강조
+    if (typeof columnIndex === 'number') {
+        const columnLabels = table.querySelectorAll('thead tr.excel-column-labels th');
+        if (columnIndex + 1 < columnLabels.length) {
+            columnLabels[columnIndex + 1].style.backgroundColor = '#e6f2ff';
+            columnLabels[columnIndex + 1].style.color = '#0033cc';
+        }
+        
+        // 모든 행의 해당 열 셀 선택
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            if (columnIndex < cells.length) {
+                cells[columnIndex].style.backgroundColor = '#e6f2ff';
+            }
+        });
+        
+        // 열 이름 헤더도 강조
+        const headerRow = table.querySelectorAll('thead tr:not(.excel-column-labels)')[0];
+        const headerCells = headerRow.querySelectorAll('th');
+        if (columnIndex + 1 < headerCells.length) {
+            headerCells[columnIndex + 1].style.backgroundColor = '#e6f2ff';
+            headerCells[columnIndex + 1].style.color = '#0033cc';
+        }
+        
+        // 전역 변수에 현재 선택된 열 저장
+        selectedColumn = columnIndex;
+    } else {
+        // 열 이름으로 선택한 경우
+        const columnName = columnIndex;
+        const headerRow = table.querySelectorAll('thead tr:not(.excel-column-labels)')[0];
+        const headerCells = headerRow.querySelectorAll('th');
+        
+        let colIndex = -1;
+        for (let i = 0; i < headerCells.length; i++) {
+            if (headerCells[i].textContent.trim() === columnName) {
+                headerCells[i].style.backgroundColor = '#e6f2ff';
+                headerCells[i].style.color = '#0033cc';
+                colIndex = i - 1; // 첫 번째 열은 행 번호
+                break;
+            }
+        }
+        
+        if (colIndex >= 0) {
+            // 알파벳 열 헤더(A, B, C...)도 강조
+            const columnLabels = table.querySelectorAll('thead tr.excel-column-labels th');
+            if (colIndex + 1 < columnLabels.length) {
+                columnLabels[colIndex + 1].style.backgroundColor = '#e6f2ff';
+                columnLabels[colIndex + 1].style.color = '#0033cc';
+            }
+            
+            // 모든 행의 해당 열 셀 선택
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (colIndex < cells.length) {
+                    cells[colIndex].style.backgroundColor = '#e6f2ff';
+                }
+            });
+            
+            // 전역 변수에 현재 선택된 열 저장
+            selectedColumn = colIndex;
+        }
+    }
+    
+    // 컨텍스트 메뉴 표시 (열 추가/삭제 등)
+    showColumnContextMenu(columnIndex);
+}
+
+// 선택 초기화
+function clearSelection() {
+    // 모든 선택 표시 제거
+    const table = document.querySelector('.editable-csv-table');
+    if (!table) return;
+    
+    // 모든 셀 배경색 초기화
+    table.querySelectorAll('td').forEach(cell => {
+        if (cell.contentEditable === 'true') {
+            cell.style.backgroundColor = '#fffde7';
+        } else {
+            cell.style.backgroundColor = '';
+        }
+    });
+    
+    // 모든 헤더 색상 초기화
+    table.querySelectorAll('th').forEach(th => {
+        if (th.classList.contains('row-header')) {
+            th.style.backgroundColor = '#e6f2ff';
+        } else if (th.classList.contains('column-label')) {
+            th.style.backgroundColor = '#e6f2ff';
+            th.style.color = '#0064E1';
+        } else {
+            th.style.backgroundColor = '#f2f2f2';
+            th.style.color = '#333';
+        }
+    });
+    
+    // 선택된 행/열 변수 초기화
+    selectedRow = null;
+    selectedColumn = null;
+    
+    // 컨텍스트 메뉴 닫기
+    hideContextMenus();
+}
+
+// 행 컨텍스트 메뉴 표시
+function showRowContextMenu(rowIndex) {
+    // 컨텍스트 메뉴는 현재 미구현 (나중에 추가 예정)
+    console.log(`행 ${rowIndex}에 대한 컨텍스트 메뉴 표시`);
+    // 행 위에 '위에 행 추가', '행 삭제' 등의 버튼 표시 가능
+}
+
+// 열 컨텍스트 메뉴 표시
+function showColumnContextMenu(columnIndex) {
+    // 컨텍스트 메뉴는 현재 미구현 (나중에 추가 예정)
+    console.log(`열 ${columnIndex}에 대한 컨텍스트 메뉴 표시`);
+    // 열 위에 '왼쪽에 열 추가', '열 삭제' 등의 버튼 표시 가능
+}
+
+// 컨텍스트 메뉴 숨기기
+function hideContextMenus() {
+    // 향후 구현
 }
 
 // CSV 변경사항 저장
