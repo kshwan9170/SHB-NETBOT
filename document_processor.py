@@ -235,8 +235,22 @@ def extract_text_from_csv(file_path: str) -> List[str]:
     text_chunks = []
     
     try:
-        # Read CSV file using pandas
-        df = pd.read_csv(file_path)
+        # 다양한 인코딩 시도
+        encodings = ['utf-8', 'cp949', 'euc-kr']
+        df = None
+        
+        for encoding in encodings:
+            try:
+                df = pd.read_csv(file_path, encoding=encoding)
+                print(f"CSV 파일 '{os.path.basename(file_path)}' {encoding} 인코딩으로 성공적으로 읽음")
+                break
+            except UnicodeDecodeError:
+                continue
+        
+        # 모든 인코딩으로 실패한 경우 기본 시스템 인코딩 시도
+        if df is None:
+            df = pd.read_csv(file_path)
+            print(f"CSV 파일 '{os.path.basename(file_path)}' 시스템 기본 인코딩으로 읽음")
         
         # Get the filename for reference
         filename = os.path.basename(file_path)
