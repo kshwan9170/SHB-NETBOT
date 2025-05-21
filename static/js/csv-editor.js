@@ -4,12 +4,17 @@
 
 // 전역 변수
 let originalCsvData = null;
+let currentFilename = null;
     
 // CSV 편집 모드 활성화
 function enableCsvEditing() {
     console.log("Enabling CSV edit mode");
     // 현재 테이블 상태 저장
     originalCsvData = document.getElementById('csv-table-container').innerHTML;
+    
+    // 현재 파일명 가져오기
+    const filenamePath = window.location.pathname;
+    currentFilename = filenamePath.substring(filenamePath.lastIndexOf('/') + 1);
     
     // 테이블 셀을 편집 가능하게 변경
     const table = document.querySelector('.editable-csv-table');
@@ -30,6 +35,8 @@ function enableCsvEditing() {
     document.getElementById('csv-edit-btn').style.display = 'none';
     document.getElementById('csv-save-btn').style.display = 'inline-block';
     document.getElementById('csv-cancel-btn').style.display = 'inline-block';
+    document.getElementById('csv-add-row-btn').style.display = 'inline-block';
+    document.getElementById('csv-add-col-btn').style.display = 'inline-block';
 }
 
 // CSV 편집 취소
@@ -42,6 +49,70 @@ function cancelCsvEditing() {
     document.getElementById('csv-edit-btn').style.display = 'inline-block';
     document.getElementById('csv-save-btn').style.display = 'none';
     document.getElementById('csv-cancel-btn').style.display = 'none';
+    document.getElementById('csv-add-row-btn').style.display = 'none';
+    document.getElementById('csv-add-col-btn').style.display = 'none';
+}
+
+// 새 행 추가
+function addCsvRow() {
+    const table = document.querySelector('.editable-csv-table');
+    if (!table) {
+        alert('테이블을 찾을 수 없습니다.');
+        return;
+    }
+    
+    const tbody = table.querySelector('tbody');
+    const columnCount = table.querySelectorAll('thead th').length;
+    
+    // 새 행 생성
+    const newRow = document.createElement('tr');
+    for (let i = 0; i < columnCount; i++) {
+        const cell = document.createElement('td');
+        cell.textContent = '';
+        cell.contentEditable = true;
+        cell.style.backgroundColor = '#fffde7';
+        cell.addEventListener('focus', function() {
+            this.style.backgroundColor = '#fff9c4';
+        });
+        cell.addEventListener('blur', function() {
+            this.style.backgroundColor = '#fffde7';
+        });
+        newRow.appendChild(cell);
+    }
+    
+    // 테이블에 새 행 추가
+    tbody.appendChild(newRow);
+}
+
+// 새 열 추가
+function addCsvColumn() {
+    const table = document.querySelector('.editable-csv-table');
+    if (!table) {
+        alert('테이블을 찾을 수 없습니다.');
+        return;
+    }
+    
+    // 헤더에 새 열 추가
+    const headerRow = table.querySelector('thead tr');
+    const newHeaderCell = document.createElement('th');
+    newHeaderCell.textContent = '새 열';
+    headerRow.appendChild(newHeaderCell);
+    
+    // 모든 데이터 행에 새 열 추가
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const newCell = document.createElement('td');
+        newCell.textContent = '';
+        newCell.contentEditable = true;
+        newCell.style.backgroundColor = '#fffde7';
+        newCell.addEventListener('focus', function() {
+            this.style.backgroundColor = '#fff9c4';
+        });
+        newCell.addEventListener('blur', function() {
+            this.style.backgroundColor = '#fffde7';
+        });
+        row.appendChild(newCell);
+    });
 }
 
 // CSV 변경사항 저장
