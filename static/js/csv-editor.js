@@ -55,7 +55,7 @@ function cancelCsvEditing() {
     document.getElementById('csv-add-col-btn').style.display = 'none';
 }
 
-// 새 행 추가
+// 새 행 추가 - 기존 함수 (맨 아래 추가)
 function addCsvRow() {
     const table = document.querySelector('.editable-csv-table');
     if (!table) {
@@ -63,8 +63,15 @@ function addCsvRow() {
         return;
     }
     
-    const tbody = table.querySelector('tbody');
-    const rows = tbody.querySelectorAll('tr');
+    // 선택된 셀이 있는지 확인
+    if (selectedRow !== null) {
+        // 선택된 행 다음에 새 행 삽입
+        addNewRow(selectedRow);
+        return;
+    }
+    
+    const tableBody = table.querySelector('tbody');
+    const rows = tableBody.querySelectorAll('tr');
     const rowCount = rows.length;
     const columnCount = table.querySelectorAll('thead tr:last-child th').length;
     
@@ -75,6 +82,10 @@ function addCsvRow() {
     const rowIndexCell = document.createElement('th');
     rowIndexCell.className = 'row-header';
     rowIndexCell.textContent = rowCount + 1; // 1부터 시작하는 행 번호
+    // 행 번호 클릭 시 행 선택
+    rowIndexCell.onclick = function() {
+        selectRow(rowCount + 1);
+    };
     newRow.appendChild(rowIndexCell);
     
     // 데이터 셀 추가
@@ -83,20 +94,40 @@ function addCsvRow() {
         cell.textContent = '';
         cell.contentEditable = true;
         cell.style.backgroundColor = '#fffde7';
+        
+        // 셀 포커스 이벤트
         cell.addEventListener('focus', function() {
+            // 행/열 인덱스 저장
+            const tr = this.parentElement;
+            const rowIdx = Array.from(tbody.children).indexOf(tr);
+            const colIdx = Array.from(tr.children).indexOf(this) - 1; // 행 번호 열 제외
+            
+            selectedRow = rowIdx;
+            selectedColumn = colIdx;
+            
+            console.log(`선택된 셀: 행=${rowIdx}, 열=${colIdx}`);
             this.style.backgroundColor = '#fff9c4';
         });
+        
         cell.addEventListener('blur', function() {
             this.style.backgroundColor = '#fffde7';
         });
+        
+        // 오른쪽 클릭 시 컨텍스트 메뉴
+        cell.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            const tr = this.parentElement;
+            const rowIdx = Array.from(tbody.children).indexOf(tr);
+            const colIdx = Array.from(tr.children).indexOf(this) - 1;
+            
+            showCellContextMenu(e, rowIdx, colIdx);
+        });
+        
         newRow.appendChild(cell);
     }
     
     // 테이블에 새 행 추가
     tbody.appendChild(newRow);
-    
-    // 사용자 피드백
-    alert(`${rowCount + 1}번 행이 추가되었습니다.`);
 }
 
 // 새 열 추가
@@ -104,6 +135,13 @@ function addCsvColumn() {
     const table = document.querySelector('.editable-csv-table');
     if (!table) {
         alert('테이블을 찾을 수 없습니다.');
+        return;
+    }
+    
+    // 선택된 셀이 있는지 확인
+    if (selectedColumn !== null) {
+        // 선택된 열 다음에 새 열 삽입
+        addNewColumn(selectedColumn);
         return;
     }
     
@@ -120,6 +158,10 @@ function addCsvColumn() {
     const newExcelHeaderCell = document.createElement('th');
     newExcelHeaderCell.className = 'column-label';
     newExcelHeaderCell.textContent = newColumnLabel;
+    // 열 헤더 클릭 시 열 선택
+    newExcelHeaderCell.onclick = function() {
+        selectColumn(alphaIndex - 1); // 인덱스 조정
+    };
     excelHeaderRow.appendChild(newExcelHeaderCell);
     
     // 새 헤더 추가
@@ -128,23 +170,44 @@ function addCsvColumn() {
     columnLabelRow.appendChild(newHeaderCell);
     
     // 모든 데이터 행에 새 열 추가
-    const rows = table.querySelectorAll('tbody tr');
+    const tableBody = table.querySelector('tbody');
+    const rows = tableBody.querySelectorAll('tr');
     rows.forEach(row => {
         const newCell = document.createElement('td');
         newCell.textContent = '';
         newCell.contentEditable = true;
         newCell.style.backgroundColor = '#fffde7';
+        
+        // 셀 포커스 이벤트
         newCell.addEventListener('focus', function() {
+            // 행/열 인덱스 저장
+            const tr = this.parentElement;
+            const rowIdx = Array.from(tbody.children).indexOf(tr);
+            const colIdx = Array.from(tr.children).indexOf(this) - 1; // 행 번호 열 제외
+            
+            selectedRow = rowIdx;
+            selectedColumn = colIdx;
+            
+            console.log(`선택된 셀: 행=${rowIdx}, 열=${colIdx}`);
             this.style.backgroundColor = '#fff9c4';
         });
+        
         newCell.addEventListener('blur', function() {
             this.style.backgroundColor = '#fffde7';
         });
+        
+        // 오른쪽 클릭 시 컨텍스트 메뉴
+        newCell.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            const tr = this.parentElement;
+            const rowIdx = Array.from(tbody.children).indexOf(tr);
+            const colIdx = Array.from(tr.children).indexOf(this) - 1;
+            
+            showCellContextMenu(e, rowIdx, colIdx);
+        });
+        
         row.appendChild(newCell);
     });
-    
-    // 사용자 피드백
-    alert(`'${newColumnLabel}' 열이 추가되었습니다.`);
 }
 
 // 행 선택 기능
@@ -482,9 +545,131 @@ function showColumnContextMenu(columnIndex) {
 // 컨텍스트 메뉴 숨기기
 function hideContextMenus() {
     // 모든 컨텍스트 메뉴 삭제
-    document.querySelectorAll('.row-context-menu, .column-context-menu').forEach(menu => {
+    document.querySelectorAll('.row-context-menu, .column-context-menu, .cell-context-menu').forEach(menu => {
         menu.remove();
     });
+}
+
+// 셀 컨텍스트 메뉴 표시 - 엑셀과 유사한 기능
+function showCellContextMenu(event, rowIndex, colIndex) {
+    console.log(`셀 컨텍스트 메뉴: 행=${rowIndex}, 열=${colIndex}`);
+    
+    // 기존 컨텍스트 메뉴 제거
+    hideContextMenus();
+    
+    // 메뉴 컨테이너 생성
+    const menuContainer = document.createElement('div');
+    menuContainer.className = 'cell-context-menu';
+    menuContainer.style.cssText = `
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        padding: 8px;
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        z-index: 1000;
+        font-size: 14px;
+        min-width: 150px;
+        top: ${event.pageY}px;
+        left: ${event.pageX}px;
+    `;
+    
+    // 행 추가 메뉴 아이템
+    const addRowAboveItem = createMenuItem('위에 행 추가', '#4caf50', () => {
+        addNewRow(rowIndex);
+        hideContextMenus();
+    });
+    
+    const addRowBelowItem = createMenuItem('아래에 행 추가', '#4caf50', () => {
+        addNewRow(rowIndex + 1);
+        hideContextMenus();
+    });
+    
+    // 열 추가 메뉴 아이템
+    const addColLeftItem = createMenuItem('왼쪽에 열 추가', '#2196f3', () => {
+        addNewColumn(colIndex);
+        hideContextMenus();
+    });
+    
+    const addColRightItem = createMenuItem('오른쪽에 열 추가', '#2196f3', () => {
+        addNewColumn(colIndex + 1);
+        hideContextMenus();
+    });
+    
+    // 삭제 메뉴 아이템
+    const deleteRowItem = createMenuItem('행 삭제', '#f44336', () => {
+        deleteRow(rowIndex + 1);
+        hideContextMenus();
+    });
+    
+    const deleteColItem = createMenuItem('열 삭제', '#f44336', () => {
+        deleteColumn(colIndex);
+        hideContextMenus();
+    });
+    
+    // 메뉴에 아이템 추가
+    menuContainer.appendChild(addRowAboveItem);
+    menuContainer.appendChild(addRowBelowItem);
+    menuContainer.appendChild(document.createElement('hr'));
+    menuContainer.appendChild(addColLeftItem);
+    menuContainer.appendChild(addColRightItem);
+    menuContainer.appendChild(document.createElement('hr'));
+    menuContainer.appendChild(deleteRowItem);
+    menuContainer.appendChild(deleteColItem);
+    
+    // 메뉴를 문서에 추가
+    document.body.appendChild(menuContainer);
+    
+    // 다른 곳 클릭 시 메뉴 닫기
+    document.addEventListener('click', function closeMenu(e) {
+        if (!menuContainer.contains(e.target)) {
+            hideContextMenus();
+            document.removeEventListener('click', closeMenu);
+        }
+    });
+    
+    // ESC 키 누르면 메뉴 닫기
+    document.addEventListener('keydown', function closeOnEsc(e) {
+        if (e.key === 'Escape') {
+            hideContextMenus();
+            document.removeEventListener('keydown', closeOnEsc);
+        }
+    });
+    
+    // 이벤트 전파 방지
+    event.stopPropagation();
+}
+
+// 메뉴 아이템 생성 도우미 함수
+function createMenuItem(text, color, onClick) {
+    const item = document.createElement('div');
+    item.className = 'menu-item';
+    item.textContent = text;
+    item.style.cssText = `
+        padding: 6px 10px;
+        cursor: pointer;
+        border-radius: 3px;
+        transition: background-color 0.2s;
+    `;
+    
+    // 호버 효과
+    item.addEventListener('mouseenter', () => {
+        item.style.backgroundColor = '#f5f5f5';
+        item.style.color = color;
+    });
+    
+    item.addEventListener('mouseleave', () => {
+        item.style.backgroundColor = 'transparent';
+        item.style.color = '#333';
+    });
+    
+    // 클릭 이벤트
+    item.addEventListener('click', onClick);
+    
+    return item;
 }
 
 // 새 행 추가 함수
@@ -497,13 +682,14 @@ function addNewRow(rowIndex) {
     const headerRow = table.querySelectorAll('thead tr:not(.excel-column-labels)')[0];
     const headerCells = headerRow.querySelectorAll('th');
     const columnCount = headerCells.length - 1; // 행 번호 열 제외
+    const tbody = table.querySelector('tbody');
+    const rows = tbody.querySelectorAll('tr');
     
     // 새 행 생성
     const newRow = document.createElement('tr');
     
     // 행 번호 셀 추가
-    const rowNumCell = document.createElement('th');
-    rowNumCell.textContent = ''; // 번호는 나중에 업데이트
+    const rowNumCell = document.createElement('th'); // 번호는 나중에 업데이트
     rowNumCell.className = 'row-header';
     rowNumCell.style.cssText = `
         background-color: #e6f2ff;
