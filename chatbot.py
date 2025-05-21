@@ -1138,6 +1138,14 @@ def get_chatbot_response(
     Returns:
         Response from the chatbot
     """
+    # 오프라인 상태 감지
+    try:
+        # app.py의 연결 상태 확인 함수 가져오기
+        from app import get_connection_status
+        is_online = get_connection_status()
+    except:
+        # 만약 app의 함수를 가져올 수 없다면, 안전하게 온라인으로 간주
+        is_online = True
     # Check if this is an IP address application process query
     ip_application_keywords = ["ip 주소 신청", "ip 신청", "ip주소 신청", "아이피 신청", 
                               "ip 할당", "ip 신청 방법", "ip 주소 신청 방법", "ip 신청 절차",
@@ -1150,7 +1158,14 @@ def get_chatbot_response(
             
     # IP 주소 신청 방법에 대한 고정 응답 사용
     if is_ip_address_query:
-        return """
+        # 오프라인 상태일 때 표시 추가
+        connection_status = ""
+        if not is_online:
+            connection_status = "\n\n[🔴 오프라인 모드] 현재 인터넷 연결이 제한되어 있습니다."
+        elif is_online:
+            connection_status = "\n\n[🟢 온라인 모드] 인터넷 연결이 정상입니다."
+            
+        return f"""
 # IP 주소 신청 절차 안내
 
 ## 신청 절차
@@ -1175,10 +1190,26 @@ def get_chatbot_response(
 - 긴급한 경우 담당자에게 직접 연락하시기 바랍니다.
 - 신청 시스템 주소: https://intra.shinhan.com/ip
 
-추가 질문이 있으신가요?
+추가 질문이 있으신가요?{connection_status}
 """
-    if not OPENAI_API_KEY:
-        return "Error: OpenAI API key is not set. Please set the OPENAI_API_KEY environment variable."
+    # API 키 부재 또는 오프라인 상태 확인
+    if not OPENAI_API_KEY or not is_online:
+        if context:
+            offline_message = f"""
+[🔴 오프라인 모드] 현재 인터넷 연결이 제한되어 있어 AI 응답 생성이 불가능합니다.
+
+질문과 관련된 로컬 데이터베이스 정보:
+{context}
+
+온라인 상태에서 다시 시도하시거나, IT 담당자에게 직접 문의해주세요.
+"""
+            return offline_message
+        else:
+            return """
+[🔴 오프라인 모드] 현재 인터넷 연결이 제한되어 있으며, 질문에 관련된 정보를 로컬에서 찾지 못했습니다.
+
+네트워크 연결이 복구된 후 다시 시도해주시거나, IT 담당자에게 직접 문의해주세요.
+"""
     
     try:
         # 파인튜닝 기능 비활성화 (사용자 요청에 따라)

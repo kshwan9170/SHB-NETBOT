@@ -4,6 +4,9 @@ import shutil
 import re
 import json as global_json  # 전역 JSON 모듈에 별칭 부여
 import urllib.parse
+import socket
+import threading
+import time
 from pathlib import Path
 from datetime import datetime
 from werkzeug.utils import secure_filename
@@ -21,6 +24,63 @@ import chatbot
 from config import FAQ_KEYWORDS, FINE_TUNED_MODEL, RAG_SYSTEM
 
 app = Flask(__name__)
+
+# 전역 변수: 연결 상태 저장
+connection_status = {
+    "online": True,  # 기본값은 온라인으로 설정
+    "last_checked": datetime.now().timestamp(),
+    "check_interval": 60  # 60초마다 연결 상태 확인
+}
+
+# 연결 상태 확인 함수
+def check_connection():
+    """
+    인터넷 연결 상태를 확인하는 함수
+    OpenAI API 및 공용 DNS 서버 연결 가능성을 테스트
+    """
+    try:
+        # OpenAI API 서버 연결 테스트
+        socket.create_connection(("api.openai.com", 443), timeout=3)
+        # Google DNS 서버 연결 테스트 (백업 확인)
+        socket.create_connection(("8.8.8.8", 53), timeout=2)
+        return True
+    except (socket.timeout, socket.error, OSError):
+        return False
+
+# 연결 상태 확인 및 업데이트 함수
+def update_connection_status():
+    """
+    주기적으로 연결 상태를 확인하고 업데이트하는 함수
+    """
+    while True:
+        global connection_status
+        is_online = check_connection()
+        connection_status["online"] = is_online
+        connection_status["last_checked"] = datetime.now().timestamp()
+        time.sleep(connection_status["check_interval"])
+
+# 연결 상태 가져오기 함수 (외부 모듈에서 호출 가능)
+def get_connection_status():
+    """
+    현재 연결 상태를 반환하는 함수
+    """
+    return connection_status["online"]
+
+# 연결 상태 API 엔드포인트
+@app.route('/api/connection_status', methods=['GET'])
+def connection_status_api():
+    """
+    연결 상태를 JSON으로 반환하는 API 엔드포인트
+    """
+    return jsonify({
+        "online": connection_status["online"],
+        "last_checked": connection_status["last_checked"],
+        "server_time": datetime.now().timestamp()
+    })
+
+# 연결 상태 모니터링 스레드 시작
+connection_monitor_thread = threading.Thread(target=update_connection_status, daemon=True)
+connection_monitor_thread.start()
 
 # 데이터베이스 초기화
 init_db()

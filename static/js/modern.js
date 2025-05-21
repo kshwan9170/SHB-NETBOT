@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const navLinks = document.querySelector('.nav-links');
     const navLinkItems = document.querySelectorAll('.nav-link');
     const minimizeChat = document.querySelector('.minimize-chat');
+    const connectionStatus = document.getElementById('connection-status');
     
     // AOS(Animate On Scroll) 초기화
     AOS.init({
@@ -19,6 +20,45 @@ document.addEventListener('DOMContentLoaded', function() {
         once: false,
         mirror: false
     });
+    
+    // 연결 상태 확인 및 표시 함수
+    function checkConnectionStatus() {
+        // 먼저 브라우저의 navigator.onLine 속성으로 연결 상태 확인
+        const isOnline = navigator.onLine;
+        
+        // 서버에 연결 상태 확인 API 호출 (더 정확한 확인을 위해)
+        fetch('/api/connection_status', { 
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-cache'
+        })
+        .then(response => response.json())
+        .then(data => {
+            updateConnectionUI(data.online);
+        })
+        .catch(error => {
+            // API 호출 실패하면 브라우저의 navigator.onLine을 사용
+            updateConnectionUI(isOnline);
+        });
+    }
+    
+    // 연결 상태 UI 업데이트 함수
+    function updateConnectionUI(isOnline) {
+        if (!connectionStatus) return;
+        
+        connectionStatus.textContent = isOnline ? '🟢 온라인' : '🔴 오프라인';
+        connectionStatus.className = 'connection-status ' + (isOnline ? 'online' : 'offline');
+    }
+    
+    // 페이지 로드 시 초기 연결 상태 확인
+    checkConnectionStatus();
+    
+    // 30초마다 연결 상태 체크
+    setInterval(checkConnectionStatus, 30000);
+    
+    // 온라인/오프라인 이벤트 리스너
+    window.addEventListener('online', () => updateConnectionUI(true));
+    window.addEventListener('offline', () => updateConnectionUI(false));
     
     // 테마 감지 및 다크모드 토글
     function initTheme() {
