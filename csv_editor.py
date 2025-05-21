@@ -4,6 +4,7 @@ CSV 파일 자동 메타데이터 생성 및 편집 기능 모듈
 
 import os
 import json
+import re
 import pandas as pd
 from pathlib import Path
 from typing import Dict, List, Any, Optional
@@ -225,15 +226,25 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
     # 모든 열이 표시되도록 스타일 추가
     table_html = table_html.replace('<table', '<table style="width: 100%; min-width: 1000px;"')
     
-    # 인덱스 열 이름을 숫자로 변경 (행 번호)
-    table_html = table_html.replace('<th>',  '<th class="row-header">')
+    # 인덱스를 1부터 시작하는 행 번호로 변경 (1, 2, 3, ...)
+    for i in range(len(df)):
+        table_html = table_html.replace(f'<th>{i}</th>', f'<th class="row-header" onclick="selectRow({i+1})">{i+1}</th>')
+    
+    # 헤더 셀을 클릭 가능하게 변경
+    pattern = r'<th>([^<]+)</th>'
+    
+    def replace_header(match):
+        header_text = match.group(1)
+        return f'<th class="column-header" onclick="selectColumn(\'{header_text}\')">{header_text}</th>'
+    
+    table_html = re.sub(pattern, replace_header, table_html)
     
     # 엑셀 스타일의 열 헤더 추가 (A, B, C, ...)
     alphabet_headers = [chr(65 + i) for i in range(len(df.columns))]
     alphabet_header_html = '<tr class="excel-column-labels">'
     alphabet_header_html += '<th></th>'  # 왼쪽 상단 빈 셀
-    for alpha in alphabet_headers:
-        alphabet_header_html += f'<th class="column-label">{alpha}</th>'
+    for i, alpha in enumerate(alphabet_headers):
+        alphabet_header_html += f'<th class="column-label" onclick="selectColumn({i})">{alpha}</th>'
     alphabet_header_html += '</tr>'
     
     # 테이블 헤더에 알파벳 행 추가
