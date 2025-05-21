@@ -44,10 +44,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 연결 상태 UI 업데이트 함수
     function updateConnectionUI(isOnline) {
-        if (!connectionStatus) return;
+        const statusDot = document.getElementById('connection-status-dot');
+        if (!statusDot) return;
         
-        connectionStatus.textContent = isOnline ? '🟢 온라인' : '🔴 오프라인';
-        connectionStatus.className = 'connection-status ' + (isOnline ? 'online' : 'offline');
+        statusDot.className = 'connection-status-dot ' + (isOnline ? 'online' : 'offline');
+        statusDot.setAttribute('data-status', isOnline ? '온라인' : '오프라인');
     }
     
     // 페이지 로드 시 초기 연결 상태 확인

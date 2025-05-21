@@ -187,26 +187,49 @@ img {
     letter-spacing: -0.5px;
 }
 
-/* 연결 상태 표시기 */
-.connection-status {
-    margin-right: 1rem;
-    font-size: 0.9rem;
-    padding: 0.2rem 0.6rem;
-    border-radius: 0.8rem;
-    font-weight: 500;
-    display: inline-flex;
+/* 연결 상태 표시기 - 현대적 도트 스타일 */
+.connection-indicator-container {
+    display: flex;
     align-items: center;
-    vertical-align: middle;
+    margin-right: 1.2rem;
+    position: relative;
 }
 
-.connection-status.online {
-    background-color: rgba(0, 200, 0, 0.15);
-    color: #00b300;
+.connection-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
 }
 
-.connection-status.offline {
-    background-color: rgba(255, 0, 0, 0.15);
-    color: #ff3333;
+.connection-status-dot.online {
+    background-color: #00d26a;
+    box-shadow: 0 0 8px rgba(0, 210, 106, 0.5);
+}
+
+.connection-status-dot.offline {
+    background-color: #ff3a55;
+    box-shadow: 0 0 8px rgba(255, 58, 85, 0.5);
+}
+
+.connection-status-dot:hover::after {
+    content: attr(data-status);
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--dark);
+    color: var(--white);
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+    opacity: 1;
+    pointer-events: none;
+    z-index: 1000;
 }
 
 .nav-links {
