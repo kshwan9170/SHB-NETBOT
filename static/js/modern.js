@@ -44,18 +44,33 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 연결 상태 UI 업데이트 함수
     function updateConnectionUI(isOnline) {
-        const logoElement = document.querySelector('.logo');
-        if (logoElement) {
+        // 로고 이미지 경로 변경
+        const logoImg = document.querySelector('.logo img');
+        if (logoImg) {
+            const baseUrl = window.location.origin;
             if (isOnline) {
-                logoElement.classList.remove('offline');
+                // 온라인 상태: 기본 파란색 로고
+                logoImg.src = baseUrl + '/static/images/shinhan_logo_refined.svg';
             } else {
-                logoElement.classList.add('offline');
+                // 오프라인 상태: 빨간색 로고
+                logoImg.src = baseUrl + '/static/images/shinhan_logo_offline.svg';
             }
         }
     }
     
-    // 페이지 로드 시 초기 연결 상태 확인
-    checkConnectionStatus();
+    // SVG 로드 완료 이벤트 처리 추가
+    document.addEventListener('DOMContentLoaded', function() {
+        const logoSvg = document.querySelector('.logo img');
+        if (logoSvg) {
+            logoSvg.addEventListener('load', function() {
+                // SVG 로드 완료 후 연결 상태 확인하여 UI 업데이트
+                checkConnectionStatus();
+            });
+        } else {
+            // SVG 요소가 없으면 기본 연결 상태 확인
+            checkConnectionStatus();
+        }
+    });
     
     // 30초마다 연결 상태 체크
     setInterval(checkConnectionStatus, 30000);
