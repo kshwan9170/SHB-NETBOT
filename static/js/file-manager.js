@@ -1,96 +1,47 @@
 /**
- * 문서 관리자 - 파일 목록 표시 및 삭제 기능 (버전 2)
+ * 향상된 파일 관리자 - 페이지네이션과 검색 기능 통합
  */
 
-// 이 버전에서 제공하는 개선 기능
-// 1. 파일 목록 페이지네이션 (10개씩 표시)
-// 2. 파일명 검색 필터링
-// 3. JSON 파일 숨김 처리
-// 4. 행/열 추가가 포함된 CSV 편집 기능
-
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("Document manager v2 initialized - 1.0.1");
-    // v2 관리자가 로드되었음을 표시
-    window.documentManagerV2 = true;
-
-    // 전역 변수로 페이지네이션 상태 관리
-    let currentPage = 1;
-    const filesPerPage = 10; // 페이지당 10개 파일 표시
+    console.log("향상된 파일 관리자 초기화");
+    
+    // 전역 변수
     let allFiles = [];
     let filteredFiles = [];
+    let currentPage = 1;
+    const filesPerPage = 10;
+    
+    // 검색 기능 이벤트 리스너
+    const searchInput = document.getElementById('file-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            filterFiles(this.value);
+        });
+    }
     
     // 동기화 버튼 이벤트 리스너
     const syncBtn = document.getElementById('sync-btn');
     if (syncBtn) {
-        syncBtn.addEventListener('click', function() {
-            syncDocuments();
-        });
+        syncBtn.addEventListener('click', syncDocuments);
     }
     
-    // 파일 목록 초기 로드
-    loadDocuments();
-    
-    // CSV 파일 편집 관련 이벤트 리스너 설정
-    setupCsvEditEvents();
-    
-    // 파일 검색 기능
-    const searchInput = document.getElementById('file-search');
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            searchFiles(this.value);
-        });
-    }
+    // 초기 파일 목록 로드
+    fetchFileList();
     
     /**
-     * 파일 검색 기능
+     * 서버에서 파일 목록을 가져옴
      */
-    function searchFiles(query) {
-        console.log("검색어:", query);
-        
-        if (!query || query.trim() === '') {
-            filteredFiles = [...allFiles];
-            currentPage = 1;
-            renderFileList(filteredFiles);
-            return;
-        }
-        
-        query = query.toLowerCase().trim();
-        filteredFiles = allFiles.filter(file => {
-            return file.filename.toLowerCase().includes(query);
-        });
-        
-        currentPage = 1;
-        renderFileList(filteredFiles);
-    }
-    
-    /**
-     * JSON 파일 필터링 함수
-     */
-    function filterJsonFiles(files) {
-        return files.filter(file => {
-            // .json 확장자를 가진 파일 숨기기
-            return !file.filename.toLowerCase().endsWith('.json');
-        });
-    }
-
-    /**
-     * 서버에서 문서 목록을 가져옴
-     */
-    function loadDocuments() {
+    function fetchFileList() {
         fetch('/api/documents')
             .then(response => response.json())
             .then(data => {
-                console.log("Document list data received");
-                
                 if (data.files && Array.isArray(data.files)) {
-                    // 파일이 있으면 저장 및 필터링 처리
-                    allFiles = data.files;
-                    filteredFiles = allFiles;
+                    // JSON 파일 필터링
+                    allFiles = data.files.filter(file => !file.filename.toLowerCase().endsWith('.json'));
+                    filteredFiles = [...allFiles];
                     
-                    // 파일 목록 렌더링
-                    renderFileList(allFiles);
-                    
-                    console.log(`Loaded ${data.files.length} files`);
+                    renderFileList(filteredFiles);
+                    console.log(`총 ${allFiles.length}개 파일 로드됨`);
                 } else {
                     // 파일 목록이 없을 경우
                     showEmptyState();
@@ -98,46 +49,58 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(error => {
                 console.error('파일 목록 조회 중 오류 발생:', error);
-                showErrorMessage('파일 목록을 불러오는 중 오류가 발생했습니다.');
+                alert('파일 목록을 불러오는 중 오류가 발생했습니다.');
             });
     }
     
     /**
-     * 파일 목록 렌더링
+     * 파일 검색 필터링
+     */
+    function filterFiles(query) {
+        if (!query || query.trim() === '') {
+            // 검색어가 없으면 전체 목록 표시
+            filteredFiles = [...allFiles];
+        } else {
+            // 검색어로 필터링
+            query = query.toLowerCase().trim();
+            filteredFiles = allFiles.filter(file => 
+                file.filename.toLowerCase().includes(query)
+            );
+        }
+        
+        // 필터링 후 항상 1페이지부터 표시
+        currentPage = 1;
+        renderFileList(filteredFiles);
+    }
+    
+    /**
+     * 파일 목록 화면에 표시
      */
     function renderFileList(files) {
-        const fileTable = document.getElementById('file-table');
-        const emptyState = document.getElementById('empty-state');
         const tableBody = document.getElementById('dynamic-file-list');
+        if (!tableBody) return;
         
-        if (!tableBody) {
-            console.error("파일 목록 테이블을 찾을 수 없습니다");
+        tableBody.innerHTML = ''; // 기존 내용 초기화
+        
+        if (files.length === 0) {
+            showEmptyState();
             return;
         }
-        
-        // JSON 파일 필터링
-        const visibleFiles = filterJsonFiles(files);
-        
-        // 파일이 없을 경우
-        if (visibleFiles.length === 0) {
-            if (fileTable) fileTable.style.display = 'none';
-            if (emptyState) emptyState.style.display = 'block';
-            return;
-        }
-        
-        // 파일이 있을 경우
-        if (fileTable) fileTable.style.display = 'table';
-        if (emptyState) emptyState.style.display = 'none';
         
         // 페이지네이션 계산
+        const totalPages = Math.ceil(files.length / filesPerPage);
         const startIndex = (currentPage - 1) * filesPerPage;
-        const endIndex = Math.min(startIndex + filesPerPage, visibleFiles.length);
-        const currentPageFiles = visibleFiles.slice(startIndex, endIndex);
+        const endIndex = Math.min(startIndex + filesPerPage, files.length);
+        const currentPageFiles = files.slice(startIndex, endIndex);
         
-        // 테이블 내용 초기화
-        tableBody.innerHTML = '';
+        // 파일 테이블 표시
+        document.getElementById('file-table').style.display = 'table';
+        document.getElementById('empty-state').style.display = 'none';
         
-        // 현재 페이지의 파일만 표시
+        // 파일 개수 정보 표시
+        updateFileCountInfo(startIndex + 1, endIndex, files.length);
+        
+        // 파일 목록 표시
         currentPageFiles.forEach(file => {
             const row = document.createElement('tr');
             
@@ -146,9 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             row.innerHTML = `
                 <td>
-                    <div style="text-align: left; padding-left: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; display: block;">
-                        ${file.filename}
-                    </div>
+                    <div style="text-align: left; padding-left: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 400px; display: block;">${file.filename}</div>
                 </td>
                 <td style="text-align: center;">${size}</td>
                 <td>
@@ -172,21 +133,38 @@ document.addEventListener('DOMContentLoaded', function() {
             tableBody.appendChild(row);
         });
         
-        // 버튼 이벤트 리스너 추가
+        // 버튼에 이벤트 리스너 추가
         addButtonEventListeners();
         
         // 페이지네이션 렌더링
-        renderPagination(visibleFiles.length);
-        
-        // 파일 수 표시 정보 업데이트
-        updateFileCountInfo(startIndex + 1, endIndex, visibleFiles.length);
+        renderPagination(files.length);
     }
-
+    
     /**
-     * 페이지네이션 정보 및 UI 렌더링
+     * 파일 개수 정보 표시 업데이트
+     */
+    function updateFileCountInfo(start, end, total) {
+        // 기존 정보가 있으면 제거
+        const existingInfo = document.querySelector('.file-count-info');
+        if (existingInfo) existingInfo.remove();
+        
+        // 새 정보 생성
+        const fileCountInfo = document.createElement('div');
+        fileCountInfo.className = 'file-count-info';
+        fileCountInfo.style.cssText = 'font-size: 0.9em; color: #666; margin-bottom: 10px;';
+        fileCountInfo.textContent = `총 ${total}개 파일 중 ${start}-${end}번 표시 중`;
+        
+        // 테이블 위에 삽입
+        const fileTable = document.getElementById('file-table');
+        if (fileTable) {
+            fileTable.parentNode.insertBefore(fileCountInfo, fileTable);
+        }
+    }
+    
+    /**
+     * 페이지네이션 렌더링
      */
     function renderPagination(totalFiles) {
-        // 페이지 컨테이너 찾기
         const paginationContainer = document.getElementById('pagination-container');
         if (!paginationContainer) return;
         
@@ -212,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
             paginationContainer.appendChild(prevBtn);
         }
         
-        // 페이지 번호 버튼들
+        // 페이지 번호 버튼
         for (let i = 1; i <= totalPages; i++) {
             const pageBtn = document.createElement('button');
             pageBtn.innerText = i;
@@ -247,27 +225,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
-     * 파일 개수 정보 표시 업데이트
-     */
-    function updateFileCountInfo(start, end, total) {
-        const countInfo = document.createElement('div');
-        countInfo.className = 'file-count-info';
-        countInfo.style.cssText = 'font-size: 0.9em; color: #666; margin-bottom: 10px;';
-        countInfo.textContent = `총 ${total}개 파일 중 ${start}-${end}번 표시 중`;
-        
-        // 기존 정보가 있으면 제거
-        const existingInfo = document.querySelector('.file-count-info');
-        if (existingInfo) existingInfo.remove();
-        
-        // 파일 테이블 위에 삽입
-        const fileTable = document.getElementById('file-table');
-        if (fileTable) {
-            fileTable.parentNode.insertBefore(countInfo, fileTable);
-        }
-    }
-    
-    /**
-     * 버튼 이벤트 리스너 추가
+     * 버튼에 이벤트 리스너 추가
      */
     function addButtonEventListeners() {
         // 삭제 버튼
@@ -303,7 +261,6 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function deleteFile(systemFilename, displayFilename) {
         if (confirm(`정말 "${displayFilename}" 파일을 삭제하시겠습니까?`)) {
-            console.log(`Sending delete request with filename: ${systemFilename}`);
             fetch('/api/delete', {
                 method: 'POST',
                 headers: {
@@ -316,16 +273,15 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showSuccessMessage(`"${displayFilename}" 파일이 삭제되었습니다.`);
-                    // 삭제 후 파일 목록 다시 조회
-                    loadDocuments();
+                    alert(`"${displayFilename}" 파일이 삭제되었습니다.`);
+                    fetchFileList(); // 파일 목록 다시 로드
                 } else {
-                    showErrorMessage(`삭제 실패: ${data.error || '알 수 없는 오류가 발생했습니다.'}`);
+                    alert(`삭제 실패: ${data.error || '알 수 없는 오류가 발생했습니다.'}`);
                 }
             })
             .catch(error => {
                 console.error('API 호출 중 오류 발생:', error);
-                showErrorMessage('서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
+                alert('서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
             });
         }
     }
@@ -335,14 +291,13 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function viewDocument(systemFilename, displayFilename) {
         console.log(`Viewing document: ${displayFilename}`);
-        // URL 인코딩하여 특수문자 처리
         const encodedFilename = encodeURIComponent(systemFilename);
         
         fetch(`/api/documents/view/${encodedFilename}`)
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    // 문서 내용 표시 - 모달
+                    // 모달 생성
                     const modal = document.createElement('div');
                     modal.className = 'document-modal';
                     modal.innerHTML = `
@@ -362,7 +317,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 모달 스타일링
                     applyModalStyles(modal);
                     
-                    // 모달 닫기 이벤트
+                    // 닫기 버튼
                     const closeBtn = modal.querySelector('.close-modal-btn');
                     closeBtn.addEventListener('click', () => {
                         modal.remove();
@@ -375,12 +330,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     });
                 } else {
-                    showErrorMessage(data.message || '문서 내용을 불러오는 중 오류가 발생했습니다.');
+                    alert(data.message || '문서 내용을 불러오는 중 오류가 발생했습니다.');
                 }
             })
             .catch(error => {
                 console.error('문서 뷰어 API 호출 중 오류 발생:', error);
-                showErrorMessage('서버 연결 중 오류가 발생했습니다.');
+                alert('서버 연결 중 오류가 발생했습니다.');
             });
     }
     
@@ -438,10 +393,8 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function downloadDocument(systemFilename, displayFilename) {
         console.log(`Downloading document: ${displayFilename}`);
-        // URL 인코딩하여 특수문자 처리
         const encodedFilename = encodeURIComponent(systemFilename);
         
-        // 다운로드 링크 생성 및 클릭
         const downloadLink = document.createElement('a');
         downloadLink.href = `/api/documents/download/${encodedFilename}`;
         downloadLink.download = displayFilename;
@@ -451,47 +404,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     /**
-     * CSV 편집 이벤트 리스너 설정
-     * - 행/열 추가 버튼
-     * - 저장 버튼
-     * - 취소 버튼
-     */
-    function setupCsvEditEvents() {
-        // CSV 편집 버튼
-        document.addEventListener('click', function(e) {
-            // 편집 버튼
-            if (e.target.id === 'csv-edit-btn') {
-                enableCsvEditing();
-            }
-            
-            // 저장 버튼
-            if (e.target.id === 'csv-save-btn') {
-                saveCsvChanges(currentFilename);
-            }
-            
-            // 취소 버튼
-            if (e.target.id === 'csv-cancel-btn') {
-                cancelCsvEditing();
-            }
-            
-            // 행 추가 버튼
-            if (e.target.id === 'csv-add-row-btn') {
-                addCsvRow();
-            }
-            
-            // 열 추가 버튼
-            if (e.target.id === 'csv-add-col-btn') {
-                addCsvColumn();
-            }
-        });
-    }
-    
-    /**
-     * 문서 동기화 (DB와 파일 시스템 일치화)
+     * 문서 동기화 (벡터 DB와 파일 시스템)
      */
     function syncDocuments() {
         if (confirm('문서 동기화를 시작하시겠습니까? 파일 크기에 따라 시간이 걸릴 수 있습니다.')) {
-            // 동기화 상태 표시 요소를 보이게 설정
+            // 동기화 상태 표시 요소 설정
             const syncStatus = document.getElementById('sync-status');
             const syncProgress = document.getElementById('sync-progress');
             const syncMessage = document.getElementById('sync-message');
@@ -505,7 +422,7 @@ document.addEventListener('DOMContentLoaded', function() {
             syncBtn.disabled = true;
             syncBtn.style.opacity = '0.7';
             
-            // 서버 동기화 요청
+            // 서버에 동기화 요청
             fetch('/api/sync', {
                 method: 'POST'
             })
@@ -521,7 +438,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             syncBtn.style.opacity = '1';
                             
                             // 동기화 완료 후 파일 목록 다시 로드
-                            loadDocuments();
+                            fetchFileList();
                             return;
                         }
                         
@@ -556,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 syncBtn.disabled = false;
                 syncBtn.style.opacity = '1';
                 
-                showErrorMessage('동기화 중 오류가 발생했습니다. 다시 시도해주세요.');
+                alert('동기화 중 오류가 발생했습니다. 다시 시도해주세요.');
             });
         }
     }
@@ -580,24 +497,11 @@ document.addEventListener('DOMContentLoaded', function() {
      * 유틸리티 함수: 빈 파일 목록 상태 표시
      */
     function showEmptyState() {
-        const fileTable = document.getElementById('file-table');
-        const emptyState = document.getElementById('empty-state');
+        document.getElementById('file-table').style.display = 'none';
+        document.getElementById('empty-state').style.display = 'block';
         
-        if (fileTable) fileTable.style.display = 'none';
-        if (emptyState) emptyState.style.display = 'block';
-    }
-    
-    /**
-     * 유틸리티 함수: 성공 메시지 표시
-     */
-    function showSuccessMessage(message) {
-        alert(message);
-    }
-    
-    /**
-     * 유틸리티 함수: 오류 메시지 표시
-     */
-    function showErrorMessage(message) {
-        alert(message);
+        // 페이지네이션 비우기
+        const paginationContainer = document.getElementById('pagination-container');
+        if (paginationContainer) paginationContainer.innerHTML = '';
     }
 });
