@@ -214,7 +214,7 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
     
     # 테이블 HTML 생성 (특수 스타일 적용)
     # 테이블 스크롤을 고려하여 고정 너비를 제거함
-    table_html = df.to_html(classes='editable-csv-table', index=False, na_rep='', 
+    table_html = df.to_html(classes='editable-csv-table', index=True, na_rep='', 
                            border=1, justify='left', 
                            col_space=120)  # 컬럼 최소 너비 설정
     
@@ -224,6 +224,20 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
     
     # 모든 열이 표시되도록 스타일 추가
     table_html = table_html.replace('<table', '<table style="width: 100%; min-width: 1000px;"')
+    
+    # 인덱스 열 이름을 숫자로 변경 (행 번호)
+    table_html = table_html.replace('<th>',  '<th class="row-header">')
+    
+    # 엑셀 스타일의 열 헤더 추가 (A, B, C, ...)
+    alphabet_headers = [chr(65 + i) for i in range(len(df.columns))]
+    alphabet_header_html = '<tr class="excel-column-labels">'
+    alphabet_header_html += '<th></th>'  # 왼쪽 상단 빈 셀
+    for alpha in alphabet_headers:
+        alphabet_header_html += f'<th class="column-label">{alpha}</th>'
+    alphabet_header_html += '</tr>'
+    
+    # 테이블 헤더에 알파벳 행 추가
+    table_html = table_html.replace('<thead>', f'<thead>{alphabet_header_html}')
     
     html = """
     <div style="padding: 20px; max-width: 100%; background-color: #f9f9f9; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -294,6 +308,27 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
                     max-width: 300px;
                     white-space: normal;
                     word-break: break-word;
+                }
+                /* 엑셀 스타일의 열 라벨 (A, B, C, ...) */
+                .excel-column-labels th.column-label {
+                    background-color: #e6f2ff;
+                    color: #0064E1;
+                    font-weight: bold;
+                    text-align: center;
+                    font-size: 14px;
+                    width: 40px;
+                    min-width: 40px;
+                    max-width: 80px;
+                }
+                /* 행 헤더 (1, 2, 3, ...) */
+                .editable-csv-table th.row-header {
+                    background-color: #e6f2ff;
+                    color: #0064E1;
+                    font-weight: bold;
+                    text-align: center;
+                    width: 40px;
+                    min-width: 40px;
+                    max-width: 40px;
                 }
                 .editable-csv-table td {
                     padding: 10px 15px;
