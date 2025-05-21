@@ -173,6 +173,7 @@ img {
 .logo {
     display: flex;
     align-items: center;
+    position: relative;
 }
 
 .logo img {
@@ -187,50 +188,33 @@ img {
     letter-spacing: -0.5px;
 }
 
-/* 연결 상태 표시기 - 현대적 도트 스타일 */
-.connection-indicator-container {
-    display: flex;
-    align-items: center;
-    margin-right: 1.2rem;
-    position: relative;
-}
-
-.connection-status-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-    position: relative;
-}
-
-.connection-status-dot.online {
-    background-color: #00d26a;
-    box-shadow: 0 0 8px rgba(0, 210, 106, 0.5);
-}
-
-.connection-status-dot.offline {
-    background-color: #ff3a55;
-    box-shadow: 0 0 8px rgba(255, 58, 85, 0.5);
-}
-
-.connection-status-dot:hover::after {
-    content: attr(data-status);
+/* 오프라인 모드 표시 */
+.logo.offline::after {
+    content: '';
     position: absolute;
-    bottom: 15px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: var(--dark);
-    color: var(--white);
-    padding: 0.4rem 0.8rem;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    white-space: nowrap;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
-    opacity: 1;
-    pointer-events: none;
-    z-index: 1000;
+    top: 0;
+    right: -10px;
+    width: 10px;
+    height: 10px;
+    background-color: #ff3a55;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(255, 58, 85, 0.6);
+    animation: pulse 2s infinite;
 }
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 58, 85, 0.6);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(255, 58, 85, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 58, 85, 0);
+    }
+}
+
+/* 제거된 연결 상태 표시기 스타일 */
 
 .nav-links {
     display: flex;
