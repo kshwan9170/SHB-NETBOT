@@ -62,11 +62,21 @@ function addCsvRow() {
     }
     
     const tbody = table.querySelector('tbody');
-    const columnCount = table.querySelectorAll('thead th').length;
+    const rows = tbody.querySelectorAll('tr');
+    const rowCount = rows.length;
+    const columnCount = table.querySelectorAll('thead tr:last-child th').length;
     
     // 새 행 생성
     const newRow = document.createElement('tr');
-    for (let i = 0; i < columnCount; i++) {
+    
+    // 행 번호 추가 (첫 번째 셀)
+    const rowIndexCell = document.createElement('th');
+    rowIndexCell.className = 'row-header';
+    rowIndexCell.textContent = rowCount + 1; // 1부터 시작하는 행 번호
+    newRow.appendChild(rowIndexCell);
+    
+    // 데이터 셀 추가
+    for (let i = 1; i < columnCount; i++) { // 첫 번째 열은 인덱스이므로 1부터 시작
         const cell = document.createElement('td');
         cell.textContent = '';
         cell.contentEditable = true;
@@ -82,6 +92,9 @@ function addCsvRow() {
     
     // 테이블에 새 행 추가
     tbody.appendChild(newRow);
+    
+    // 사용자 피드백
+    alert(`${rowCount + 1}번 행이 추가되었습니다.`);
 }
 
 // 새 열 추가
@@ -92,11 +105,25 @@ function addCsvColumn() {
         return;
     }
     
-    // 헤더에 새 열 추가
-    const headerRow = table.querySelector('thead tr');
+    // 현재 열 수 확인
+    const headerRows = table.querySelectorAll('thead tr');
+    const excelHeaderRow = headerRows[0]; // A, B, C, ... 행
+    const columnLabelRow = headerRows[1]; // 실제 컬럼명 행
+    
+    // 새 엑셀 스타일 열 헤더 (A, B, C, ...)
+    const alphaIndex = excelHeaderRow.querySelectorAll('th').length - 1;
+    const newColumnLabel = String.fromCharCode(65 + alphaIndex); // 0->A, 1->B, ...
+    
+    // 새 엑셀 헤더 셀 추가
+    const newExcelHeaderCell = document.createElement('th');
+    newExcelHeaderCell.className = 'column-label';
+    newExcelHeaderCell.textContent = newColumnLabel;
+    excelHeaderRow.appendChild(newExcelHeaderCell);
+    
+    // 새 헤더 추가
     const newHeaderCell = document.createElement('th');
     newHeaderCell.textContent = '새 열';
-    headerRow.appendChild(newHeaderCell);
+    columnLabelRow.appendChild(newHeaderCell);
     
     // 모든 데이터 행에 새 열 추가
     const rows = table.querySelectorAll('tbody tr');
@@ -113,6 +140,9 @@ function addCsvColumn() {
         });
         row.appendChild(newCell);
     });
+    
+    // 사용자 피드백
+    alert(`'${newColumnLabel}' 열이 추가되었습니다.`);
 }
 
 // CSV 변경사항 저장
