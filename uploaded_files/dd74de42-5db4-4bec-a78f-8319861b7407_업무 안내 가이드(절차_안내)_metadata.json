@@ -1,0 +1,15 @@
+{
+  "filename": "dd74de42-5db4-4bec-a78f-8319861b7407_업무 안내 가이드(절차_안내).csv",
+  "file_path": "uploaded_files/dd74de42-5db4-4bec-a78f-8319861b7407_업무 안내 가이드(절차_안내).csv",
+  "encoding": "cp949",
+  "column_count": 8,
+  "row_count": 4,
+  "columns": {
+    "절차 구분": {
+      "type": "CATEGORY",
+      "sample_values": [
+        "IP 주소 신청",
+        "LAN선 공사 신청",
+        "전화기 설정"
+      ],
+      "null_count": 
