@@ -38,6 +38,10 @@ def check_connection():
     인터넷 연결 상태를 확인하는 함수
     OpenAI API 및 공용 DNS 서버 연결 가능성을 테스트
     """
+    # 테스트용 임시 강제 설정 - 모바일에서 테스트 후 제거 예정
+    return False
+    
+    # 실제 연결 확인 코드
     try:
         # OpenAI API 서버 연결 테스트
         socket.create_connection(("api.openai.com", 443), timeout=3)
