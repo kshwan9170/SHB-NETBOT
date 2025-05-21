@@ -189,10 +189,10 @@ img {
 
 /* 연결 상태 표시기 */
 .connection-status {
-    margin-left: 0.8rem;
-    font-size: 1rem;
+    margin-right: 1rem;
+    font-size: 0.9rem;
     padding: 0.2rem 0.6rem;
-    border-radius: 1rem;
+    border-radius: 0.8rem;
     font-weight: 500;
     display: inline-flex;
     align-items: center;
