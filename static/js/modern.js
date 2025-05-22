@@ -55,53 +55,138 @@ document.addEventListener('DOMContentLoaded', function() {
             // 마지막 업데이트 시간 확인 (1시간마다 갱신)
             const lastUpdate = localStorage.getItem(LOCAL_CSV_LAST_UPDATE);
             const now = new Date().getTime();
-            if (lastUpdate && (now - parseInt(lastUpdate) < 3600000)) {
-                console.log('최근에 업데이트된 CSV 데이터가 있습니다. 재사용합니다.');
-                return;
-            }
             
-            // 서버에서 문서 목록 가져오기
-            const response = await fetch('/api/documents');
-            const data = await response.json();
+            // 이미 저장된 데이터가 있는지 확인
+            const existingData = localStorage.getItem(LOCAL_CSV_DATA_KEY);
             
-            if (data.files) {
-                // CSV 파일만 필터링
-                const csvFiles = data.files.filter(file => 
-                    file.filename.toLowerCase().endsWith('.csv')
-                );
-                
-                console.log(`${csvFiles.length}개의 CSV 파일을 찾았습니다.`);
-                
-                // 각 CSV 파일의 내용 가져오기
-                const csvDataPromises = csvFiles.map(async file => {
-                    try {
-                        const viewResponse = await fetch(`/api/documents/view/${file.system_filename}`);
-                        const viewData = await viewResponse.json();
-                        
-                        if (viewData.content) {
-                            return {
-                                filename: file.filename,
-                                system_filename: file.system_filename,
-                                content: viewData.content,
-                                records: processCSVContent(viewData.content)
-                            };
-                        }
-                        return null;
-                    } catch (error) {
-                        console.error(`파일 가져오기 오류: ${file.filename}`, error);
-                        return null;
+            // 업데이트가 필요한 경우 - 저장된 데이터가 없거나 1시간 지난 경우
+            if (!existingData || !lastUpdate || (now - parseInt(lastUpdate) >= 3600000)) {
+                // 서버에서 문서 목록 가져오기
+                try {
+                    const response = await fetch('/api/documents', {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' },
+                        cache: 'no-cache',
+                        timeout: 5000 // 5초 타임아웃
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`서버 응답 오류: ${response.status}`);
                     }
-                });
+                    
+                    const data = await response.json();
+                    
+                    if (data.files && data.files.length > 0) {
+                        // CSV 파일만 필터링
+                        const csvFiles = data.files.filter(file => 
+                            file.filename.toLowerCase().endsWith('.csv')
+                        );
+                        
+                        console.log(`${csvFiles.length}개의 CSV 파일을 찾았습니다.`);
+                        
+                        if (csvFiles.length === 0) {
+                            console.log('CSV 파일이 없습니다.');
+                            return;
+                        }
+                        
+                        // 각 CSV 파일의 내용 가져오기
+                        const csvDataPromises = csvFiles.map(async file => {
+                            try {
+                                const viewResponse = await fetch(`/api/documents/view/${file.system_filename}`, {
+                                    method: 'GET',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    cache: 'no-cache',
+                                    timeout: 5000 // 5초 타임아웃
+                                });
+                                
+                                if (!viewResponse.ok) {
+                                    throw new Error(`파일 조회 오류: ${viewResponse.status}`);
+                                }
+                                
+                                const viewData = await viewResponse.json();
+                                
+                                if (viewData.content) {
+                                    // CSV 데이터 처리 및 반환
+                                    const records = processCSVContent(viewData.content);
+                                    console.log(`${file.filename}: ${records.length}개 레코드 처리됨`);
+                                    
+                                    return {
+                                        filename: file.filename,
+                                        system_filename: file.system_filename,
+                                        content: viewData.content,
+                                        records: records
+                                    };
+                                }
+                                return null;
+                            } catch (error) {
+                                console.error(`파일 가져오기 오류: ${file.filename}`, error);
+                                return null;
+                            }
+                        });
+                        
+                        // 모든 CSV 파일 데이터 기다리기
+                        const csvDataResults = await Promise.all(csvDataPromises);
+                        const csvData = csvDataResults.filter(item => item !== null);
+                        
+                        if (csvData.length > 0) {
+                            // 로컬 스토리지에 저장
+                            try {
+                                const jsonData = JSON.stringify(csvData);
+                                localStorage.setItem(LOCAL_CSV_DATA_KEY, jsonData);
+                                localStorage.setItem(LOCAL_CSV_LAST_UPDATE, now.toString());
+                                
+                                // 저장 확인
+                                const savedData = localStorage.getItem(LOCAL_CSV_DATA_KEY);
+                                if (savedData) {
+                                    console.log(`${csvData.length}개의 CSV 파일을 로컬에 저장했습니다. (${jsonData.length} 바이트)`);
+                                    
+                                    // 테스트 목적으로 첫 번째 파일 데이터 출력
+                                    if (csvData[0] && csvData[0].records) {
+                                        console.log(`첫 번째 파일 샘플 레코드: ${csvData[0].records.length}개`);
+                                    }
+                                } else {
+                                    console.error('로컬 스토리지 저장 실패');
+                                }
+                            } catch (storageError) {
+                                console.error('로컬 스토리지 저장 중 오류:', storageError);
+                                
+                                // 스토리지 용량 초과 가능성이 있으므로 일부 데이터만 저장
+                                if (storageError.name === 'QuotaExceededError') {
+                                    // 처음 2개 파일만 저장 시도
+                                    const reducedData = csvData.slice(0, 2);
+                                    try {
+                                        localStorage.setItem(LOCAL_CSV_DATA_KEY, JSON.stringify(reducedData));
+                                        localStorage.setItem(LOCAL_CSV_LAST_UPDATE, now.toString());
+                                        console.log('용량 제한으로 일부 CSV 파일만 저장했습니다.');
+                                    } catch (e) {
+                                        console.error('축소된 데이터도 저장 실패:', e);
+                                    }
+                                }
+                            }
+                        } else {
+                            console.log('저장할 유효한 CSV 데이터가 없습니다.');
+                        }
+                    } else {
+                        console.log('서버에 문서가 없거나 응답이 비어있습니다.');
+                    }
+                } catch (fetchError) {
+                    console.error('서버에서 문서 가져오기 실패:', fetchError);
+                    
+                    // 오프라인 상태로 판단하고 기존 캐시 데이터 유지
+                    if (existingData) {
+                        console.log('오프라인 상태입니다. 기존 캐시 데이터를 사용합니다.');
+                    }
+                }
+            } else {
+                console.log('최근에 업데이트된 CSV 데이터가 있습니다. 재사용합니다.');
                 
-                // 모든 CSV 파일 데이터 기다리기
-                const csvDataResults = await Promise.all(csvDataPromises);
-                const csvData = csvDataResults.filter(item => item !== null);
-                
-                // 로컬 스토리지에 저장
-                localStorage.setItem(LOCAL_CSV_DATA_KEY, JSON.stringify(csvData));
-                localStorage.setItem(LOCAL_CSV_LAST_UPDATE, now.toString());
-                
-                console.log(`${csvData.length}개의 CSV 파일을 로컬에 저장했습니다.`);
+                // 저장된 데이터 확인
+                try {
+                    const savedData = JSON.parse(localStorage.getItem(LOCAL_CSV_DATA_KEY));
+                    console.log(`저장된 CSV 파일 ${savedData.length}개를 사용합니다.`);
+                } catch (e) {
+                    console.error('저장된 데이터 확인 중 오류:', e);
+                }
             }
         } catch (error) {
             console.error('CSV 데이터 캐싱 중 오류:', error);
@@ -136,12 +221,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 로컬 데이터에서 쿼리에 맞는 응답 찾기
     function getLocalResponse(query) {
+        // 로컬 데이터 확인
+        const csvDataString = localStorage.getItem(LOCAL_CSV_DATA_KEY);
+        if (!csvDataString) {
+            console.error('로컬에 저장된 CSV 데이터가 없습니다. 강제로 데이터 로드를 시도합니다.');
+            // 강제로 로컬 데이터 로드 시도 (비동기 함수지만 바로 호출)
+            fetchAndCacheCSVData();
+            return '로컬 데이터가 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.';
+        }
+        
         // IP 주소 패턴 검색
         const ipPattern = /\b(?:\d{1,3}\.){3}\d{1,3}\b/;
         const ipMatch = query.match(ipPattern);
         
         if (ipMatch) {
             const targetIp = ipMatch[0];
+            console.log(`IP 주소 ${targetIp}에 대한 로컬 검색 시작`);
             const ipResponse = searchIpInLocalData(targetIp);
             if (ipResponse) {
                 return ipResponse;
@@ -151,6 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 키워드 검색 (2글자 이상 단어만)
         const keywords = query.split(/\s+/).filter(word => word.length >= 2);
         if (keywords.length > 0) {
+            console.log(`키워드 검색 시작: ${keywords.join(', ')}`);
             const keywordResponse = searchKeywordsInLocalData(keywords);
             if (keywordResponse) {
                 return keywordResponse;
@@ -358,6 +454,12 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateConnectionUI(isOnline) {
         console.log('연결 상태 업데이트:', isOnline ? '온라인' : '오프라인');
         
+        // 페이지 로드 시 즉시 CSV 데이터 캐싱 시도
+        if (!localStorage.getItem(LOCAL_CSV_DATA_KEY)) {
+            console.log('최초 실행: CSV 데이터 즉시 캐싱 시도');
+            fetchAndCacheCSVData();
+        }
+        
         // 상태 배지 업데이트
         const statusBadge = document.getElementById('connection-status');
         if (statusBadge) {
@@ -365,14 +467,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 statusBadge.textContent = '온라인';
                 statusBadge.className = 'status-badge online';
                 
-                // 온라인 상태일 때도 주기적으로 CSV 데이터 캐싱
+                // 온라인 상태일 때 데이터 캐싱 (시간 간격 체크는 함수 내부에서 수행)
                 fetchAndCacheCSVData();
             } else {
                 statusBadge.textContent = '오프라인';
                 statusBadge.className = 'status-badge offline';
-                
-                // 오프라인 모드일 때 CSV 데이터 로컬 캐싱 시도
-                fetchAndCacheCSVData();
             }
         }
         
