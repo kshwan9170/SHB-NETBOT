@@ -221,8 +221,8 @@ const OfflineCache = {
                 const errorType = rowData['장애 유형'] || rowData['오류 유형'] || '';
                 const symptom = rowData['증상'] || '';
                 const solution = rowData['조치 방법'] || '';
-                const department = rowData['담당 부서'] || '';
-                const relatedDoc = rowData['관련 문서/링크'] || '';
+                const errorDept = rowData['담당 부서'] || '';
+                const errorDoc = rowData['관련 문서/링크'] || '';
                 
                 // 더 자연스러운 장애 안내 생성
                 text = `"${errorType}" 장애가 발생했습니다.`;
@@ -235,12 +235,12 @@ const OfflineCache = {
                     text += ` 조치 방법: ${solution}`;
                 }
                 
-                if (department) {
-                    text += ` 담당 부서는 ${department}입니다.`;
+                if (errorDept) {
+                    text += ` 담당 부서는 ${errorDept}입니다.`;
                 }
                 
-                if (relatedDoc) {
-                    text += ` 자세한 내용은 ${relatedDoc} 문서를 참고하세요.`;
+                if (errorDoc) {
+                    text += ` 자세한 내용은 ${errorDoc} 문서를 참고하세요.`;
                 }
                 
                 metadata = {
@@ -248,8 +248,8 @@ const OfflineCache = {
                     error_type: errorType,
                     symptom: symptom,
                     solution: solution,
-                    department: department,
-                    related_doc: relatedDoc
+                    department: errorDept,
+                    related_doc: errorDoc
                 };
                 break;
                 
