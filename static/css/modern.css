@@ -181,6 +181,12 @@ img {
     margin-right: 1.2rem;
 }
 
+/* 신한은행 로고 특별 스타일 */
+.shinhan-bank-logo {
+    height: 2.5rem;
+    margin-right: 0.8rem;
+}
+
 .logo span {
     font-size: 2rem;
     font-weight: 700;
