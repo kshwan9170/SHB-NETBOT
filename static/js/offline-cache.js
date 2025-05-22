@@ -111,14 +111,30 @@ const OfflineCache = {
                 const user = rowData['사용자명'] || rowData['사용자'] || '';
                 const dept = rowData['부서'] || rowData['소속'] || '';
                 const status = rowData['상태'] || '사용 중';
+                const contact = rowData['연락처'] || rowData['전화번호'] || '';
+                const lastAccess = rowData['최종 접속일'] || '';
                 
-                text = `IP ${ip}는 ${dept} ${user}님이 ${status}입니다.`;
+                // 더 자연스러운 응답 생성
+                if (contact) {
+                    text = `IP ${ip}는 ${dept} ${user}님이 ${status}입니다. 연락처는 ${contact}입니다.`;
+                    if (lastAccess) {
+                        text += ` 최근 접속일은 ${lastAccess}입니다.`;
+                    }
+                } else {
+                    text = `IP ${ip}는 ${dept} ${user}님이 ${status}입니다.`;
+                    if (lastAccess) {
+                        text += ` 최근 접속일은 ${lastAccess}입니다.`;
+                    }
+                }
+                
                 metadata = {
                     ...metadata,
                     ip: ip,
                     user: user,
                     department: dept,
-                    status: status
+                    status: status,
+                    contact: contact,
+                    last_access: lastAccess
                 };
                 break;
                 
@@ -128,13 +144,28 @@ const OfflineCache = {
                 const question = rowData['질문 예시'] || '';
                 const answer = rowData['요약 응답'] || rowData['상세 안내'] || '';
                 const category = rowData['절차 구분'] || rowData['카테고리'] || '';
+                const department = rowData['담당 부서'] || '';
+                const relatedDoc = rowData['관련 문서/링크'] || '';
                 
+                // 기본적으로 답변을 그대로 사용
                 text = answer;
+                
+                // 추가 정보가 있으면 응답에 보강
+                if (department) {
+                    text += ` 해당 업무는 ${department}에서 담당하고 있습니다.`;
+                }
+                
+                if (relatedDoc) {
+                    text += ` 자세한 내용은 ${relatedDoc} 문서를 참고하시기 바랍니다.`;
+                }
+                
                 metadata = {
                     ...metadata,
                     keyword: keyword,
                     question: question,
-                    category: category
+                    category: category,
+                    department: department,
+                    related_doc: relatedDoc
                 };
                 break;
                 
@@ -143,15 +174,45 @@ const OfflineCache = {
                 const orgName = rowData['대외기관명'] || '';
                 const service = rowData['서비스명'] || '';
                 const ipInfo = rowData['IP(운영)'] || rowData['IP'] || '';
+                const devIp = rowData['IP(개발)'] || '';
                 const contact = rowData['기관 담당자'] || '';
+                const contactInfo = rowData['기관 연락처'] || '';
+                const teamContact = rowData['당행 담당자'] || '';
+                const dept = rowData['당행 부서'] || '';
                 
-                text = `${orgName} ${service} 서비스는 IP ${ipInfo}로 연결되며, 담당자는 ${contact}입니다.`;
+                // 보다 상세한 자연어 응답 생성
+                text = `${orgName}의 ${service} 서비스는 운영 IP ${ipInfo}`;
+                if (devIp) {
+                    text += `, 개발 IP ${devIp}`;
+                }
+                text += `로 연결됩니다.`;
+                
+                if (contact) {
+                    text += ` 기관 측 담당자는 ${contact}`;
+                    if (contactInfo) {
+                        text += `(연락처: ${contactInfo})`;
+                    }
+                    text += `입니다.`;
+                }
+                
+                if (dept) {
+                    text += ` 당행 담당 부서는 ${dept}`;
+                    if (teamContact) {
+                        text += `, 담당자는 ${teamContact}`;
+                    }
+                    text += `입니다.`;
+                }
+                
                 metadata = {
                     ...metadata,
                     organization: orgName,
                     service: service,
                     ip: ipInfo,
-                    contact: contact
+                    ip_dev: devIp,
+                    contact: contact,
+                    contact_info: contactInfo,
+                    department: dept,
+                    team_contact: teamContact
                 };
                 break;
                 
@@ -160,13 +221,35 @@ const OfflineCache = {
                 const errorType = rowData['장애 유형'] || rowData['오류 유형'] || '';
                 const symptom = rowData['증상'] || '';
                 const solution = rowData['조치 방법'] || '';
+                const department = rowData['담당 부서'] || '';
+                const relatedDoc = rowData['관련 문서/링크'] || '';
                 
-                text = `${errorType} 장애 증상: ${symptom}. 조치 방법: ${solution}`;
+                // 더 자연스러운 장애 안내 생성
+                text = `"${errorType}" 장애가 발생했습니다.`;
+                
+                if (symptom) {
+                    text += ` 주요 증상은 "${symptom}"입니다.`;
+                }
+                
+                if (solution) {
+                    text += ` 조치 방법: ${solution}`;
+                }
+                
+                if (department) {
+                    text += ` 담당 부서는 ${department}입니다.`;
+                }
+                
+                if (relatedDoc) {
+                    text += ` 자세한 내용은 ${relatedDoc} 문서를 참고하세요.`;
+                }
+                
                 metadata = {
                     ...metadata,
                     error_type: errorType,
                     symptom: symptom,
-                    solution: solution
+                    solution: solution,
+                    department: department,
+                    related_doc: relatedDoc
                 };
                 break;
                 
