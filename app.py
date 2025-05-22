@@ -77,6 +77,8 @@ def catch_all(subpath):
     # #support 또는 %23support 등의 URL 요청을 기본 페이지로 리디렉션
     if '#' in subpath or '%23' in subpath:
         return redirect('/')
+    # 그 외의 경우에도 리디렉션 처리
+    return redirect('/')
     
 @app.route('/file-manager')
 def file_manager():
