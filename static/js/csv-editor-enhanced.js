@@ -288,11 +288,21 @@ function addCsvRow() {
     const rowCount = tableBody.querySelectorAll('tr').length;
     insertNewRow(rowCount);
     
+    // 모든 선택 초기화
+    clearSelection();
+    
     // 추가된 행으로 스크롤
     setTimeout(() => {
         const rows = tableBody.querySelectorAll('tr');
         if (rows.length > 0) {
-            rows[rows.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const lastRow = rows[rows.length - 1];
+            lastRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // 추가된 행 강조 표시 (잠시 후 사라짐)
+            lastRow.style.backgroundColor = '#e8f5e9';
+            setTimeout(() => {
+                lastRow.style.backgroundColor = '';
+            }, 2000);
         }
     }, 100);
 }
@@ -305,17 +315,26 @@ function addCsvColumn() {
         return;
     }
     
-    // 선택된 셀이 있는지 확인
-    if (selectedColumn !== null) {
-        // 선택된 열 다음에 새 열 삽입
-        insertNewColumn(selectedColumn + 1);
-        return;
-    }
-    
-    // 선택된 열이 없으면 마지막에 열 추가
+    // 항상 마지막에 열 추가 (사용자 요청대로 수정)
     const headerRow = table.querySelector('thead tr:not(.excel-column-labels)');
     const columnCount = headerRow.querySelectorAll('th').length - 1; // 행 번호 열 제외
     insertNewColumn(columnCount);
+    
+    // 모든 선택 초기화
+    clearSelection();
+    
+    // 새 열 강조 표시 (잠시 후 사라짐)
+    setTimeout(() => {
+        const headers = headerRow.querySelectorAll('th');
+        const lastHeader = headers[headers.length - 1];
+        
+        if (lastHeader) {
+            lastHeader.style.backgroundColor = '#e3f2fd';
+            setTimeout(() => {
+                lastHeader.style.backgroundColor = '';
+            }, 2000);
+        }
+    }, 100);
 }
 
 // 행 선택 기능
@@ -1039,20 +1058,38 @@ function deleteRow(rowIndex) {
     const tableBody = table.querySelector('tbody');
     const rows = tableBody.querySelectorAll('tr');
     
-    // 행 번호 유효성 검사
-    if (rowIndex < 0 || rowIndex >= rows.length) return;
+    // 행 번호 유효성 검사 (rowIndex는 UI 기준으로 1부터 시작)
+    if (rowIndex < 1 || rowIndex > rows.length) {
+        console.error(`유효하지 않은 행 인덱스: ${rowIndex}, 전체 행 수: ${rows.length}`);
+        return;
+    }
     
-    // 행 삭제 확인
-    if (confirm(`${rowIndex + 1}번 행을 삭제하시겠습니까?`)) {
+    // 배열 인덱스로 변환 (0부터 시작)
+    const arrayIndex = rowIndex - 1;
+    
+    // 행 삭제 애니메이션 효과
+    const row = rows[arrayIndex];
+    row.style.transition = 'all 0.3s';
+    row.style.backgroundColor = '#ffebee';
+    row.style.opacity = '0.5';
+    
+    setTimeout(() => {
         // 행 삭제
-        rows[rowIndex].remove();
+        tableBody.removeChild(row);
         
         // 행 번호 업데이트
         updateRowNumbers();
         
         // 선택 상태 초기화
         clearSelection();
-    }
+        
+        // 삭제 후 테이블이 비어있는지 확인
+        const remainingRows = tableBody.querySelectorAll('tr');
+        if (remainingRows.length === 0) {
+            // 테이블이 비어있으면 빈 행 하나 추가
+            insertNewRow(0);
+        }
+    }, 300);
 }
 
 // 선택된 행 삭제 (삭제 버튼 클릭)
@@ -1063,7 +1100,12 @@ function deleteSelectedRow() {
         return;
     }
     
-    deleteRow(selectedRow);
+    // 실제 행 인덱스는 0부터 시작하지만, UI에서는 1부터 시작하므로 +1
+    const displayRowNumber = selectedRow + 1;
+    if (confirm(`${displayRowNumber}번 행을 삭제하시겠습니까?`)) {
+        // selectedRow는 0부터 시작하는 배열 인덱스이므로, UI 인덱스로 변환 (+1)
+        deleteRow(displayRowNumber);
+    }
 }
 
 // 열 삭제
