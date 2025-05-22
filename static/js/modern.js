@@ -26,6 +26,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // 먼저 브라우저의 navigator.onLine 속성으로 연결 상태 확인
         const isOnline = navigator.onLine;
         
+        // 오프라인 테스트 모드인 경우 강제로 오프라인 상태로 처리
+        if (localStorage.getItem('offline_test_mode') === 'true') {
+            console.log('오프라인 테스트 모드 활성화됨');
+            updateConnectionUI(false);
+            return;
+        }
+        
         // 서버에 연결 상태 확인 API 호출 (더 정확한 확인을 위해)
         fetch('/api/connection_status', { 
             method: 'GET',
