@@ -379,18 +379,27 @@ const OfflineCache = {
             if (containsIp && bestMatch.metadata && bestMatch.metadata.ip) {
                 const meta = bestMatch.metadata;
                 if (meta.user && meta.department) {
-                    responseText = `IP ${meta.ip}는 ${meta.department}의 ${meta.user} 담당자가 사용 중입니다.`;
+                    responseText = `IP ${meta.ip}는 ${meta.department} ${meta.user}님이 사용 중입니다.`;
                     
                     if (meta.contact) {
-                        responseText += ` 연락처는 ${meta.contact}입니다.`;
-                    }
-                    
-                    if (meta.last_access) {
-                        responseText += ` 최근 접속일은 ${meta.last_access}입니다.`;
+                        responseText += ` 연락처는 ${meta.contact}이며,`;
                     }
                     
                     if (meta.status) {
-                        responseText += ` 현재 상태는 '${meta.status}'입니다.`;
+                        responseText += ` 현재 상태는 ${meta.status}입니다.`;
+                    } else {
+                        responseText += ` 현재 상태는 미사용입니다.`;
+                    }
+                    
+                    if (meta.last_access) {
+                        responseText += ` 최종 접속일은 ${meta.last_access}입니다.`;
+                    } else {
+                        responseText += ` 최종 접속일은 -입니다.`;
+                    }
+                    
+                    // 출처 정보 추가
+                    if (meta.source) {
+                        responseText = `IP ${meta.ip}에 대한 정보를 찾았습니다. (출처: ${meta.source})\n` + responseText;
                     }
                 }
             }
