@@ -264,6 +264,10 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const csvData = JSON.parse(csvDataString);
             
+            // 결과를 직접 문자열로 생성 (formatIpRecord 함수 대신)
+            let foundRecord = null;
+            let sourceFilename = "";
+            
             // 모든 CSV 파일 검색
             for (const file of csvData) {
                 // IP 주소 관련 파일 우선 검색
@@ -277,23 +281,70 @@ document.addEventListener('DOMContentLoaded', function() {
                         for (const [key, value] of Object.entries(record)) {
                             if (value === ipAddress) {
                                 // IP 주소 일치하는 레코드 발견
-                                return formatIpRecord(record, file.filename);
+                                foundRecord = record;
+                                sourceFilename = file.filename;
+                                break;
                             }
                         }
+                        if (foundRecord) break;
                     }
                 }
+                if (foundRecord) break;
             }
             
             // IP 파일에서 찾지 못한 경우 다른 모든 파일 검색
-            for (const file of csvData) {
-                for (const record of file.records) {
-                    for (const [key, value] of Object.entries(record)) {
-                        if (value === ipAddress) {
-                            return formatRecord(record, file.filename);
+            if (!foundRecord) {
+                for (const file of csvData) {
+                    for (const record of file.records) {
+                        for (const [key, value] of Object.entries(record)) {
+                            if (value === ipAddress) {
+                                foundRecord = record;
+                                sourceFilename = file.filename;
+                                break;
+                            }
                         }
+                        if (foundRecord) break;
                     }
+                    if (foundRecord) break;
                 }
             }
+            
+            // 레코드를 찾았으면 직접 자연어 응답 생성
+            if (foundRecord) {
+                // 필요한 정보 추출
+                const user = foundRecord['사용자'] || foundRecord['사용자명'] || foundRecord['이름'] || foundRecord['담당자'] || '';
+                const dept = foundRecord['부서'] || foundRecord['팀'] || foundRecord['소속'] || '';
+                const contact = foundRecord['연락처'] || foundRecord['전화번호'] || '';
+                const status = foundRecord['상태'] || '사용 중';
+                const date = foundRecord['최종 접속일'] || foundRecord['접속일'] || foundRecord['날짜'] || '';
+                const notes = foundRecord['비고'] || foundRecord['메모'] || '';
+                
+                // 자연어 응답 생성
+                let response = '';
+                
+                if (dept && user) {
+                    response = `IP ${ipAddress}는 ${dept}의 ${user} 담당자가 ${status}입니다.`;
+                } else if (user) {
+                    response = `IP ${ipAddress}는 ${user} 담당자가 ${status}입니다.`;
+                } else {
+                    response = `IP ${ipAddress} 정보를 찾았습니다.`;
+                }
+                
+                if (contact) {
+                    response += ` 연락처는 ${contact}입니다.`;
+                }
+                
+                if (date) {
+                    response += ` 최근 접속일은 ${date}입니다.`;
+                }
+                
+                if (notes) {
+                    response += ` 참고사항: ${notes}`;
+                }
+                
+                return response;
+            }
+            
         } catch (error) {
             console.error('로컬 데이터 IP 검색 중 오류:', error);
         }
@@ -984,7 +1035,52 @@ document.addEventListener('DOMContentLoaded', function() {
                     // IndexedDB 실패 시 localStorage 검색
                     const localResponse = getLocalResponse(message);
                     if (localResponse) {
-                        addMessage('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n' + localResponse, 'bot');
+                        // 응답 처리 - A:, B: 형식을 자연어로 변환
+                        let processedResponse = localResponse;
+                        
+                        // IP 주소를 포함하는 응답에 대한 특별 처리
+                        if (message.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/)) {
+                            // A:, B:, C: 형식 응답을 자연어로 변환
+                            const ipMatch = message.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/);
+                            const ipAddress = ipMatch ? ipMatch[0] : '';
+                            
+                            // 기존 응답에서 정보 추출
+                            const userMatch = processedResponse.match(/사용자.?\s*:\s*([^\n.]+)/i);
+                            const deptMatch = processedResponse.match(/부서.?\s*:\s*([^\n.]+)/i);
+                            const contactMatch = processedResponse.match(/연락처.?\s*:\s*([^\n.]+)/i);
+                            const dateMatch = processedResponse.match(/(최종 접속일|날짜).?\s*:\s*([^\n.]+)/i);
+                            
+                            const user = userMatch ? userMatch[1].trim() : '';
+                            const dept = deptMatch ? deptMatch[1].trim() : '';
+                            const contact = contactMatch ? contactMatch[1].trim() : '';
+                            const date = dateMatch ? dateMatch[2].trim() : '';
+                            
+                            // 자연어 응답 생성
+                            let naturalResponse = '';
+                            
+                            if (dept && user) {
+                                naturalResponse = `IP ${ipAddress}는 ${dept}의 ${user} 담당자가 사용 중입니다.`;
+                            } else if (user) {
+                                naturalResponse = `IP ${ipAddress}는 ${user} 담당자가 사용 중입니다.`;
+                            } else {
+                                naturalResponse = `IP ${ipAddress} 정보를 찾았습니다.`;
+                            }
+                            
+                            if (contact) {
+                                naturalResponse += ` 연락처는 ${contact}입니다.`;
+                            }
+                            
+                            if (date) {
+                                naturalResponse += ` 최근 접속일은 ${date}입니다.`;
+                            }
+                            
+                            // 변환된 자연어 응답 사용
+                            if (naturalResponse) {
+                                processedResponse = naturalResponse;
+                            }
+                        }
+                        
+                        addMessage('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n' + processedResponse, 'bot');
                     } else {
                         addMessage('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n현재 오프라인 상태입니다. 로컬 데이터에서 관련 정보를 찾을 수 없습니다.', 'bot');
                     }
