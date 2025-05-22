@@ -402,113 +402,65 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // IP 주소 관련 레코드 포맷팅 (자연어 응답)
     function formatIpRecord(record, filename) {
-        // 필요한 정보 추출
-        let userInfo = '';
-        let departmentInfo = '';
-        let contactInfo = '';
-        let ipAddress = '';
-        let status = '';
-        let lastAccess = '';
-        let notes = '';
+        // 직접 필요한 정보 추출 - 변수명 충돌 제거
+        let ipValue = record['IP 주소'] || record['IP'] || '';
+        let userName = record['사용자명'] || record['사용자'] || record['이름'] || record['담당자'] || '';
+        let deptName = record['부서'] || record['팀'] || record['소속'] || '';
+        let contactNumber = record['연락처'] || record['전화번호'] || '';
+        let statusValue = record['상태'] || '사용 중';
+        let accessDate = record['최종 접속일'] || record['접속일'] || record['날짜'] || '';
+        let notesText = record['비고'] || record['메모'] || '';
         
-        // 사용자 정보 우선 포함
-        if (record['사용자'] || record['이름'] || record['담당자'] || record['사용자명']) {
-            userInfo = record['사용자'] || record['이름'] || record['담당자'] || record['사용자명'];
-        }
-        
-        // 부서 정보 추가
-        if (record['부서'] || record['팀'] || record['소속']) {
-            departmentInfo = record['부서'] || record['팀'] || record['소속'];
-        }
-        
-        // 연락처 정보 추가
-        if (record['연락처'] || record['전화번호']) {
-            contactInfo = record['연락처'] || record['전화번호'];
-        }
-        
-        // 상태 정보
-        if (record['상태']) {
-            status = record['상태'];
-        } else {
-            status = '사용 중';
-        }
-        
-        // 접속일 정보
-        if (record['최종 접속일'] || record['접속일'] || record['날짜']) {
-            lastAccess = record['최종 접속일'] || record['접속일'] || record['날짜'];
-        }
-        
-        // 비고 정보
-        if (record['비고'] || record['메모']) {
-            notes = record['비고'] || record['메모'];
-        }
-        
-        // IP 주소 정보
-        for (const [key, value] of Object.entries(record)) {
-            if (/\b(?:\d{1,3}\.){3}\d{1,3}\b/.test(value) || 
-               key.includes('IP') || key.includes('ip') || key.includes('주소')) {
-                ipAddress = value;
-                break;
+        // 다른 키에서 IP 주소 찾기 (위에서 찾지 못한 경우)
+        if (!ipValue) {
+            for (const [key, value] of Object.entries(record)) {
+                if (typeof value === 'string' && /\b(?:\d{1,3}\.){3}\d{1,3}\b/.test(value)) {
+                    ipValue = value;
+                    break;
+                }
             }
         }
         
         // 자연어 응답 메시지 생성
         let response = '';
         
-        // 오프라인 모드 직접 레코드 변환
-        // IP, 사용자, 부서 정보가 A:, B:, C: 형태로 나오는 문제 해결
-        let ipText = record['IP 주소'] || record['IP'] || '';
-        let userText = record['사용자명'] || record['사용자'] || record['이름'] || record['담당자'] || '';
-        let deptText = record['부서'] || record['팀'] || record['소속'] || '';
-        let contactText = record['연락처'] || record['전화번호'] || '';
-        let dateText = record['최종 접속일'] || record['접속일'] || record['날짜'] || '';
-        
-        // IP가 직접 일치하는 경우를 우선 처리
-        if (ipAddress) {
-            if (deptText && userText) {
-                response = `IP ${ipAddress}는 ${deptText}의 ${userText} 담당자가 ${status}입니다.`;
-            } else if (userText) {
-                response = `IP ${ipAddress}는 ${userText} 담당자가 ${status}입니다.`;
+        // 정보 기반으로 자연스러운 문장 생성
+        if (ipValue) {
+            if (deptName && userName) {
+                response = `IP ${ipValue}는 ${deptName}의 ${userName} 담당자가 ${statusValue}입니다.`;
+            } else if (userName) {
+                response = `IP ${ipValue}는 ${userName} 담당자가 ${statusValue}입니다.`;
             } else {
-                response = `IP ${ipAddress} 정보를 찾았습니다.`;
+                response = `IP ${ipValue} 정보를 찾았습니다.`;
             }
             
-            if (contactText) {
-                response += ` 연락처는 ${contactText}입니다.`;
+            if (contactNumber) {
+                response += ` 연락처는 ${contactNumber}입니다.`;
             }
             
-            if (dateText) {
-                response += ` 최근 접속일은 ${dateText}입니다.`;
+            if (accessDate) {
+                response += ` 최근 접속일은 ${accessDate}입니다.`;
             }
             
-            if (notes) {
-                response += ` 참고사항: ${notes}`;
+            if (notesText) {
+                response += ` 참고사항: ${notesText}`;
             }
-        }
-        
-        // 응답이 비어있으면 다른 방법으로 시도
-        if (!response) {
-            response = `IP ${ipAddress}에 대한 정보입니다.`;
+        } else {
+            // IP 주소가 없는 경우 일반적인 정보 제공
+            response = "요청하신 IP 주소 정보를 찾았습니다:\n";
             
-            // 각 필드를 순회하며 자연어 문장 생성
+            // 주요 필드 우선 표시
+            const priorityFields = ['사용자명', '사용자', '부서', '연락처', '상태', '최종 접속일'];
+            priorityFields.forEach(field => {
+                if (record[field]) {
+                    response += `${field}: ${record[field]}. `;
+                }
+            });
+            
+            // 나머지 필드 표시
             for (const [key, value] of Object.entries(record)) {
-                if (key === 'IP' || key === 'IP 주소' || key === 'IP주소') continue;
-                if (!value) continue;
-                
-                if (key === '사용자' || key === '사용자명' || key === '이름' || key === '담당자') {
-                    response += ` 담당자는 ${value}입니다.`;
-                } else if (key === '부서' || key === '팀' || key === '소속') {
-                    response += ` ${value} 부서 소속입니다.`;
-                } else if (key === '연락처' || key === '전화번호') {
-                    response += ` 연락처는 ${value}입니다.`;
-                } else if (key === '최종 접속일' || key === '접속일' || key === '날짜') {
-                    response += ` 최근 접속일은 ${value}입니다.`;
-                } else if (key === '상태') {
-                    response += ` 현재 ${value} 상태입니다.`;
-                } else if (key === '비고' || key === '메모') {
-                    response += ` 참고사항: ${value}`;
-                } else {
-                    response += ` ${key}은(는) ${value}입니다.`;
+                if (!priorityFields.includes(key) && value) {
+                    response += `${key}: ${value}. `;
                 }
             }
         }
@@ -518,7 +470,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 일반 레코드 포맷팅 (자연어 응답)
     function formatRecord(record, filename) {
-        let response = '[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다]\n\n';
+        // IP 주소가 포함된 레코드라면 formatIpRecord 함수로 처리
+        for (const [key, value] of Object.entries(record)) {
+            if (typeof value === 'string' && /\b(?:\d{1,3}\.){3}\d{1,3}\b/.test(value)) {
+                return formatIpRecord(record, filename);
+            }
+        }
+        
+        let response = '';
         
         // 주요 정보 수집
         const entries = Object.entries(record);
@@ -526,15 +485,47 @@ document.addEventListener('DOMContentLoaded', function() {
         const valueField = entries.length > 0 ? entries[0][1] : '';
         
         // 자연어 문장 시작
-        response += `검색하신 "${valueField}"에 대한 정보입니다.`;
+        if (valueField) {
+            response = `검색하신 "${valueField}"에 대한 정보입니다.`;
+        } else {
+            response = "요청하신 정보를 찾았습니다.";
+        }
         
-        // 나머지 필드를 문장으로 구성
+        // 주요 필드 먼저 처리 (보다 자연스러운 순서로)
+        const priorityFields = ['사용자명', '부서', '연락처', '상태', '최종 접속일'];
+        let usedKeys = [keyField]; // 첫 번째 필드는 이미 사용
+        
+        // 우선순위 필드 먼저 처리
+        for (const field of priorityFields) {
+            for (const [key, value] of entries) {
+                if (key.includes(field) && value && !usedKeys.includes(key)) {
+                    if (field.includes('사용자')) {
+                        response += ` 담당자는 ${value}입니다.`;
+                    } else if (field.includes('부서')) {
+                        response += ` ${value} 부서 소속입니다.`;
+                    } else if (field.includes('연락처')) {
+                        response += ` 연락처는 ${value}입니다.`;
+                    } else if (field.includes('접속일') || field.includes('날짜')) {
+                        response += ` 최근 접속일은 ${value}입니다.`;
+                    } else {
+                        response += ` ${key}은(는) ${value}입니다.`;
+                    }
+                    usedKeys.push(key);
+                }
+            }
+        }
+        
+        // 나머지 필드 처리
         let additionalInfo = [];
         
-        for (let i = 1; i < entries.length; i++) {
-            const [key, value] = entries[i];
-            if (value) {
-                additionalInfo.push(`${key}은(는) ${value}입니다`);
+        for (const [key, value] of entries) {
+            if (value && !usedKeys.includes(key)) {
+                if (key.includes('비고') || key.includes('메모')) {
+                    additionalInfo.push(`참고 사항: ${value}`);
+                } else {
+                    additionalInfo.push(`${key}은(는) ${value}입니다`);
+                }
+                usedKeys.push(key);
             }
         }
         
@@ -542,7 +533,9 @@ document.addEventListener('DOMContentLoaded', function() {
             response += ` ${additionalInfo.join('. ')}.`;
         }
         
-        response += `\n\n*정보 출처: ${filename}*`;
+        if (filename) {
+            response += `\n\n출처: ${filename}`;
+        }
         
         return response;
     }
