@@ -389,14 +389,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                         취소
                                     </button>
                                 </div>
-                                <div class="csv-row-controls" style="margin-bottom: 15px; display: none;">
-                                    <button id="csv-add-row-btn" style="background-color: #4caf50; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; margin-right: 10px;">
-                                        <span style="font-size: 14px; margin-right: 5px;">+</span> 맨 아래 행 추가
-                                    </button>
-                                    <button id="csv-delete-row-btn" style="background-color: #f44336; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: default; opacity: 0.6;">
-                                        <span style="font-size: 14px; margin-right: 5px;">-</span> 선택 행 삭제
-                                    </button>
-                                </div>
+                                <!-- 행/열 추가/삭제 버튼 제거됨 -->
                             </div>
                             <div id="csv-table-container">
                                 ${data.content}

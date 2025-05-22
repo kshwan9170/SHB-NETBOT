@@ -28,17 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cancelBtn.addEventListener('click', cancelCsvEditing);
     }
     
-    // 행 추가 버튼
-    const addRowBtn = document.getElementById('csv-add-row-btn');
-    if (addRowBtn) {
-        addRowBtn.addEventListener('click', addCsvRow);
-    }
-    
-    // 열 추가 버튼
-    const addColBtn = document.getElementById('csv-add-col-btn');
-    if (addColBtn) {
-        addColBtn.addEventListener('click', addCsvColumn);
-    }
+
     
     // 행 헤더 클릭 이벤트 - 행 선택
     const rowHeaders = document.querySelectorAll('.row-header');
@@ -63,25 +53,24 @@ function enableCsvEditing() {
     // 현재 테이블 상태 저장
     originalCsvData = document.getElementById('csv-table-container').innerHTML;
     
-    // 현재 파일명 가져오기
-    const filenamePath = window.location.pathname;
-    const pathSegments = filenamePath.split('/');
-    
-    // URL이 /api/documents/view/filename 형식인지 확인
-    if (pathSegments.includes('view')) {
-        // 전체 경로에서 마지막 부분이 파일명
-        currentFilename = pathSegments[pathSegments.length - 1];
-    } else if (pathSegments.includes('file-manager')) {
-        // 파일 관리자에서는 별도로 파일명을 가져와야 함
-        const viewingFile = document.querySelector('.file-preview-title');
-        if (viewingFile && viewingFile.dataset.systemFilename) {
-            currentFilename = viewingFile.dataset.systemFilename;
+    // 현재 파일명 가져오기 (모달 제목 태그에서 직접 추출)
+    const viewingFile = document.querySelector('.file-preview-title');
+    if (viewingFile && viewingFile.getAttribute('data-system-filename')) {
+        currentFilename = viewingFile.getAttribute('data-system-filename');
+        console.log("파일 제목 태그에서 찾은 파일명:", currentFilename);
+    } else {
+        // 백업 방법: URL에서 찾기
+        const filenamePath = window.location.pathname;
+        const pathSegments = filenamePath.split('/');
+        
+        if (pathSegments.includes('view')) {
+            // 전체 경로에서 마지막 부분이 파일명
+            currentFilename = pathSegments[pathSegments.length - 1];
         } else {
-            alert('편집할 파일을 찾을 수 없습니다.');
+            alert('편집할 파일을 찾을 수 없습니다. 페이지를 새로고침하고 다시 시도해주세요.');
+            console.error("파일명을 찾을 수 없음:", filenamePath);
             return;
         }
-    } else {
-        currentFilename = filenamePath.substring(filenamePath.lastIndexOf('/') + 1);
     }
     console.log("현재 편집 중인 파일명:", currentFilename);
     
@@ -136,27 +125,7 @@ function enableCsvEditing() {
     document.getElementById('csv-save-btn').style.display = 'inline-block';
     document.getElementById('csv-cancel-btn').style.display = 'inline-block';
     
-    // 행 관련 컨트롤 표시
-    const rowControls = document.querySelector('.csv-row-controls');
-    if (rowControls) {
-        rowControls.style.display = 'block';
-    }
-    
-    // 행 추가 버튼이 있으면 표시
-    const addRowBtn = document.getElementById('csv-add-row-btn');
-    if (addRowBtn) {
-        addRowBtn.style.display = 'inline-block';
-    }
-    
-    // 삭제 버튼이 있으면 표시
-    const deleteRowBtn = document.getElementById('csv-delete-row-btn');
-    if (deleteRowBtn) {
-        deleteRowBtn.style.display = 'inline-block';
-        deleteRowBtn.style.opacity = '0.6';
-        deleteRowBtn.style.cursor = 'default';
-        // 이벤트 리스너 추가
-        deleteRowBtn.addEventListener('click', deleteSelectedRow);
-    }
+    // 행/열 컨트롤 기능 제거됨
 }
 
 // CSV 편집 취소
@@ -275,67 +244,7 @@ function saveCsvChanges() {
     });
 }
 
-// 새 행 추가 (버튼 클릭) - 항상 맨 아래에 추가
-function addCsvRow() {
-    const table = document.querySelector('.editable-csv-table');
-    if (!table) {
-        alert('테이블을 찾을 수 없습니다.');
-        return;
-    }
-    
-    // 항상 마지막에 행 추가
-    const tableBody = table.querySelector('tbody');
-    const rowCount = tableBody.querySelectorAll('tr').length;
-    insertNewRow(rowCount);
-    
-    // 모든 선택 초기화
-    clearSelection();
-    
-    // 추가된 행으로 스크롤
-    setTimeout(() => {
-        const rows = tableBody.querySelectorAll('tr');
-        if (rows.length > 0) {
-            const lastRow = rows[rows.length - 1];
-            lastRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            
-            // 추가된 행 강조 표시 (잠시 후 사라짐)
-            lastRow.style.backgroundColor = '#e8f5e9';
-            setTimeout(() => {
-                lastRow.style.backgroundColor = '';
-            }, 2000);
-        }
-    }, 100);
-}
-
-// 새 열 추가 (버튼 클릭)
-function addCsvColumn() {
-    const table = document.querySelector('.editable-csv-table');
-    if (!table) {
-        alert('테이블을 찾을 수 없습니다.');
-        return;
-    }
-    
-    // 항상 마지막에 열 추가 (사용자 요청대로 수정)
-    const headerRow = table.querySelector('thead tr:not(.excel-column-labels)');
-    const columnCount = headerRow.querySelectorAll('th').length - 1; // 행 번호 열 제외
-    insertNewColumn(columnCount);
-    
-    // 모든 선택 초기화
-    clearSelection();
-    
-    // 새 열 강조 표시 (잠시 후 사라짐)
-    setTimeout(() => {
-        const headers = headerRow.querySelectorAll('th');
-        const lastHeader = headers[headers.length - 1];
-        
-        if (lastHeader) {
-            lastHeader.style.backgroundColor = '#e3f2fd';
-            setTimeout(() => {
-                lastHeader.style.backgroundColor = '';
-            }, 2000);
-        }
-    }, 100);
-}
+// CSV 행/열 추가 기능이 제거되었습니다.
 
 // 행 선택 기능
 function selectRow(rowIndex) {
@@ -366,13 +275,7 @@ function selectRow(rowIndex) {
         rowHeader.style.color = 'white';
     }
     
-    // 삭제 버튼 활성화 시각적 표시
-    const deleteRowBtn = document.getElementById('csv-delete-row-btn');
-    if (deleteRowBtn && deleteRowBtn.style.display !== 'none') {
-        deleteRowBtn.style.opacity = '1';
-        deleteRowBtn.style.cursor = 'pointer';
-        deleteRowBtn.title = `${rowIndex}번 행 삭제`;
-    }
+    // 행/열 삭제 버튼 관련 기능 제거됨
     
     // 컨텍스트 메뉴 표시 (행 추가/삭제 등)
     showRowContextMenu(rowIndex);
@@ -460,13 +363,7 @@ function clearSelection() {
     selectedRow = null;
     selectedColumn = null;
     
-    // 삭제 버튼 비활성화 시각적 표시
-    const deleteRowBtn = document.getElementById('csv-delete-row-btn');
-    if (deleteRowBtn && deleteRowBtn.style.display !== 'none') {
-        deleteRowBtn.style.opacity = '0.6';
-        deleteRowBtn.style.cursor = 'default';
-        deleteRowBtn.title = '행을 선택하면 삭제할 수 있습니다';
-    }
+    // 행/열 삭제 버튼 관련 기능 제거됨
     
     // 컨텍스트 메뉴 닫기
     hideContextMenus();
@@ -481,7 +378,7 @@ function hideContextMenus() {
     });
 }
 
-// 행 컨텍스트 메뉴 표시
+// 행 컨텍스트 메뉴 표시 (행/열 추가 및 삭제 기능 제거됨)
 function showRowContextMenu(rowIndex) {
     console.log(`행 ${rowIndex}에 대한 컨텍스트 메뉴 표시`);
     
@@ -511,49 +408,7 @@ function showRowContextMenu(rowIndex) {
         z-index: 1000;
     `;
     
-    // 행 위에 추가 버튼
-    const addAboveBtn = document.createElement('button');
-    addAboveBtn.innerText = '위에 행 추가';
-    addAboveBtn.style.cssText = `
-        padding: 4px 8px;
-        background-color: #4caf50;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    `;
-    addAboveBtn.onclick = () => insertNewRow(rowIndex - 1);
-    
-    // 행 아래 추가 버튼
-    const addBelowBtn = document.createElement('button');
-    addBelowBtn.innerText = '아래에 행 추가';
-    addBelowBtn.style.cssText = `
-        padding: 4px 8px;
-        background-color: #2196f3;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    `;
-    addBelowBtn.onclick = () => insertNewRow(rowIndex);
-    
-    // 행 삭제 버튼
-    const deleteRowBtn = document.createElement('button');
-    deleteRowBtn.innerText = '행 삭제';
-    deleteRowBtn.style.cssText = `
-        padding: 4px 8px;
-        background-color: #f44336;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    `;
-    deleteRowBtn.onclick = () => deleteRow(rowIndex);
-    
-    // 메뉴에 버튼 추가
-    menuContainer.appendChild(addAboveBtn);
-    menuContainer.appendChild(addBelowBtn);
-    menuContainer.appendChild(deleteRowBtn);
+    // 행/열 추가 및 삭제 기능 제거됨
     
     // 선택한 행 위에 메뉴 위치시키기
     const row = rows[rowIndex - 1];
@@ -603,49 +458,7 @@ function showColumnContextMenu(columnIndex) {
         z-index: 1000;
     `;
     
-    // 왼쪽에 열 추가 버튼
-    const addLeftBtn = document.createElement('button');
-    addLeftBtn.innerText = '왼쪽에 열 추가';
-    addLeftBtn.style.cssText = `
-        padding: 4px 8px;
-        background-color: #4caf50;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    `;
-    addLeftBtn.onclick = () => insertNewColumn(columnIndex);
-    
-    // 오른쪽에 열 추가 버튼
-    const addRightBtn = document.createElement('button');
-    addRightBtn.innerText = '오른쪽에 열 추가';
-    addRightBtn.style.cssText = `
-        padding: 4px 8px;
-        background-color: #2196f3;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    `;
-    addRightBtn.onclick = () => insertNewColumn(columnIndex + 1);
-    
-    // 열 삭제 버튼
-    const deleteColumnBtn = document.createElement('button');
-    deleteColumnBtn.innerText = '열 삭제';
-    deleteColumnBtn.style.cssText = `
-        padding: 4px 8px;
-        background-color: #f44336;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    `;
-    deleteColumnBtn.onclick = () => deleteColumn(columnIndex);
-    
-    // 메뉴에 버튼 추가
-    menuContainer.appendChild(addLeftBtn);
-    menuContainer.appendChild(addRightBtn);
-    menuContainer.appendChild(deleteColumnBtn);
+    // 행/열 추가 및 삭제 기능 제거됨
     
     // 선택한 열 위에 메뉴 위치시키기
     const headerRow = table.querySelector('thead tr:not(.excel-column-labels)');
@@ -671,7 +484,7 @@ function showColumnContextMenu(columnIndex) {
     }
 }
 
-// 셀 컨텍스트 메뉴 표시 - 엑셀스타일
+// 셀 컨텍스트 메뉴 표시 - 엑셀스타일 (행/열 추가 및 삭제 기능 제거됨)
 function showCellContextMenu(event, rowIndex, colIndex) {
     console.log(`셀 컨텍스트 메뉴: 행=${rowIndex}, 열=${colIndex}`);
     
@@ -698,48 +511,7 @@ function showCellContextMenu(event, rowIndex, colIndex) {
         left: ${event.pageX}px;
     `;
     
-    // 행 추가 메뉴 아이템
-    const addRowAboveItem = createMenuItem('위에 행 추가', '#4caf50', () => {
-        insertNewRow(rowIndex);
-        hideContextMenus();
-    });
-    
-    const addRowBelowItem = createMenuItem('아래에 행 추가', '#4caf50', () => {
-        insertNewRow(rowIndex + 1);
-        hideContextMenus();
-    });
-    
-    // 열 추가 메뉴 아이템
-    const addColLeftItem = createMenuItem('왼쪽에 열 추가', '#2196f3', () => {
-        insertNewColumn(colIndex);
-        hideContextMenus();
-    });
-    
-    const addColRightItem = createMenuItem('오른쪽에 열 추가', '#2196f3', () => {
-        insertNewColumn(colIndex + 1);
-        hideContextMenus();
-    });
-    
-    // 삭제 메뉴 아이템
-    const deleteRowItem = createMenuItem('행 삭제', '#f44336', () => {
-        deleteRow(rowIndex + 1);
-        hideContextMenus();
-    });
-    
-    const deleteColItem = createMenuItem('열 삭제', '#f44336', () => {
-        deleteColumn(colIndex);
-        hideContextMenus();
-    });
-    
-    // 메뉴에 아이템 추가
-    menuContainer.appendChild(addRowAboveItem);
-    menuContainer.appendChild(addRowBelowItem);
-    menuContainer.appendChild(document.createElement('hr'));
-    menuContainer.appendChild(addColLeftItem);
-    menuContainer.appendChild(addColRightItem);
-    menuContainer.appendChild(document.createElement('hr'));
-    menuContainer.appendChild(deleteRowItem);
-    menuContainer.appendChild(deleteColItem);
+    // 행/열 추가 및 삭제 기능 제거됨
     
     // 메뉴를 문서에 추가
     document.body.appendChild(menuContainer);
@@ -1048,120 +820,11 @@ function insertNewColumn(columnIndex) {
     clearSelection();
 }
 
-// 행 삭제
-function deleteRow(rowIndex) {
-    console.log(`행 삭제: ${rowIndex}번`);
-    
-    const table = document.querySelector('.editable-csv-table');
-    if (!table) return;
-    
-    const tableBody = table.querySelector('tbody');
-    const rows = tableBody.querySelectorAll('tr');
-    
-    // 행 번호 유효성 검사 (rowIndex는 UI 기준으로 1부터 시작)
-    if (rowIndex < 1 || rowIndex > rows.length) {
-        console.error(`유효하지 않은 행 인덱스: ${rowIndex}, 전체 행 수: ${rows.length}`);
-        return;
-    }
-    
-    // 배열 인덱스로 변환 (0부터 시작)
-    const arrayIndex = rowIndex - 1;
-    
-    // 행 삭제 애니메이션 효과
-    const row = rows[arrayIndex];
-    row.style.transition = 'all 0.3s';
-    row.style.backgroundColor = '#ffebee';
-    row.style.opacity = '0.5';
-    
-    setTimeout(() => {
-        // 행 삭제
-        tableBody.removeChild(row);
-        
-        // 행 번호 업데이트
-        updateRowNumbers();
-        
-        // 선택 상태 초기화
-        clearSelection();
-        
-        // 삭제 후 테이블이 비어있는지 확인
-        const remainingRows = tableBody.querySelectorAll('tr');
-        if (remainingRows.length === 0) {
-            // 테이블이 비어있으면 빈 행 하나 추가
-            insertNewRow(0);
-        }
-    }, 300);
-}
+// 행 삭제 기능 제거됨
 
-// 선택된 행 삭제 (삭제 버튼 클릭)
-function deleteSelectedRow() {
-    // 선택된 행이 있는지 확인
-    if (selectedRow === null) {
-        alert('삭제할 행을 먼저 선택해주세요.');
-        return;
-    }
-    
-    // 실제 행 인덱스는 0부터 시작하지만, UI에서는 1부터 시작하므로 +1
-    const displayRowNumber = selectedRow + 1;
-    if (confirm(`${displayRowNumber}번 행을 삭제하시겠습니까?`)) {
-        // selectedRow는 0부터 시작하는 배열 인덱스이므로, UI 인덱스로 변환 (+1)
-        deleteRow(displayRowNumber);
-    }
-}
+// 선택된 행 삭제 기능 제거됨
 
-// 열 삭제
-function deleteColumn(columnIndex) {
-    console.log(`열 삭제: ${columnIndex}번`);
-    
-    const table = document.querySelector('.editable-csv-table');
-    if (!table) return;
-    
-    // 열 번호 유효성 검사
-    if (columnIndex < 0) return;
-    
-    // 엑셀 스타일 헤더 행과 일반 헤더 행
-    const excelHeaderRow = table.querySelector('thead tr.excel-column-labels');
-    const columnLabelRow = table.querySelector('thead tr:not(.excel-column-labels)');
-    
-    if (!excelHeaderRow || !columnLabelRow) return;
-    
-    const excelHeaders = excelHeaderRow.querySelectorAll('th');
-    const columnHeaders = columnLabelRow.querySelectorAll('th');
-    
-    // 열 인덱스 유효성 검사 (행 번호 열 제외)
-    if (columnIndex + 1 >= columnHeaders.length) return;
-    
-    // 열 이름 가져오기
-    const columnName = columnHeaders[columnIndex + 1].textContent.trim();
-    
-    // 열 삭제 확인
-    if (confirm(`'${columnName}' 열을 삭제하시겠습니까?`)) {
-        // 열 헤더 삭제 (행 번호 열 고려)
-        if (columnIndex + 1 < excelHeaders.length) {
-            excelHeaders[columnIndex + 1].remove();
-        }
-        
-        if (columnIndex + 1 < columnHeaders.length) {
-            columnHeaders[columnIndex + 1].remove();
-        }
-        
-        // 모든 행에서 해당 열 셀 삭제
-        const tableBody = table.querySelector('tbody');
-        const rows = tableBody.querySelectorAll('tr');
-        
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            if (columnIndex < cells.length) {
-                cells[columnIndex].remove();
-            }
-        });
-        
-        // 엑셀 스타일 열 헤더 업데이트 (A, B, C, ...)
-        updateColumnHeaders();
-        
-        // 선택 상태 초기화
-        clearSelection();
-    }
-}
+// 열 삭제 기능 제거됨
 
 // 행 번호 업데이트
 function updateRowNumbers() {

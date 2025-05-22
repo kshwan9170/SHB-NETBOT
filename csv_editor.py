@@ -273,18 +273,7 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
                 </svg>
                 취소
             </button>
-            <button id="csv-add-row-btn" class="btn btn-light" style="display:none; padding: 8px 16px; border-radius: 4px; font-weight: 500; display: flex; align-items: center; gap: 5px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M8 0a.5.5 0 0 1 .5.5v7.5H16a.5.5 0 0 1 0 1H8.5V16a.5.5 0 0 1-1 0V9H0a.5.5 0 0 1 0-1h7.5V.5A.5.5 0 0 1 8 0z"/>
-                </svg>
-                행 추가
-            </button>
-            <button id="csv-add-col-btn" class="btn btn-light" style="display:none; padding: 8px 16px; border-radius: 4px; font-weight: 500; display: flex; align-items: center; gap: 5px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M8 0a.5.5 0 0 1 .5.5v7.5H16a.5.5 0 0 1 0 1H8.5V16a.5.5 0 0 1-1 0V9H0a.5.5 0 0 1 0-1h7.5V.5A.5.5 0 0 1 8 0z"/>
-                </svg>
-                열 추가
-            </button>
+
             <a href="/api/documents/download/""" + system_filename + """" class="btn btn-info" style="padding: 8px 16px; border-radius: 4px; font-weight: 500; text-decoration: none; display: flex; align-items: center; gap: 5px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                     <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/>
@@ -397,8 +386,7 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
                 editBtn.style.display = 'none';
                 saveBtn.style.display = 'inline-block';
                 cancelBtn.style.display = 'inline-block';
-                document.getElementById('csv-add-row-btn').style.display = 'inline-flex';
-                document.getElementById('csv-add-col-btn').style.display = 'inline-flex';
+
             });
         }
         
@@ -412,99 +400,11 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
                 editBtn.style.display = 'inline-block';
                 saveBtn.style.display = 'none';
                 cancelBtn.style.display = 'none';
-                document.getElementById('csv-add-row-btn').style.display = 'none';
-                document.getElementById('csv-add-col-btn').style.display = 'none';
+
             });
         }
         
-        // 행 추가 버튼 이벤트 리스너
-        const addRowBtn = document.getElementById('csv-add-row-btn');
-        if (addRowBtn) {
-            addRowBtn.addEventListener('click', function() {
-                const table = document.querySelector('.editable-csv-table');
-                if (!table) return;
-                
-                // 컬럼 수 계산
-                const headerCells = table.querySelectorAll('thead th');
-                const columnCount = headerCells.length;
-                
-                // 새 행 생성
-                const tbody = table.querySelector('tbody');
-                const newRow = document.createElement('tr');
-                
-                // 빈 셀 추가
-                for (let i = 0; i < columnCount; i++) {
-                    const cell = document.createElement('td');
-                    cell.contentEditable = true;
-                    cell.style.backgroundColor = '#fffde7';
-                    cell.addEventListener('focus', function() {
-                        this.style.backgroundColor = '#fff9c4';
-                    });
-                    cell.addEventListener('blur', function() {
-                        this.style.backgroundColor = '#fffde7';
-                    });
-                    newRow.appendChild(cell);
-                }
-                
-                // 새 행을 테이블에 추가
-                tbody.appendChild(newRow);
-                
-                // 추가 효과 (깜빡임)
-                newRow.style.transition = 'background-color 0.5s';
-                newRow.style.backgroundColor = '#e3f2fd';
-                setTimeout(() => {
-                    newRow.style.backgroundColor = '';
-                }, 1000);
-            });
-        }
-        
-        // 열 추가 버튼 이벤트 리스너
-        const addColBtn = document.getElementById('csv-add-col-btn');
-        if (addColBtn) {
-            addColBtn.addEventListener('click', function() {
-                // 컬럼 이름 입력 받기
-                const columnName = prompt('새 열의 이름을 입력하세요:', '');
-                if (columnName === null) return; // 취소한 경우
-                
-                const table = document.querySelector('.editable-csv-table');
-                if (!table) return;
-                
-                // 헤더에 새 열 추가
-                const headerRow = table.querySelector('thead tr');
-                const newHeaderCell = document.createElement('th');
-                newHeaderCell.textContent = columnName;
-                headerRow.appendChild(newHeaderCell);
-                
-                // 데이터 행에 새 열 추가
-                const rows = table.querySelectorAll('tbody tr');
-                rows.forEach(row => {
-                    const cell = document.createElement('td');
-                    cell.contentEditable = true;
-                    cell.style.backgroundColor = '#fffde7';
-                    cell.addEventListener('focus', function() {
-                        this.style.backgroundColor = '#fff9c4';
-                    });
-                    cell.addEventListener('blur', function() {
-                        this.style.backgroundColor = '#fffde7';
-                    });
-                    row.appendChild(cell);
-                });
-                
-                // 추가 효과 (깜빡임)
-                const newCells = table.querySelectorAll('td:last-child, th:last-child');
-                newCells.forEach(cell => {
-                    cell.style.transition = 'background-color 0.5s';
-                    cell.style.backgroundColor = '#e3f2fd';
-                    setTimeout(() => {
-                        if (cell.tagName === 'TH') {
-                            cell.style.backgroundColor = '#f2f2f2';
-                        } else {
-                            cell.style.backgroundColor = '';
-                        }
-                    }, 1000);
-                });
-            });
-        }
+        // CSV 행/열 추가 기능 제거됨
         
         // 저장 버튼 이벤트 리스너
         if (saveBtn) {
