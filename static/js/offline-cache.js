@@ -367,14 +367,46 @@ const OfflineCache = {
             // 가장 관련성 높은 결과 사용
             const bestMatch = results[0];
             
+            // IP 주소 쿼리인지 확인
+            const ipRegex = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/;
+            const containsIp = ipRegex.test(query);
+            
+            // 관련 결과 추출 (최대 3개)
+            const relatedResults = results.slice(1, 4).map(item => item.text);
+            
             // 응답 형식 구성
+            let enhancedText = bestMatch.text;
+            
+            // 메타데이터 활용하여 응답 보강
+            if (containsIp && bestMatch.metadata.ip) {
+                // IP 쿼리에 대해 더 풍부한 정보 제공
+                const meta = bestMatch.metadata;
+                if (meta.user && meta.department) {
+                    enhancedText = `IP ${meta.ip}는 ${meta.department}의 ${meta.user} 담당자가 사용 중입니다.`;
+                    
+                    if (meta.contact) {
+                        enhancedText += ` 연락처는 ${meta.contact}입니다.`;
+                    }
+                    
+                    if (meta.last_access) {
+                        enhancedText += ` 최근 접속일은 ${meta.last_access}입니다.`;
+                    }
+                    
+                    if (meta.status) {
+                        enhancedText += ` 현재 상태는 '${meta.status}'입니다.`;
+                    }
+                }
+            }
+            
             return {
                 success: true,
                 message: "로컬 데이터에서 정보를 찾았습니다.",
                 data: {
-                    text: bestMatch.text,
+                    text: enhancedText,
                     source: bestMatch.metadata.source || "로컬 데이터",
-                    additionalResults: results.length > 1 ? results.length - 1 : 0
+                    additionalResults: relatedResults,
+                    metadata: bestMatch.metadata,
+                    relatedCount: results.length > 1 ? results.length - 1 : 0
                 }
             };
         } catch (error) {
