@@ -1,9 +1,10 @@
 /**
- * 오프라인 모드를 위한 CSV 데이터 캐싱 및 검색 기능
+ * 오프라인 모드를 위한 CSV 데이터 캐싱 및 검색 기능 (v2)
  * 
  * 1. CSV 파일을 자연어 문장으로 변환하여 로컬에 저장
  * 2. 오프라인 상태에서 로컬 데이터 검색
  * 3. IP 주소 및 키워드 기반 검색 지원
+ * 4. 더 자연스러운 응답 생성
  */
 
 // 로컬 캐시 관리 객체
@@ -175,10 +176,10 @@ const OfflineCache = {
                 const service = rowData['서비스명'] || '';
                 const ipInfo = rowData['IP(운영)'] || rowData['IP'] || '';
                 const devIp = rowData['IP(개발)'] || '';
-                const contact = rowData['기관 담당자'] || '';
-                const contactInfo = rowData['기관 연락처'] || '';
+                const extContact = rowData['기관 담당자'] || '';
+                const extContactInfo = rowData['기관 연락처'] || '';
                 const teamContact = rowData['당행 담당자'] || '';
-                const dept = rowData['당행 부서'] || '';
+                const extDept = rowData['당행 부서'] || '';
                 
                 // 보다 상세한 자연어 응답 생성
                 text = `${orgName}의 ${service} 서비스는 운영 IP ${ipInfo}`;
@@ -187,16 +188,16 @@ const OfflineCache = {
                 }
                 text += `로 연결됩니다.`;
                 
-                if (contact) {
-                    text += ` 기관 측 담당자는 ${contact}`;
-                    if (contactInfo) {
-                        text += `(연락처: ${contactInfo})`;
+                if (extContact) {
+                    text += ` 기관 측 담당자는 ${extContact}`;
+                    if (extContactInfo) {
+                        text += `(연락처: ${extContactInfo})`;
                     }
                     text += `입니다.`;
                 }
                 
-                if (dept) {
-                    text += ` 당행 담당 부서는 ${dept}`;
+                if (extDept) {
+                    text += ` 당행 담당 부서는 ${extDept}`;
                     if (teamContact) {
                         text += `, 담당자는 ${teamContact}`;
                     }
@@ -209,9 +210,9 @@ const OfflineCache = {
                     service: service,
                     ip: ipInfo,
                     ip_dev: devIp,
-                    contact: contact,
-                    contact_info: contactInfo,
-                    department: dept,
+                    contact: extContact,
+                    contact_info: extContactInfo,
+                    department: extDept,
                     team_contact: teamContact
                 };
                 break;
