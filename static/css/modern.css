@@ -617,6 +617,22 @@ body.offline-mode .logo img {
     gap: 1.2rem;
 }
 
+.chat-title-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.chat-logo {
+    height: 2.5rem;
+    margin-right: 10px;
+}
+
+.chat-title-text {
+    display: flex;
+    align-items: center;
+}
+
 .chat-title h3 {
     font-size: 2rem;
     font-weight: 600;
