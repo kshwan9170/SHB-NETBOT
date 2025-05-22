@@ -1028,65 +1028,109 @@ document.addEventListener('DOMContentLoaded', function() {
                     // IndexedDB 실패 시 localStorage 검색
                     const localResponse = getLocalResponse(message);
                     if (localResponse) {
-                        // 응답 처리 - A:, B: 형식을 자연어로 변환
+                        // A:, B:, C: 형식을 완전히 제거하고 자연어 변환
                         let processedResponse = localResponse;
                         
-                        // IP 주소를 포함하는 응답에 대한 특별 처리 - 강화된 자연어 변환
+                        // IP 주소를 포함하는 응답 - 특화된 처리
                         if (message.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/)) {
-                            // 무조건 새로운 자연어 응답으로 교체 (기존 형식 사용하지 않음)
                             const ipMatch = message.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/);
                             const ipAddress = ipMatch ? ipMatch[0] : '';
                             
-                            // 원본 응답에서 데이터 파싱
+                            console.log('IP 주소 검색 응답 변환 시작:', localResponse);
+                            
+                            // 알파벳 단일문자 레이블 패턴(A:, B:) 및 한글 패턴(사용자:, 부서:) 모두 처리
+                            const formatPattern = /(?:^|\s|[.])([A-G]|사용자명?|부서|연락처|상태|최종[ _]?접속일|날짜|비고)\s*[:]\s*([^.,:]+)(?=[,.]|\s|$)/gi;
+                            
+                            // 정보 추출
                             let userData = '';
                             let deptData = '';
                             let contactData = '';
                             let dateData = '';
-                            let statusData = '사용 중';
+                            let statusData = '';
+                            let notesData = '';
                             
-                            // 응답 구문 분석 - 콜론 기준으로 나누어 처리
-                            const lines = processedResponse.split(/[.]\s*/);
-                            
-                            for (const line of lines) {
-                                const parts = line.split(':');
-                                if (parts.length !== 2) continue;
+                            // 모든 매칭 찾기
+                            let match;
+                            while ((match = formatPattern.exec(localResponse)) !== null) {
+                                const key = match[1].trim().toLowerCase();
+                                const value = match[2].trim();
                                 
-                                const key = parts[0].trim().toLowerCase();
-                                const value = parts[1].trim();
+                                console.log('매칭 찾음:', key, '=', value);
                                 
-                                if (key.includes('사용자') || key.includes('이름') || key === 'a') {
+                                // 키 패턴에 따라 데이터 분류
+                                if (key === 'a' || key.includes('사용자')) {
                                     userData = value;
-                                } else if (key.includes('부서') || key.includes('팀') || key === 'b') {
+                                } else if (key === 'b' || key.includes('부서')) {
                                     deptData = value;
-                                } else if (key.includes('연락처') || key.includes('전화') || key === 'c') {
+                                } else if (key === 'c' || key.includes('연락처')) {
                                     contactData = value;
-                                } else if (key.includes('접속일') || key.includes('날짜') || key === 'e' || key === 'f') {
-                                    dateData = value;
-                                } else if (key.includes('상태')) {
+                                } else if (key === 'd' || key.includes('상태')) {
                                     statusData = value;
+                                } else if (key === 'e' || key === 'f' || key.includes('접속일') || key.includes('날짜')) {
+                                    dateData = value;
+                                } else if (key === 'g' || key.includes('비고')) {
+                                    notesData = value;
                                 }
                             }
                             
-                            // 무조건 자연어 형태로 응답
-                            if (deptData && userData) {
-                                processedResponse = `IP ${ipAddress}는 ${deptData}의 ${userData} 담당자가 ${statusData}입니다.`;
-                            } else if (userData) {
-                                processedResponse = `IP ${ipAddress}는 ${userData} 담당자가 ${statusData}입니다.`;
-                            } else {
-                                processedResponse = `IP ${ipAddress} 정보를 찾았습니다.`;
+                            // 자연어 문장 조합
+                            if (!statusData) statusData = '사용 중';
+                            
+                            if (ipAddress) {
+                                if (deptData && userData) {
+                                    processedResponse = `IP ${ipAddress}는 ${deptData}의 ${userData} 담당자가 ${statusData}입니다.`;
+                                } else if (userData) {
+                                    processedResponse = `IP ${ipAddress}는 ${userData} 담당자가 ${statusData}입니다.`;
+                                } else {
+                                    processedResponse = `IP ${ipAddress} 정보를 찾았습니다.`;
+                                }
+                                
+                                if (contactData) {
+                                    processedResponse += ` 연락처는 ${contactData}입니다.`;
+                                }
+                                
+                                if (dateData) {
+                                    processedResponse += ` 최근 접속일은 ${dateData}입니다.`;
+                                }
+                                
+                                if (notesData) {
+                                    processedResponse += ` 참고사항: ${notesData}`;
+                                }
                             }
                             
-                            if (contactData) {
-                                processedResponse += ` 연락처는 ${contactData}입니다.`;
+                            // 백업 처리: 알파벳 패턴 직접 찾기
+                            if (processedResponse === localResponse && localResponse.includes(': ')) {
+                                const alphaPattern = /([A-G])\s*:\s*([^.,]+)(?=[,.]|\s|$)/g;
+                                const extractedData = {};
+                                
+                                while ((match = alphaPattern.exec(localResponse)) !== null) {
+                                    const label = match[1];
+                                    const value = match[2].trim();
+                                    extractedData[label] = value;
+                                }
+                                
+                                console.log('백업 처리로 추출된 데이터:', extractedData);
+                                
+                                // 백업 데이터로 자연어 생성
+                                if (Object.keys(extractedData).length > 0) {
+                                    if (ipAddress) {
+                                        processedResponse = `IP ${ipAddress}에 대한 정보입니다: `;
+                                        if (extractedData['A']) processedResponse += `사용자는 ${extractedData['A']}`;
+                                        if (extractedData['B']) processedResponse += `, 부서는 ${extractedData['B']}`;
+                                        if (extractedData['C']) processedResponse += `, 연락처는 ${extractedData['C']}`;
+                                        if (extractedData['D']) processedResponse += `, 상태는 ${extractedData['D']}`;
+                                        if (extractedData['E']) processedResponse += `, 날짜는 ${extractedData['E']}`;
+                                        if (extractedData['F']) processedResponse += `, ${extractedData['F']}`;
+                                        if (extractedData['G']) processedResponse += `, ${extractedData['G']}`;
+                                        
+                                        // 쉼표 정리
+                                        processedResponse = processedResponse.replace(/,\s*$/, '');
+                                        processedResponse = processedResponse.replace(/:\s*,/, ':');
+                                    }
+                                }
                             }
                             
-                            if (dateData) {
-                                processedResponse += ` 최근 접속일은 ${dateData}입니다.`;
-                            }
-                            
-                            // 로깅을 통한 디버깅
-                            console.log('원본 응답:', localResponse);
-                            console.log('변환된 응답:', processedResponse);
+                            console.log('최종 변환된 응답:', processedResponse);
                         }
                         
                         addMessage('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n' + processedResponse, 'bot');
