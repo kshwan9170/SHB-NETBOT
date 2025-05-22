@@ -541,6 +541,15 @@ window.offlineHelper = {
         return "[🔴 서버 연결이 끊겼습니다. 업로드된 문서 데이터로 응답 중입니다]\n\n" + response;
     },
     
+    // 오프라인 응답 확인 (디버깅용)
+    getOfflineStatus: function() {
+        return {
+            mode: localStorage.getItem('offline_test_mode') === 'true' ? 'offline_test' : 'normal',
+            dataCount: JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '[]').length,
+            documentsCache: localStorage.getItem(this.DOCUMENTS_CACHE_KEY) !== null
+        };
+    },
+    
     // 온라인 응답 저장
     saveResponse: function(query, response) {
         try {
