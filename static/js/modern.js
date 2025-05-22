@@ -1031,46 +1031,62 @@ document.addEventListener('DOMContentLoaded', function() {
                         // 응답 처리 - A:, B: 형식을 자연어로 변환
                         let processedResponse = localResponse;
                         
-                        // IP 주소를 포함하는 응답에 대한 특별 처리
+                        // IP 주소를 포함하는 응답에 대한 특별 처리 - 강화된 자연어 변환
                         if (message.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/)) {
-                            // A:, B:, C: 형식 응답을 자연어로 변환
+                            // 무조건 새로운 자연어 응답으로 교체 (기존 형식 사용하지 않음)
                             const ipMatch = message.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/);
                             const ipAddress = ipMatch ? ipMatch[0] : '';
                             
-                            // 기존 응답에서 정보 추출
-                            const userMatch = processedResponse.match(/사용자.?\s*:\s*([^\n.]+)/i);
-                            const deptMatch = processedResponse.match(/부서.?\s*:\s*([^\n.]+)/i);
-                            const contactMatch = processedResponse.match(/연락처.?\s*:\s*([^\n.]+)/i);
-                            const dateMatch = processedResponse.match(/(최종 접속일|날짜).?\s*:\s*([^\n.]+)/i);
+                            // 원본 응답에서 데이터 파싱
+                            let userData = '';
+                            let deptData = '';
+                            let contactData = '';
+                            let dateData = '';
+                            let statusData = '사용 중';
                             
-                            const user = userMatch ? userMatch[1].trim() : '';
-                            const dept = deptMatch ? deptMatch[1].trim() : '';
-                            const contact = contactMatch ? contactMatch[1].trim() : '';
-                            const date = dateMatch ? dateMatch[2].trim() : '';
+                            // 응답 구문 분석 - 콜론 기준으로 나누어 처리
+                            const lines = processedResponse.split(/[.]\s*/);
                             
-                            // 자연어 응답 생성
-                            let naturalResponse = '';
+                            for (const line of lines) {
+                                const parts = line.split(':');
+                                if (parts.length !== 2) continue;
+                                
+                                const key = parts[0].trim().toLowerCase();
+                                const value = parts[1].trim();
+                                
+                                if (key.includes('사용자') || key.includes('이름') || key === 'a') {
+                                    userData = value;
+                                } else if (key.includes('부서') || key.includes('팀') || key === 'b') {
+                                    deptData = value;
+                                } else if (key.includes('연락처') || key.includes('전화') || key === 'c') {
+                                    contactData = value;
+                                } else if (key.includes('접속일') || key.includes('날짜') || key === 'e' || key === 'f') {
+                                    dateData = value;
+                                } else if (key.includes('상태')) {
+                                    statusData = value;
+                                }
+                            }
                             
-                            if (dept && user) {
-                                naturalResponse = `IP ${ipAddress}는 ${dept}의 ${user} 담당자가 사용 중입니다.`;
-                            } else if (user) {
-                                naturalResponse = `IP ${ipAddress}는 ${user} 담당자가 사용 중입니다.`;
+                            // 무조건 자연어 형태로 응답
+                            if (deptData && userData) {
+                                processedResponse = `IP ${ipAddress}는 ${deptData}의 ${userData} 담당자가 ${statusData}입니다.`;
+                            } else if (userData) {
+                                processedResponse = `IP ${ipAddress}는 ${userData} 담당자가 ${statusData}입니다.`;
                             } else {
-                                naturalResponse = `IP ${ipAddress} 정보를 찾았습니다.`;
+                                processedResponse = `IP ${ipAddress} 정보를 찾았습니다.`;
                             }
                             
-                            if (contact) {
-                                naturalResponse += ` 연락처는 ${contact}입니다.`;
+                            if (contactData) {
+                                processedResponse += ` 연락처는 ${contactData}입니다.`;
                             }
                             
-                            if (date) {
-                                naturalResponse += ` 최근 접속일은 ${date}입니다.`;
+                            if (dateData) {
+                                processedResponse += ` 최근 접속일은 ${dateData}입니다.`;
                             }
                             
-                            // 변환된 자연어 응답 사용
-                            if (naturalResponse) {
-                                processedResponse = naturalResponse;
-                            }
+                            // 로깅을 통한 디버깅
+                            console.log('원본 응답:', localResponse);
+                            console.log('변환된 응답:', processedResponse);
                         }
                         
                         addMessage('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n' + processedResponse, 'bot');
