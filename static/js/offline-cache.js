@@ -347,73 +347,84 @@ const OfflineCache = {
     },
     
     /**
-     * 오프라인 상태에서 쿼리 처리
+     * 오프라인 상태에서 쿼리 처리 - 유사도 기반 단일 결과 반환
      * @param {string} query - 사용자 질문
      * @returns {Promise<Object>} 검색 결과 및 응답
      */
     handleOfflineQuery: async function(query) {
         try {
-            // IndexedDB에서 관련 데이터 검색
+            // IndexedDB에서 관련 데이터 검색 (유사도 기반, 최대 1개 결과)
             const results = await OfflineStorage.searchData(query);
             
+            // 검색 결과가 없거나 유사도가 낮은 경우
             if (results.length === 0) {
                 return {
                     success: false,
-                    message: "로컬 데이터에서 정보를 찾을 수 없습니다.",
+                    message: "현재 오프라인 상태입니다. 저장된 메뉴얼 데이터만으로 응답할 수 있습니다.",
                     data: null
                 };
             }
             
-            // 가장 관련성 높은 결과 사용
+            // 가장 관련성 높은 결과 1개만 사용
             const bestMatch = results[0];
             
             // IP 주소 쿼리인지 확인
             const ipRegex = /\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/;
             const containsIp = ipRegex.test(query);
             
-            // 관련 결과 추출 (최대 3개)
-            const relatedResults = results.slice(1, 4).map(item => item.text);
+            // 응답 형식 구성 (단일 결과)
+            let responseText = bestMatch.text;
             
-            // 응답 형식 구성
-            let enhancedText = bestMatch.text;
-            
-            // 메타데이터 활용하여 응답 보강
-            if (containsIp && bestMatch.metadata.ip) {
-                // IP 쿼리에 대해 더 풍부한 정보 제공
+            // IP 쿼리인 경우에만 메타데이터 활용하여 응답 보강
+            if (containsIp && bestMatch.metadata && bestMatch.metadata.ip) {
                 const meta = bestMatch.metadata;
                 if (meta.user && meta.department) {
-                    enhancedText = `IP ${meta.ip}는 ${meta.department}의 ${meta.user} 담당자가 사용 중입니다.`;
+                    responseText = `IP ${meta.ip}는 ${meta.department}의 ${meta.user} 담당자가 사용 중입니다.`;
                     
                     if (meta.contact) {
-                        enhancedText += ` 연락처는 ${meta.contact}입니다.`;
+                        responseText += ` 연락처는 ${meta.contact}입니다.`;
                     }
                     
                     if (meta.last_access) {
-                        enhancedText += ` 최근 접속일은 ${meta.last_access}입니다.`;
+                        responseText += ` 최근 접속일은 ${meta.last_access}입니다.`;
                     }
                     
                     if (meta.status) {
-                        enhancedText += ` 현재 상태는 '${meta.status}'입니다.`;
+                        responseText += ` 현재 상태는 '${meta.status}'입니다.`;
                     }
                 }
             }
             
-            return {
-                success: true,
-                message: "로컬 데이터에서 정보를 찾았습니다.",
-                data: {
-                    text: enhancedText,
-                    source: bestMatch.metadata.source || "로컬 데이터",
-                    additionalResults: relatedResults,
-                    metadata: bestMatch.metadata,
-                    relatedCount: results.length > 1 ? results.length - 1 : 0
-                }
-            };
+            // QA 유형 데이터인 경우 (answer 필드 그대로 사용)
+            if (bestMatch.metadata && bestMatch.metadata.answer) {
+                responseText = bestMatch.metadata.answer;
+            }
+            
+            // 유사도가 기준치 이상인 경우에만 실제 결과 반환
+            if (bestMatch.similarity >= 0.3) {
+                return {
+                    success: true,
+                    message: "로컬 데이터에서 정보를 찾았습니다.",
+                    data: {
+                        text: responseText,
+                        source: bestMatch.metadata.source || "로컬 데이터",
+                        similarity: bestMatch.similarity,
+                        additionalResults: [] // 추가 결과 표시하지 않음
+                    }
+                };
+            } else {
+                // 유사도가 낮은 경우 상태 안내만 제공
+                return {
+                    success: false,
+                    message: "현재 오프라인 상태입니다. 저장된 메뉴얼 데이터만으로 응답할 수 있습니다.",
+                    data: null
+                };
+            }
         } catch (error) {
             console.error('오프라인 쿼리 처리 실패:', error);
             return {
                 success: false,
-                message: "로컬 데이터 검색 중 오류가 발생했습니다.",
+                message: "현재 오프라인 상태입니다. 저장된 메뉴얼 데이터만으로 응답할 수 있습니다.",
                 data: null
             };
         }
