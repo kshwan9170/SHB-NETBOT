@@ -68,6 +68,16 @@ def get_clean_filename(filename):
 def index():
     return render_template('index.html')
     
+@app.route('/<path:subpath>')
+def catch_all(subpath):
+    """
+    해시 기반 라우팅을 지원하기 위한 캐치올 라우트
+    /#support 같은 URL 패턴을 처리합니다
+    """
+    # #support 또는 %23support 등의 URL 요청을 기본 페이지로 리디렉션
+    if '#' in subpath or '%23' in subpath:
+        return redirect('/')
+    
 @app.route('/file-manager')
 def file_manager():
     """간단한 파일 관리 페이지"""
