@@ -1161,34 +1161,68 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.log('현재 모드:', isOfflineMode ? '오프라인' : '온라인');
                     
                     // 이미 오프라인 모드이거나 네트워크 연결이 없는 경우 로컬 데이터 검색 시도
-                    if (isOfflineMode || !navigator.onLine) {
-                        console.log('오프라인 모드에서 로컬 데이터 검색 시작');
+                    const offlineTestMode = localStorage.getItem('offline_test_mode') === 'true';
+                    if (isOfflineMode || !navigator.onLine || offlineTestMode) {
+                        console.log('오프라인 모드에서 로컬 데이터 검색 시작', { isOfflineMode, onlineStatus: navigator.onLine, offlineTestMode });
                         
                         try {
                             // 간단한 오프라인 헬퍼 사용
                             if (window.offlineHelper && typeof window.offlineHelper.search === 'function') {
-                                console.log('오프라인 헬퍼로 검색 시도 중...');
+                                console.log('오프라인 헬퍼로 검색 시도 중...', window.offlineHelper.getOfflineStatus());
                                 
-                                // 검색 실행 및 응답
-                                const offlineResponse = window.offlineHelper.search(message);
-                                
-                                if (offlineResponse) {
-                                    // 응답 표시 (지연 효과 적용)
-                                    addMessageWithTypingEffect(offlineResponse, 'bot');
-                                    return;
-                                } else {
-                                    // 결과가 없는 경우 기본 메시지
-                                    addMessageWithTypingEffect('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다]\n\n현재 오프라인 상태입니다. 저장된 메뉴얼 데이터만으로 응답할 수 있습니다.', 'bot');
+                                try {
+                                    // 검색 실행 및 응답
+                                    const offlineResponse = window.offlineHelper.search(message);
+                                    console.log('오프라인 응답 결과:', offlineResponse ? '결과 있음' : '결과 없음');
+                                    
+                                    if (offlineResponse) {
+                                        // 응답 표시 (지연 효과 적용)
+                                        addMessageWithTypingEffect(offlineResponse, 'bot');
+                                        
+                                        // 로딩 인디케이터 제거 및 버튼 다시 활성화
+                                        loadingIndicator.classList.remove('active');
+                                        sendButton.style.pointerEvents = '';
+                                        sendButton.style.opacity = '';
+                                        return;
+                                    } else {
+                                        // 결과가 없는 경우 기본 메시지
+                                        const noResultMsg = '[🔴 서버 연결이 끊겼습니다. 업로드된 문서 데이터로 응답 중입니다]\n\n현재 오프라인 상태입니다. 저장된 문서에 대한 질문만 응답 가능합니다.';
+                                        addMessageWithTypingEffect(noResultMsg, 'bot');
+                                        
+                                        // 로딩 인디케이터 제거 및 버튼 다시 활성화
+                                        loadingIndicator.classList.remove('active');
+                                        sendButton.style.pointerEvents = '';
+                                        sendButton.style.opacity = '';
+                                        return;
+                                    }
+                                } catch (searchError) {
+                                    console.error('오프라인 검색 오류:', searchError);
+                                    addMessageWithTypingEffect('[🔴 오프라인 모드 오류]\n\n오프라인 데이터 검색 중 오류가 발생했습니다.', 'bot');
+                                    
+                                    // 로딩 인디케이터 제거 및 버튼 다시 활성화
+                                    loadingIndicator.classList.remove('active');
+                                    sendButton.style.pointerEvents = '';
+                                    sendButton.style.opacity = '';
                                     return;
                                 }
                             } else {
                                 console.error('오프라인 헬퍼 모듈을 찾을 수 없습니다.');
-                                addMessageWithTypingEffect('현재 오프라인 상태입니다. 저장된 메뉴얼 데이터만으로 응답할 수 있습니다.', 'bot');
+                                addMessageWithTypingEffect('현재 오프라인 상태입니다. 저장된 문서에 대한 질문만 응답 가능합니다.', 'bot');
+                                
+                                // 로딩 인디케이터 제거 및 버튼 다시 활성화
+                                loadingIndicator.classList.remove('active');
+                                sendButton.style.pointerEvents = '';
+                                sendButton.style.opacity = '';
                                 return;
                             }
                         } catch (offlineError) {
                             console.error('오프라인 응답 생성 중 오류:', offlineError);
                             addMessageWithTypingEffect('현재 오프라인 상태입니다. 로컬 데이터 처리 중 오류가 발생했습니다.', 'bot');
+                            
+                            // 로딩 인디케이터 제거 및 버튼 다시 활성화
+                            loadingIndicator.classList.remove('active');
+                            sendButton.style.pointerEvents = '';
+                            sendButton.style.opacity = '';
                             return;
                         }
                     }
