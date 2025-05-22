@@ -115,17 +115,21 @@ const OfflineCache = {
                 const contact = rowData['연락처'] || rowData['전화번호'] || '';
                 const lastAccess = rowData['최종 접속일'] || '';
                 
-                // 더 자연스러운 응답 생성
-                if (contact) {
-                    text = `IP ${ip}는 ${dept} ${user}님이 ${status}입니다. 연락처는 ${contact}입니다.`;
-                    if (lastAccess) {
-                        text += ` 최근 접속일은 ${lastAccess}입니다.`;
-                    }
+                // 완전히 자연스러운 응답 생성 (통일된 포맷)
+                if (dept && user) {
+                    text = `IP ${ip}는 ${dept}의 ${user} 담당자가 ${status}입니다.`;
+                } else if (user) {
+                    text = `IP ${ip}는 ${user} 담당자가 ${status}입니다.`;
                 } else {
-                    text = `IP ${ip}는 ${dept} ${user}님이 ${status}입니다.`;
-                    if (lastAccess) {
-                        text += ` 최근 접속일은 ${lastAccess}입니다.`;
-                    }
+                    text = `IP ${ip} 정보를 찾았습니다.`;
+                }
+                
+                if (contact) {
+                    text += ` 연락처는 ${contact}입니다.`;
+                }
+                
+                if (lastAccess) {
+                    text += ` 최근 접속일은 ${lastAccess}입니다.`;
                 }
                 
                 metadata = {

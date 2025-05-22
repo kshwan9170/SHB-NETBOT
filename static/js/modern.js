@@ -378,6 +378,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // 상태 정보
         if (record['상태']) {
             status = record['상태'];
+        } else {
+            status = '사용 중';
         }
         
         // 접속일 정보
@@ -400,62 +402,65 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // 자연어 응답 메시지 생성
-        let response = '[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다]\n\n';
+        let response = '';
         
-        // 기본 정보 문장 구성
-        if (userInfo && departmentInfo) {
-            response += `IP ${ipAddress}는 ${departmentInfo}의 ${userInfo} 담당자가 사용 중입니다.`;
-        } else if (userInfo) {
-            response += `IP ${ipAddress}는 ${userInfo} 담당자가 사용 중입니다.`;
-        } else {
-            response += `IP ${ipAddress} 정보를 찾았습니다.`;
-        }
+        // 오프라인 모드 직접 레코드 변환
+        // IP, 사용자, 부서 정보가 A:, B:, C: 형태로 나오는 문제 해결
+        let ipText = record['IP 주소'] || record['IP'] || '';
+        let userText = record['사용자명'] || record['사용자'] || record['이름'] || record['담당자'] || '';
+        let deptText = record['부서'] || record['팀'] || record['소속'] || '';
+        let contactText = record['연락처'] || record['전화번호'] || '';
+        let dateText = record['최종 접속일'] || record['접속일'] || record['날짜'] || '';
         
-        // 추가 정보를 별도 문장으로 추가
-        if (contactInfo) {
-            response += ` 연락처는 ${contactInfo}입니다.`;
-        }
-        
-        if (lastAccess) {
-            response += ` 최근 접속일은 ${lastAccess}입니다.`;
-        }
-        
-        if (notes) {
-            response += ` 참고사항: ${notes}`;
-        }
-        
-        // 다른 추가 정보가 있으면 포함
-        let additionalInfo = [];
-        
-        for (const [key, value] of Object.entries(record)) {
-            if (key !== 'IP' && 
-                key !== 'IP 주소' && 
-                key !== 'IP주소' && 
-                key !== '사용자' && 
-                key !== '사용자명' && 
-                key !== '이름' && 
-                key !== '담당자' && 
-                key !== '부서' && 
-                key !== '팀' && 
-                key !== '소속' && 
-                key !== '연락처' && 
-                key !== '전화번호' && 
-                key !== '상태' && 
-                key !== '최종 접속일' && 
-                key !== '접속일' &&
-                key !== '날짜' &&
-                key !== '비고' &&
-                key !== '메모' &&
-                value) {
-                additionalInfo.push(`${key}: ${value}`);
+        // IP가 직접 일치하는 경우를 우선 처리
+        if (ipAddress) {
+            if (deptText && userText) {
+                response = `IP ${ipAddress}는 ${deptText}의 ${userText} 담당자가 ${status}입니다.`;
+            } else if (userText) {
+                response = `IP ${ipAddress}는 ${userText} 담당자가 ${status}입니다.`;
+            } else {
+                response = `IP ${ipAddress} 정보를 찾았습니다.`;
+            }
+            
+            if (contactText) {
+                response += ` 연락처는 ${contactText}입니다.`;
+            }
+            
+            if (dateText) {
+                response += ` 최근 접속일은 ${dateText}입니다.`;
+            }
+            
+            if (notes) {
+                response += ` 참고사항: ${notes}`;
             }
         }
         
-        if (additionalInfo.length > 0) {
-            response += `\n\n추가 정보: ${additionalInfo.join(', ')}`;
+        // 응답이 비어있으면 다른 방법으로 시도
+        if (!response) {
+            response = `IP ${ipAddress}에 대한 정보입니다.`;
+            
+            // 각 필드를 순회하며 자연어 문장 생성
+            for (const [key, value] of Object.entries(record)) {
+                if (key === 'IP' || key === 'IP 주소' || key === 'IP주소') continue;
+                if (!value) continue;
+                
+                if (key === '사용자' || key === '사용자명' || key === '이름' || key === '담당자') {
+                    response += ` 담당자는 ${value}입니다.`;
+                } else if (key === '부서' || key === '팀' || key === '소속') {
+                    response += ` ${value} 부서 소속입니다.`;
+                } else if (key === '연락처' || key === '전화번호') {
+                    response += ` 연락처는 ${value}입니다.`;
+                } else if (key === '최종 접속일' || key === '접속일' || key === '날짜') {
+                    response += ` 최근 접속일은 ${value}입니다.`;
+                } else if (key === '상태') {
+                    response += ` 현재 ${value} 상태입니다.`;
+                } else if (key === '비고' || key === '메모') {
+                    response += ` 참고사항: ${value}`;
+                } else {
+                    response += ` ${key}은(는) ${value}입니다.`;
+                }
+            }
         }
-        
-        response += `\n\n*정보 출처: ${filename}*`;
         
         return response;
     }
