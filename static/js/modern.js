@@ -1153,42 +1153,36 @@ document.addEventListener('DOMContentLoaded', function() {
                     const isOfflineMode = document.body.classList.contains('offline-mode');
                     console.log('현재 모드:', isOfflineMode ? '오프라인' : '온라인');
                     
-                    // 이미 오프라인 모드이거나 IndexedDB가 사용 가능하면 로컬 데이터 검색 시도
+                    // 이미 오프라인 모드이거나 네트워크 연결이 없는 경우 로컬 데이터 검색 시도
                     if (isOfflineMode || !navigator.onLine) {
                         console.log('오프라인 모드에서 로컬 데이터 검색 시작');
                         
-                        // 로컬 데이터로 응답 시도
                         try {
-                            // IndexedDB 사용 가능한 경우 (OfflineStorage.js)
-                            if (window.OfflineStorage && window.OfflineCache) {
-                                console.log('IndexedDB 검색 시도 중...');
+                            // 간단한 오프라인 헬퍼 사용
+                            if (window.offlineHelper && typeof window.offlineHelper.search === 'function') {
+                                console.log('오프라인 헬퍼로 검색 시도 중...');
                                 
-                                // OfflineCache를 통한 검색
-                                const offlineResult = await OfflineCache.handleOfflineQuery(message);
-                                if (offlineResult && offlineResult.success) {
-                                    // 단일 결과만 표시하도록 수정
-                                    let offlineResponse = '[🔴 서버 연결이 끊겼습니다. 저장된 메뉴얼 데이터만으로 응답합니다.]\n\n' + 
-                                                         offlineResult.data.text;
-                                    
-                                    // 응답 표시 (관련 정보 제외)
+                                // 검색 실행 및 응답
+                                const offlineResponse = window.offlineHelper.search(message);
+                                
+                                if (offlineResponse) {
+                                    // 응답 표시 (지연 효과 적용)
                                     addMessageWithTypingEffect(offlineResponse, 'bot');
                                     return;
+                                } else {
+                                    // 결과가 없는 경우 기본 메시지
+                                    addMessageWithTypingEffect('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다]\n\n현재 오프라인 상태입니다. 저장된 메뉴얼 데이터만으로 응답할 수 있습니다.', 'bot');
+                                    return;
                                 }
-                            }
-                            
-                            // IndexedDB 검색에 실패한 경우 localStorage에서 기존 방식으로 검색
-                            const localResponse = getLocalResponse(message);
-                            if (localResponse) {
-                                addMessageWithTypingEffect('[🔴 서버 연결이 끊겼습니다. 저장된 메뉴얼 데이터만으로 응답합니다.]\n\n' + 
-                                                          localResponse, 'bot');
-                                return;
                             } else {
+                                console.error('오프라인 헬퍼 모듈을 찾을 수 없습니다.');
                                 addMessageWithTypingEffect('현재 오프라인 상태입니다. 저장된 메뉴얼 데이터만으로 응답할 수 있습니다.', 'bot');
                                 return;
                             }
                         } catch (offlineError) {
                             console.error('오프라인 응답 생성 중 오류:', offlineError);
-                            // 오프라인 응답 실패 시 서버 요청 계속 진행
+                            addMessageWithTypingEffect('현재 오프라인 상태입니다. 로컬 데이터 처리 중 오류가 발생했습니다.', 'bot');
+                            return;
                         }
                     }
                     
