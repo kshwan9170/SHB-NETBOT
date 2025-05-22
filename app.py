@@ -121,8 +121,13 @@ def chat():
     if use_offline_mode or not openai_key:
         try:
             # 로컬 데이터 기반 응답 생성
+            # CSV 데이터가 로드되어 있는지 확인하고, 없으면 재로드 시도
+            if not chatbot.csv_narratives:
+                print("CSV 데이터가 없어 초기화 시도")
+                chatbot.initialize_csv_narratives()
+                
             reply = chatbot.get_local_response(user_message)
-            offline_message = "[🔴 오프라인 모드] 현재 인터넷 연결이 제한되어 있어 로컬 데이터만 사용합니다.\n\n"
+            offline_message = "[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n"
             
             return jsonify({
                 'reply': offline_message + reply,
@@ -132,8 +137,9 @@ def chat():
         except Exception as offline_error:
             print(f"오프라인 응답 생성 중 오류: {str(offline_error)}")
             return jsonify({
-                'reply': '오프라인 응답 생성 중 오류가 발생했습니다.',
+                'reply': '[🔴 서버 연결이 끊겼습니다.]\n\n모든 기능이 제한됩니다. 네트워크 연결 상태를 확인해 주세요.',
                 'question': user_message,
+                'mode': 'offline',
                 'error': str(offline_error)
             }), 500
     
@@ -157,8 +163,13 @@ def chat():
         
         try:
             # API 오류 시 오프라인 모드로 폴백
+            # CSV 데이터가 로드되어 있는지 확인하고, 없으면 재로드 시도
+            if not chatbot.csv_narratives:
+                print("API 오류 모드: CSV 데이터가 없어 초기화 시도")
+                chatbot.initialize_csv_narratives()
+                
             offline_reply = chatbot.get_local_response(user_message)
-            fallback_message = f"[🔴 API 오류] OpenAI API 연결 중 오류가 발생하여 로컬 데이터만 사용합니다.\n\n"
+            fallback_message = f"[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n"
             
             return jsonify({
                 'reply': fallback_message + offline_reply,
@@ -166,13 +177,14 @@ def chat():
                 'mode': 'offline'
             })
         except Exception as offline_error:
+            print(f"오프라인 응답 생성 중 오류: {str(offline_error)}")
             # 사용자 언어에 맞게 오류 메시지
             if re.search(r'[가-힣]', user_message):
-                reply = "죄송합니다. 답변 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+                reply = "[🔴 서버 연결이 끊겼습니다.]\n\n죄송합니다. 현재 서버 연결이 원활하지 않아 응답을 생성할 수 없습니다. 네트워크 연결을 확인해주세요."
             else:
-                reply = "Sorry, an error occurred while generating a response. Please try again later."
+                reply = "[🔴 Server connection lost.]\n\nSorry, the server connection is currently unavailable. Please check your network connection."
                 
-            return jsonify({'reply': reply, 'question': user_message}), 500
+            return jsonify({'reply': reply, 'question': user_message, 'mode': 'offline'}), 500
 
 @app.route('/api/chat/feedback', methods=['POST'])
 def chat_feedback():
