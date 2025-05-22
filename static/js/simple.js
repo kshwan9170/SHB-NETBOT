@@ -19,7 +19,40 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // URL 해시 처리 - 페이지 로드 시 해당 섹션으로 스크롤
-    if (window.location.hash) {
+    // 404 오류 해결: URL이 /%23support 형태로 오는 경우 처리
+    if (window.location.pathname.includes('%23') || window.location.pathname.includes('#')) {
+        // URL에서 해시 부분 추출
+        let hashPart = '';
+        if (window.location.pathname.includes('%23')) {
+            hashPart = window.location.pathname.split('%23')[1];
+        } else if (window.location.pathname.includes('#')) {
+            hashPart = window.location.pathname.split('#')[1];
+        }
+        
+        if (hashPart) {
+            // 올바른 URL로 리다이렉트
+            window.history.replaceState(null, null, '/#' + hashPart);
+            const targetElement = document.getElementById(hashPart);
+            
+            if (targetElement) {
+                // 페이지가 완전히 로드된 후 스크롤
+                setTimeout(() => {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80, // 헤더 높이 고려
+                        behavior: 'smooth'
+                    });
+                    
+                    // 타겟 섹션 강조 애니메이션
+                    targetElement.classList.add('highlight-section');
+                    setTimeout(() => {
+                        targetElement.classList.remove('highlight-section');
+                    }, 1500);
+                }, 300);
+            }
+        }
+    }
+    // 정상 해시 처리
+    else if (window.location.hash) {
         const targetId = window.location.hash.substring(1); // '#' 제거
         const targetElement = document.getElementById(targetId);
         
