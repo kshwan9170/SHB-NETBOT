@@ -3,7 +3,8 @@
  * IndexedDB를 사용하여 CSV 데이터를 저장하고 검색합니다.
  */
 
-const OfflineStorage = {
+// 전역 객체로 노출
+window.offlineStorage = {
     // IndexedDB 데이터베이스 이름과 버전
     DB_NAME: 'shb-netbot-local-storage',
     DB_VERSION: 1,
@@ -40,6 +41,38 @@ const OfflineStorage = {
                 store.createIndex('source', 'metadata.source', { unique: false });
                 
                 console.log('IndexedDB 스토어 및 인덱스 생성 완료');
+                
+                // 샘플 데이터 초기 추가 (스토어 생성 후 트랜잭션 유지)
+                const sampleData = [
+                    {
+                        text: "IP 192.168.0.1은 네트워크관리팀의 김철수 담당자가 사용 중입니다. 연락처는 02-123-4567입니다.",
+                        metadata: {
+                            ip: "192.168.0.1",
+                            user: "김철수",
+                            department: "네트워크관리팀",
+                            contact: "02-123-4567",
+                            last_access: "2025-05-20",
+                            status: "사용 중",
+                            source: "샘플 데이터",
+                            question: "192.168.0.1 정보 알려줘"
+                        }
+                    },
+                    {
+                        text: "대외계 연동을 위해서는 VPN 접속이 필요합니다. 금융결제원 시스템은 10.10.20.5, 신한금융지주 시스템은 10.10.30.8로 연결하세요.",
+                        metadata: {
+                            system: "대외계",
+                            department: "금융시스템팀",
+                            source: "샘플 데이터",
+                            question: "대외계 연동 방법"
+                        }
+                    }
+                ];
+                
+                // 샘플 데이터 추가
+                sampleData.forEach(item => {
+                    store.add(item);
+                });
+                console.log('샘플 데이터 초기화 완료');
             };
             
             request.onsuccess = (event) => {
