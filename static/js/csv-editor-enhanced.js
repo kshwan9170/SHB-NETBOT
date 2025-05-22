@@ -55,22 +55,39 @@ function enableCsvEditing() {
     
     // 현재 파일명 가져오기 (모달 제목 태그에서 직접 추출)
     const viewingFile = document.querySelector('.file-preview-title');
+    
     if (viewingFile && viewingFile.getAttribute('data-system-filename')) {
+        // 데이터 속성에서 시스템 파일명 가져오기
         currentFilename = viewingFile.getAttribute('data-system-filename');
         console.log("파일 제목 태그에서 찾은 파일명:", currentFilename);
+    } else if (viewingFile && viewingFile.textContent) {
+        // 텍스트 내용에서 파일명 추출 시도
+        const fileTitle = viewingFile.textContent.trim();
+        // CSV 파일 목록에서 일치하는 파일 찾기
+        const csvFiles = document.querySelectorAll('.file-item[data-type="csv"]');
+        let foundFilename = null;
+        
+        csvFiles.forEach(file => {
+            const displayName = file.querySelector('.file-name').textContent;
+            if (displayName === fileTitle && file.dataset.systemFilename) {
+                foundFilename = file.dataset.systemFilename;
+            }
+        });
+        
+        if (foundFilename) {
+            currentFilename = foundFilename;
+            console.log("파일 목록에서 찾은 파일명:", currentFilename);
+        } else {
+            alert('편집할 CSV 파일 정보를 찾을 수 없습니다. 페이지를 새로고침하고 다시 시도해주세요.');
+            console.error("CSV 파일명을 찾을 수 없음");
+            return;
+        }
     } else {
         // 백업 방법: URL에서 찾기
         const filenamePath = window.location.pathname;
-        const pathSegments = filenamePath.split('/');
-        
-        if (pathSegments.includes('view')) {
-            // 전체 경로에서 마지막 부분이 파일명
-            currentFilename = pathSegments[pathSegments.length - 1];
-        } else {
-            alert('편집할 파일을 찾을 수 없습니다. 페이지를 새로고침하고 다시 시도해주세요.');
-            console.error("파일명을 찾을 수 없음:", filenamePath);
-            return;
-        }
+        console.error("파일명을 찾을 수 없음:", filenamePath);
+        alert('편집할 CSV 파일을 찾을 수 없습니다. 파일 목록에서 CSV 파일을 선택해주세요.');
+        return;
     }
     console.log("현재 편집 중인 파일명:", currentFilename);
     
