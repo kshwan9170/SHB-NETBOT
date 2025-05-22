@@ -4,205 +4,124 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SHB-NetBot | 신한은행 네트워크 지원 챗봇</title>
-    <style>
-        /* 기본 스타일 */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f5f5f5;
-            color: #333;
-        }
-        .navbar {
-            background-color: #0064E1;
-            color: white;
-            padding: 1rem;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .navbar-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .logo {
-            display: flex;
-            align-items: center;
-        }
-        .logo img {
-            height: 30px;
-            margin-right: 10px;
-        }
-        .logo span {
-            font-weight: bold;
-            font-size: 18px;
-        }
-        .nav-links {
-            display: flex;
-            align-items: center;
-        }
-        .nav-link {
-            color: white;
-            text-decoration: none;
-            margin-left: 20px;
-            padding: 5px 10px;
-            border-radius: 5px;
-            transition: background-color 0.3s;
-        }
-        .nav-link:hover {
-            background-color: rgba(255,255,255,0.1);
-        }
-        .nav-link.active {
-            background-color: rgba(255,255,255,0.2);
-        }
-        .hero-section {
-            padding-top: 80px;
-            text-align: center;
-            min-height: 400px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 60px 20px;
-            background-color: #f0f4f8;
-            margin-top: 60px;
-        }
-        .hero-content {
-            max-width: 800px;
-        }
-        .hero-content h1 {
-            font-size: 48px;
-            margin-bottom: 20px;
-            color: #0064E1;
-        }
-        .hero-content p {
-            font-size: 20px;
-            margin-bottom: 30px;
-            color: #666;
-        }
-        .cta-button {
-            display: inline-block;
-            background-color: #0064E1;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 30px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: background-color 0.3s;
-        }
-        .cta-button:hover {
-            background-color: #0052b9;
-        }
-        .about-section {
-            padding: 80px 20px;
-            background-color: white;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        .section-title {
-            text-align: center;
-            margin-bottom: 60px;
-            color: #333;
-            font-size: 36px;
-        }
-        .about-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 30px;
-        }
-        .feature-card {
-            background-color: #f9f9f9;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            transition: transform 0.3s;
-        }
-        .feature-card:hover {
-            transform: translateY(-5px);
-        }
-        .feature-icon {
-            width: 60px;
-            height: 60px;
-            background-color: #e6f0ff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-            color: #0064E1;
-        }
-        .feature-card h3 {
-            margin-top: 0;
-            margin-bottom: 15px;
-            color: #333;
-            font-size: 22px;
-        }
-        .feature-card p {
-            margin: 0;
-            color: #666;
-            line-height: 1.6;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
     <!-- 고정 내비게이션 바 -->
     <nav class="navbar">
         <div class="navbar-container">
             <div class="logo">
-                <img src="/static/images/shinhan_logo_refined.svg" alt="신한은행 로고">
+                <img src="{{ url_for('static', filename='images/shinhan_logo_refined.svg') }}" alt="신한은행 로고">
                 <span>SHB-NetBot</span>
             </div>
             <div class="nav-links">
                 <a href="#home" class="nav-link active">Home</a>
                 <a href="#about" class="nav-link">About</a>
                 <a href="#chat" class="nav-link">Chat</a>
+                <a href="#documents" class="nav-link">Documents</a>
                 <a href="#support" class="nav-link">Support</a>
+                <button id="theme-toggle" class="theme-toggle">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="mobile-menu-btn">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
             </div>
         </div>
     </nav>
 
     <!-- 히어로 섹션 -->
     <section id="home" class="hero-section">
-        <div class="hero-content">
+        <div class="hero-content" data-aos="fade-up" data-aos-duration="800">
             <h1>SHB-NetBot</h1>
             <p>신한은행 네트워크 관련 문의 FAQ 챗봇</p>
             <a href="#chat" class="cta-button">시작하기</a>
+        </div>
+        <div class="scroll-indicator">
+            <p>스크롤 다운</p>
+            <div class="scroll-arrow"></div>
         </div>
     </section>
 
     <!-- About 섹션 -->
     <section id="about" class="about-section">
         <div class="container">
-            <h2 class="section-title">About SHB-NetBot</h2>
+            <h2 class="section-title" data-aos="fade-up">About SHB-NetBot</h2>
             <div class="about-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
-                        </svg>
-                    </div>
-                    <h3>실시간 네트워크 모니터링</h3>
-                    <p>신한은행 전체 네트워크 상태를 실시간으로 모니터링하고 즉각적인 응답을 제공합니다.</p>
-                </div>
-                <div class="feature-card">
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="100">
                     <div class="feature-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <path d="M12 6v6l4 2"></path>
                         </svg>
                     </div>
-                    <h3>24/7 지원 서비스</h3>
-                    <p>연중무휴 24시간 네트워크 관련 문의에 응답하여 업무 효율성을 높입니다.</p>
+                    <h3>실시간 응답</h3>
+                    <p>네트워크 관련 질문에 대해 즉시 분석하고 빠르게 응답하여 업무 지연을 최소화합니다.</p>
                 </div>
-                <div class="feature-card">
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="150">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20.42 4.58a5.4 5.4 0 0 0-7.65 0l-.77.78-.77-.78a5.4 5.4 0 0 0-7.65 0C1.46 6.7 1.33 10.28 4 13l8 8 8-8c2.67-2.72 2.54-6.3.42-8.42z"></path>
+                        </svg>
+                    </div>
+                    <h3>맞춤형 지원</h3>
+                    <p>직무·부서·사용자 환경에 따라 상황에 맞는 해결책을 제공합니다. 단순 Q&A를 넘어 컨텍스트 기반 안내를 지원합니다.</p>
+                </div>
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                    </div>
+                    <h3>문서 기반 지식 응답 (RAG)</h3>
+                    <p>사내 매뉴얼·정책 문서를 기반으로 정확하고 신뢰도 높은 답변을 제공합니다. 문서 업로드 시 자동 반영됩니다.</p>
+                </div>
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="250">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                    </div>
+                    <h3>강력한 보안 체계</h3>
+                    <p>모든 대화와 문서는 보안 기준에 따라 암호화되어 저장 및 처리됩니다. 민감한 정보도 안전하게 다룰 수 있습니다.</p>
+                </div>
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="feature-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                    </div>
+                    <h3>지속적 고도화</h3>
+                    <p>사용자 질문과 피드백 데이터를 기반으로 챗봇이 스스로 정교해집니다. 시간이 지날수록 응답 품질이 향상됩니다.</p>
+                </div>
+                <div class="feature-card" data-aos="fade-up" data-aos-delay="350">
                     <div class="feature-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
@@ -218,244 +137,397 @@
             </div>
         </div>
     </section>
-    
-    <!-- Support 섹션 -->
-    <section id="support" class="support-section">
+
+    <!-- 챗 섹션 -->
+    <section id="chat" class="chat-section">
         <div class="container">
-            <h2 class="section-title">고객지원</h2>
-            
-            <!-- FAQ 섹션 -->
-            <div class="faq-container">
-                <h3>자주 묻는 질문</h3>
-                
-                <div class="accordion">
-                    <div class="accordion-item">
-                        <div class="accordion-header">
-                            <button class="accordion-button" type="button">
-                                네트워크 연결이 자주 끊깁니다. 어떻게 해야 할까요?
-                            </button>
-                        </div>
-                        <div class="accordion-content">
-                            <p>네트워크 연결 불안정은 여러 원인이 있을 수 있습니다. 먼저 네트워크 케이블 연결 상태를 확인하고, 무선 연결인 경우 AP와의 거리를 확인해 보세요. 문제가 지속되면 IT 헬프데스크(내선 1234)로 연락 주시기 바랍니다.</p>
-                        </div>
+            <h2 class="section-title" data-aos="fade-up">NetBot과 대화하기</h2>
+            <div class="chat-card" data-aos="fade-up" data-aos-delay="100">
+                <div class="chat-header">
+                    <div class="chat-title">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <h3>SHB-NetBot 채팅 <span id="connection-status" class="status-badge online">온라인</span></h3>
                     </div>
-                    
-                    <div class="accordion-item">
-                        <div class="accordion-header">
-                            <button class="accordion-button" type="button">
-                                특정 IP 주소의 사용자 정보를 어떻게 확인할 수 있나요?
-                            </button>
-                        </div>
-                        <div class="accordion-content">
-                            <p>ChatBot에 "192.168.x.x 사용자는 누구인가요?" 형식으로 질문하시면 해당 IP 주소의 사용자 정보와 현재 상태를 확인하실 수 있습니다. 오프라인 모드에서도 기본적인 정보 제공이 가능합니다.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="accordion-item">
-                        <div class="accordion-header">
-                            <button class="accordion-button" type="button">
-                                외부 시스템 연동 시 오류가 발생합니다. 어떻게 해결하나요?
-                            </button>
-                        </div>
-                        <div class="accordion-content">
-                            <p>외부 시스템 연동 오류는 시스템 간 방화벽 설정이나 인증 문제일 수 있습니다. 먼저 연동 시스템 담당자에게 연락하여 서비스 상태를 확인하시고, 자세한 오류 로그와 함께 IT 헬프데스크에 문의해 주세요.</p>
-                        </div>
-                    </div>
-                    
-                    <div class="accordion-item">
-                        <div class="accordion-header">
-                            <button class="accordion-button" type="button">
-                                NetBot이 오프라인 모드일 때도 응답이 가능한가요?
-                            </button>
-                        </div>
-                        <div class="accordion-content">
-                            <p>네, NetBot은 오프라인 모드에서도 기본적인 응답이 가능합니다. IP 주소 조회, 자주 묻는 질문, 기본 네트워크 문제 해결 가이드 등을 제공합니다. 다만, 실시간 데이터가 필요한 일부 기능은 제한될 수 있습니다.</p>
+                    <button class="minimize-chat">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="18 15 12 9 6 15"></polyline>
+                        </svg>
+                    </button>
+                </div>
+                <div class="offline-mode-indicator">
+                    🔴 오프라인 모드: 인터넷 연결 제한으로 로컬 데이터만 사용합니다
+                    <button id="force-offline" class="toggle-button" style="margin-left: 8px; font-size: 11px; padding: 2px 6px; background: #ff333322; color: #ff3333; border: 1px solid #ff3333; border-radius: 4px; cursor: pointer;">
+                        오프라인 모드 테스트
+                    </button>
+                </div>
+                <div id="chatContainer" class="chat-messages">
+                    <div class="message bot-message">
+                        <div class="message-content">
+                            안녕하세요! 신한은행 네트워크 지원 AI 챗봇입니다. 어떤 질문이 있으신가요?
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- 연락처 정보 -->
-            <div class="contact-info">
-                <h3>문의 연락처</h3>
-                <p>네트워크 긴급 장애: 내선 1234 (IT 헬프데스크)</p>
-                <p>일반 문의: it-support@shinhan.com</p>
-                <p>운영 시간: 평일 09:00 - 18:00 (긴급 장애는 24시간 대응)</p>
+                <form id="chatForm" class="chat-input">
+                    <input type="text" id="userInput" placeholder="메시지를 입력하세요..." autocomplete="off">
+                    <button type="submit" id="sendButton">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </form>
             </div>
         </div>
     </section>
     
-    <style>
-        /* Support 섹션 스타일 */
-        .support-section {
-            padding: 80px 20px;
-            background-color: #f0f4f8;
-        }
-        
-        .faq-container {
-            margin-bottom: 60px;
-        }
-        
-        .accordion {
-            margin-top: 30px;
-        }
-        
-        .accordion-item {
-            background-color: white;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            overflow: hidden;
-        }
-        
-        .accordion-header {
-            background-color: white;
-        }
-        
-        .accordion-button {
-            background-color: white;
-            color: #333;
-            cursor: pointer;
-            padding: 18px 20px;
-            width: 100%;
-            text-align: left;
-            border: none;
-            font-weight: 600;
-            position: relative;
-            transition: 0.3s;
-            border-radius: 0;
-        }
-        
-        .accordion-button:after {
-            content: '+';
-            color: #0064E1;
-            font-weight: bold;
-            float: right;
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-        
-        .accordion-button.active:after {
-            content: '-';
-        }
-        
-        .accordion-content {
-            padding: 0 20px;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-            background-color: white;
-        }
-        
-        .active + .accordion-content {
-            padding: 10px 20px 20px;
-            max-height: 400px;
-        }
-        
-        .contact-info {
-            background-color: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
-        
-        .contact-info h3 {
-            margin-top: 0;
-            color: #0064E1;
-            margin-bottom: 20px;
-        }
-        
-        .contact-info p {
-            margin: 10px 0;
-            color: #555;
-        }
-        
-        /* 모바일 대응 스타일 */
-        @media (max-width: 768px) {
-            .support-section {
-                padding: 60px 15px;
-            }
-            
-            .section-title {
-                font-size: 28px;
-                margin-bottom: 40px;
-            }
-            
-            .accordion-button {
-                padding: 15px;
-                font-size: 15px;
-            }
-            
-            .contact-info {
-                padding: 20px;
-            }
-        }
-    </style>
-
-    <!-- 간단한 스크립트 -->
-    <script>
-        console.log("페이지 로드 중...");
-        
-        // 페이지 로드 완료 시 실행
-        window.onload = function() {
-            console.log("페이지 로드 완료");
-            
-            // 내비게이션 링크 클릭 처리
-            const navLinks = document.querySelectorAll('.nav-link');
-            navLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    // 현재 활성화된 링크 클래스 제거
-                    navLinks.forEach(l => l.classList.remove('active'));
-                    // 클릭한 링크에 활성화 클래스 추가
-                    this.classList.add('active');
-                });
-            });
-            
-            // 아코디언 토글 기능
-            const accordionButtons = document.querySelectorAll('.accordion-button');
-            accordionButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    this.classList.toggle('active');
-                    
-                    // 현재 URL이 #support인 경우 계속 유지
-                    if(window.location.hash === '#support') {
-                        setTimeout(() => {
-                            window.location.hash = '#support';
-                        }, 10);
-                    }
-                });
-            });
-            
-            // URL 해시 기반 페이지 이동 처리
-            if(window.location.hash) {
-                // 해시에 맞는 섹션으로 이동
-                const hash = window.location.hash;
-                const targetSection = document.querySelector(hash);
+    <!-- 문서 업로드 섹션 -->
+    <section id="documents" class="documents-section">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">Documents</h2>
+            <div class="documents-grid">
+                <div class="upload-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="upload-header">
+                        <div class="upload-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <h3>Upload Documents</h3>
+                        </div>
+                    </div>
+                    <div class="upload-content">
+                        <p>Upload documents to enhance NetBot's knowledge.</p>
+                        <form id="uploadForm" class="upload-form">
+                            <div class="upload-dropzone" id="uploadDropzone">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <p style="margin-bottom: 10px;">Drag and drop files here or <span class="upload-browse">browse</span></p>
+                                <div style="background-color: #f8f9fa; padding: 8px 15px; border-radius: 6px; text-align: center; max-width: 300px; margin: 0 auto;">
+                                    <p style="margin-bottom: 5px; font-weight: 500; font-size: 14px;">Supported file types:</p>
+                                    <p style="margin-bottom: 3px; font-size: 13px;">PDF • PPTX • DOCX • XLSX • TXT • CSV</p>
+                                    <p style="font-size: 12px; color: #666;">(Max size: 50MB)</p>
+                                </div>
+                                <input type="file" id="fileInput" accept=".pdf,.docx,.pptx,.xlsx,.xls,.txt,.csv" multiple style="display: none">
+                            </div>
+                            
+                            <!-- 업로드 진행률 표시 -->
+                            <div id="uploadProgressContainer" style="display: none; margin: 15px 0;">
+                                <div class="progress-info" style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                    <span id="uploadProgressText">0%</span>
+                                    <span id="uploadProgressChunks">0/0 청크</span>
+                                </div>
+                                <div class="progress-bar-container" style="background-color: #f0f0f0; border-radius: 4px; height: 8px; overflow: hidden;">
+                                    <div id="uploadProgressBar" style="background-color: #0064E1; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                                </div>
+                                <div id="uploadFileName" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
+                            </div>
+                            
+                            <button type="submit" id="uploadButton" class="upload-button">Upload Files</button>
+                        </form>
+                    </div>
+                </div>
                 
-                if(targetSection) {
-                    // 해당 섹션이 존재하면 스크롤
-                    targetSection.scrollIntoView();
-                    
-                    // 해시에 맞는 네비게이션 링크 활성화
-                    navLinks.forEach(link => {
-                        if(link.getAttribute('href') === hash) {
-                            navLinks.forEach(l => l.classList.remove('active'));
-                            link.classList.add('active');
-                        }
-                    });
-                    
-                    // #support 해시인 경우 처음에는 모든 아코디언 닫아두기
-                    if(hash === '#support') {
-                        // 이미 열려있는 모든 항목 닫기
-                        accordionButtons.forEach(button => {
-                            button.classList.remove('active');
-                        });
-                    }
+                <div class="documents-list-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="documents-header">
+                        <div class="documents-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            <h3>Uploaded Documents</h3>
+                            <a href="/file-manager" class="manage-files-btn" style="margin-left: 15px; background-color: #0064E1; color: white; padding: 5px 10px; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: 500;">
+                                관리하기 →
+                            </a>
+                        </div>
+                    </div>
+                    <div class="documents-content">
+                        <div class="documents-files">
+                            <h4 style="font-size: 1.4rem; color: #333; margin-bottom: 14px; font-weight: 600;">Available Documents:</h4>
+                            
+                            <div id="dynamic-documents-table">
+                                <table id="documents-table" style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                    <thead>
+                                        <tr>
+                                            <th style="text-align: left; padding: 12px; border-bottom: 1px solid #eaeaea; background-color: #f5f8fd; width: 30%;">File Name</th>
+                                            <th style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea; background-color: #f5f8fd; width: 15%;">Size</th>
+                                            <th style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea; background-color: #f5f8fd; width: 55%;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="documents-tbody">
+                                        <!-- 문서 목록은 자바스크립트에 의해 동적으로 추가됩니다 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- 동적 파일 목록을 위한 컨테이너 추가 -->
+                            <div id="file-list-container" class="document-cards-container" style="display: none;">
+                                <!-- 여기에 파일 카드들이 동적으로 추가됩니다 -->
+                            </div>
+                            
+                            <div id="documentsList" class="documents-list" style="display: none;">
+                                <div class="empty-state">
+                                    <p>No documents uploaded yet</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Support 섹션 시작 -->
+    <section id="support" class="section">
+        <div class="container">
+            <h2 class="section-title" data-aos="fade-up">고객 지원</h2>
+            <p class="section-description" data-aos="fade-up" data-aos-delay="100">
+                신한은행 네트워크 봇은 여러분의 피드백과 의견을 소중히 생각합니다. 문의사항이나 피드백을 남겨주세요.
+            </p>
+            
+            <div class="support-grid">
+                <div class="support-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                    </div>
+                    <h3>문의하기</h3>
+                    <p>네트워크 관련 문의사항이 있으신가요? 저희 팀에 문의해 주세요.</p>
+                    <a href="/inquiry" class="btn btn-primary">문의하기</a>
+                </div>
+                
+                <div class="support-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                        </svg>
+                    </div>
+                    <h3>피드백</h3>
+                    <p>서비스 이용 경험을 개선하기 위한 소중한 의견을 남겨주세요.</p>
+                    <a href="/feedback" class="btn btn-primary">피드백 남기기</a>
+                </div>
+                
+                <div class="support-card" data-aos="fade-up" data-aos-delay="400">
+                    <div class="card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                        </svg>
+                    </div>
+                    <h3>장애 신고</h3>
+                    <p>서비스 이용 중 오류나 장애를 발견하셨나요? 빠르게 해결해 드리겠습니다.</p>
+                    <a href="/report" class="btn btn-primary">장애 신고하기</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    <!-- Support 섹션 끝 -->
+
+    <!-- 푸터 섹션 -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-content">
+                <div class="footer-grid">
+                    <div class="footer-col">
+                        <h3>서비스</h3>
+                        <div class="footer-links">
+                            <a href="#home" class="footer-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                </svg>
+                                홈
+                            </a>
+                            <a href="#about" class="footer-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                소개
+                            </a>
+                            <a href="#chat" class="footer-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                대화하기
+                            </a>
+                            <a href="#documents" class="footer-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                문서
+                            </a>
+                        </div>
+                    </div>
+                    <div class="footer-col">
+                        <h3>고객지원</h3>
+                        <div class="footer-links">
+                            <a href="/inquiry" class="footer-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                </svg>
+                                문의하기
+                            </a>
+                            <a href="/feedback" class="footer-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+                                </svg>
+                                피드백
+                            </a>
+                            <a href="/report" class="footer-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                                장애 신고
+                            </a>
+                        </div>
+                    </div>
+                    <div class="footer-col">
+                        <h3>정책 및 약관</h3>
+                        <div class="footer-links">
+                            <a href="/terms" class="footer-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                                이용약관
+                            </a>
+                            <a href="/privacy" class="footer-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                </svg>
+                                개인정보처리방침
+                            </a>
+                            <a href="/copyright" class="footer-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M15 9.354a4 4 0 1 0 0 5.292"></path>
+                                </svg>
+                                저작권
+                            </a>
+                            <a href="/security" class="footer-link">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                </svg>
+                                보안정책
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <img src="{{ url_for('static', filename='images/shinhan_logo_refined.svg') }}" alt="신한은행 로고">
+                <p>&copy; 2025 신한은행. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 로딩 인디케이터 -->
+    <div id="loadingIndicator" class="loading-indicator">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- 스크립트 -->
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+    <script src="{{ url_for('static', filename='js/offline-storage.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/offline-cache.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/modern.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/markdown-handler.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/document-manager.js') }}"></script>
+    
+    <script>
+        // 파일 삭제 확인 함수
+        function confirmDelete(systemFilename, displayFilename) {
+            console.log(`Confirming deletion of: ${displayFilename} (${systemFilename})`);
+            
+            // 사용자 확인
+            if (confirm("정말 파일을 삭제하시겠습니까?")) {
+                deleteFile(systemFilename, displayFilename);
+            }
+        }
+        
+        // 파일 삭제 함수
+        function deleteFile(systemFilename, displayFilename) {
+            console.log(`Deleting file: ${displayFilename} (${systemFilename})`);
+            
+            // 삭제 중인 행 찾기
+            const rows = document.querySelectorAll('table tr');
+            let rowToRemove = null;
+            
+            for (let i = 0; i < rows.length; i++) {
+                if (rows[i].innerHTML.includes(displayFilename)) {
+                    rowToRemove = rows[i];
+                    break;
                 }
             }
-        };
+            
+            // API 요청 보내기
+            fetch('/api/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    system_filename: systemFilename
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // 성공 시 UI에서 행 제거
+                    if (rowToRemove) {
+                        rowToRemove.remove();
+                        
+                        // 테이블에 행이 남아있는지 확인 (헤더 제외)
+                        const remainingRows = document.querySelectorAll('table tr:not(:first-child)');
+                        if (remainingRows.length === 0) {
+                            // 모든 문서가 삭제된 경우, 테이블을 숨기고 빈 상태 메시지 표시
+                            const table = document.querySelector('table');
+                            if (table) table.style.display = 'none';
+                            
+                            const emptyState = document.querySelector('.empty-state');
+                            if (emptyState) {
+                                emptyState.style.display = 'block';
+                                document.getElementById('documentsList').style.display = 'block';
+                            }
+                        }
+                    }
+                } else {
+                    alert(`삭제 실패: ${data.error || '알 수 없는 오류가 발생했습니다.'}`);
+                }
+            })
+            .catch(error => {
+                console.error('파일 삭제 API 호출 중 오류 발생:', error);
+                alert('서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
+            });
+        }
     </script>
 </body>
 </html>
