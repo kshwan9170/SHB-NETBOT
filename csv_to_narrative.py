@@ -25,8 +25,8 @@ class CsvNarrativeConverter:
     def __init__(self):
         self.templates = {
             "IP_사용자_조회": {
-                "template": "IP {IP 주소}는 {부서}의 {사용자명} 담당자가 {상태} 상태입니다. 연락처는 {연락처}입니다. 최종 접속일은 {최종 접속일}입니다. {비고}",
-                "short_template": "IP {IP 주소}는 {부서}의 {사용자명} 담당자가 {상태} 상태입니다.",
+                "template": "{IP 주소}는 {부서} {사용자명}님이 사용 중입니다. 연락처는 {연락처}이며, 현재 상태는 {상태}입니다. 최종 접속일은 {최종 접속일}입니다.",
+                "short_template": "{IP 주소}는 {부서} {사용자명}님이 사용 중입니다.",
                 "fallback": "요청하신 IP 주소에 대한 정보를 찾을 수 없습니다."
             },
             "절차_안내": {
@@ -101,11 +101,11 @@ class CsvNarrativeConverter:
             row_dict = {k: '' if pd.isna(v) else v for k, v in row.to_dict().items()}
             
             # 자연어 문장 생성
-            narrative = self._create_narrative(row_dict, csv_type, int(idx))
+            narrative = self._create_narrative(row_dict, csv_type, idx)
             
             # 메타데이터 추가
             if add_metadata:
-                metadata = self._create_metadata(filepath, row_dict, csv_type, int(idx))
+                metadata = self._create_metadata(filepath, row_dict, csv_type, idx)
                 narrative.update(metadata)
             
             narratives.append(narrative)
@@ -129,67 +129,21 @@ class CsvNarrativeConverter:
         """
         template = self.templates.get(csv_type, self.templates["default"])
         
-        # 빈 값 처리 - 자연스러운 문장 생성을 위해
-        cleaned_dict = row_dict.copy()
-        for key, value in row_dict.items():
-            if pd.isna(value) or value == '':
-                if key == '상태':
-                    cleaned_dict[key] = '사용 중'
-                elif key == '비고':
-                    cleaned_dict[key] = ''
-                else:
-                    cleaned_dict[key] = '정보 없음'
-        
         try:
-            # IP 주소 조회 유형인 경우 특별 처리
-            if csv_type == "IP_사용자_조회":
-                ip_address = cleaned_dict.get('IP 주소', '')
-                user_name = cleaned_dict.get('사용자명', '정보 없음')
-                department = cleaned_dict.get('부서', '정보 없음')
-                contact = cleaned_dict.get('연락처', '')
-                status = cleaned_dict.get('상태', '사용 중')
-                last_access = cleaned_dict.get('최종 접속일', '')
-                note = cleaned_dict.get('비고', '')
-                
-                # 기본 문장 구성
-                if status in ['사용 중', '정상', '활성']:
-                    narrative_text = f"IP {ip_address}는 {department}의 {user_name} 담당자가 사용 중입니다."
-                else:
-                    narrative_text = f"IP {ip_address}는 {department}의 {user_name} 담당자가 {status} 상태입니다."
-                
-                # 추가 정보
-                if contact and contact != '정보 없음':
-                    narrative_text += f" 연락처는 {contact}입니다."
-                    
-                if last_access and last_access != '정보 없음':
-                    narrative_text += f" 최근 접속일은 {last_access}입니다."
-                    
-                if note and note.strip():
-                    if any(warning in note for warning in ['차단', '만료', '경고', '주의']):
-                        narrative_text += f" 주의: {note}"
-                    else:
-                        narrative_text += f" 참고사항: {note}"
-                
-                # 짧은 버전
-                if status in ['사용 중', '정상', '활성']:
-                    short_text = f"IP {ip_address}는 {department}의 {user_name} 담당자가 사용 중입니다."
-                else:
-                    short_text = f"IP {ip_address}는 {department}의 {user_name} 담당자가 {status} 상태입니다."
-                
-            # 기본 템플릿 적용 (다른 유형)
-            elif csv_type == "default":
+            # 템플릿 형식 문자열에 데이터 적용
+            if csv_type == "default":
                 narrative_text = template["template"].format(
                     row_index=row_idx + 1, 
-                    row_data=", ".join([f"{k}: {v}" for k, v in cleaned_dict.items()])
+                    row_data=", ".join([f"{k}: {v}" for k, v in row_dict.items()])
                 )
                 short_text = template["short_template"].format(
                     row_index=row_idx + 1, 
-                    row_data=", ".join([f"{k}: {v}" for k, v in cleaned_dict.items()])
+                    row_data=", ".join([f"{k}: {v}" for k, v in row_dict.items()])
                 )
             else:
-                # 그 외 템플릿 적용
-                narrative_text = template["template"].format(**cleaned_dict)
-                short_text = template["short_template"].format(**cleaned_dict)
+                # 특정 유형별 템플릿 적용
+                narrative_text = template["template"].format(**row_dict)
+                short_text = template["short_template"].format(**row_dict)
                 
         except KeyError as e:
             # 템플릿에 필요한 키가 없는 경우
@@ -272,61 +226,23 @@ class CsvNarrativeConverter:
             ip_address: 검색할 IP 주소
             
         Returns:
-            매칭된 결과 목록 (오프라인 모드용 자연어 문장 포함)
+            매칭된 결과 목록
         """
         ip_pattern = ip_address.replace(".", r"\.")  # IP 주소 정규식 패턴화
         
         matches = []
         for narrative in narratives:
             # IP 주소 필드 확인
-            if narrative.get("ip_address") == ip_address or any(str(value) == ip_address for key, value in narrative.get("row_data", {}).items()):
-                # 원본 데이터 복제
-                result = dict(narrative)
+            if narrative.get("ip_address") == ip_address:
+                matches.append(narrative)
+                continue
                 
-                # 자연스러운 문장 생성을 위한 데이터 추출
-                row_data = result.get("row_data", {})
-                
-                # 필요한 정보 추출
-                user_name = row_data.get("사용자명", "")
-                department = row_data.get("부서", "")
-                status = row_data.get("상태", "사용 중")
-                contact = row_data.get("연락처", "")
-                last_access = row_data.get("최종 접속일", "")
-                note = row_data.get("비고", "")
-                
-                # 오프라인 모드 응답용 자연어 문장 생성
-                offline_text = f"IP {ip_address}는 "
-                
-                if department and user_name:
-                    if status in ["사용 중", "정상", "활성"]:
-                        offline_text += f"{department}의 {user_name} 담당자가 사용 중입니다."
-                    else:
-                        offline_text += f"{department}의 {user_name} 담당자가 {status} 상태입니다."
-                elif user_name:
-                    if status in ["사용 중", "정상", "활성"]:
-                        offline_text += f"{user_name} 담당자가 사용 중입니다."
-                    else:
-                        offline_text += f"{user_name} 담당자가 {status} 상태입니다."
-                else:
-                    offline_text += f"에 대한 정보입니다."
-                
-                # 추가 정보 포함
-                if contact:
-                    offline_text += f" 연락처는 {contact}입니다."
-                
-                if last_access:
-                    offline_text += f" 최근 접속일은 {last_access}입니다."
-                
-                if note and note.strip():
-                    if any(keyword in note for keyword in ["차단", "만료", "경고", "주의"]):
-                        offline_text += f" 주의: {note}"
-                    else:
-                        offline_text += f" 참고사항: {note}"
-                
-                # 오프라인 모드용 텍스트 필드 추가
-                result["offline_text"] = offline_text
-                
-                matches.append(result)
+            # 행 데이터에서 IP 주소 검색
+            row_data = narrative.get("row_data", {})
+            for key, value in row_data.items():
+                if str(value) == ip_address:
+                    matches.append(narrative)
+                    break
         
         return matches
     

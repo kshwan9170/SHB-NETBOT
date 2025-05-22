@@ -1311,51 +1311,11 @@ def get_local_response(query: str) -> str:
                         if '사용자' in result['metadata']['filename'] or 'IP' in result['metadata']['filename']:
                             is_user_info = True
                     
-                    # 자연어 문장 생성을 위한 데이터 추출
-                    row_data = result.get('row_data', {})
-                    
-                    # 필요한 정보 추출
-                    user_name = row_data.get('사용자명', '')
-                    department = row_data.get('부서', '')
-                    status = row_data.get('상태', '사용 중')
-                    contact = row_data.get('연락처', '')
-                    last_access = row_data.get('최종 접속일', '')
-                    note = row_data.get('비고', '')
-                    
-                    # 자연어 문장 형식 생성
-                    natural_text = f"IP {ip_address}는 "
-                    
-                    if department and user_name:
-                        if status in ["사용 중", "정상", "활성"]:
-                            natural_text += f"{department}의 {user_name} 담당자가 사용 중입니다."
-                        else:
-                            natural_text += f"{department}의 {user_name} 담당자가 {status} 상태입니다."
-                    elif user_name:
-                        if status in ["사용 중", "정상", "활성"]:
-                            natural_text += f"{user_name} 담당자가 사용 중입니다."
-                        else:
-                            natural_text += f"{user_name} 담당자가 {status} 상태입니다."
-                    else:
-                        natural_text += f"에 대한 정보입니다."
-                    
-                    # 추가 정보 포함
-                    if contact:
-                        natural_text += f" 연락처는 {contact}입니다."
-                    
-                    if last_access:
-                        natural_text += f" 최근 접속일은 {last_access}입니다."
-                    
-                    if note and note.strip():
-                        if any(keyword in note for keyword in ["차단", "만료", "경고", "주의"]):
-                            natural_text += f" 주의: {note}"
-                        else:
-                            natural_text += f" 참고사항: {note}"
-                    
                     # 응답 메시지 생성 (사용자 정보인 경우 다른 포맷 적용)
                     if is_user_info:
-                        response = f"## IP 주소 사용자 정보\n\n{natural_text}"
+                        response = f"## IP 주소 사용자 정보\n\n{result['text']}"
                     else:
-                        response = f"## IP 주소 정보 조회 결과\n\n{natural_text}"
+                        response = f"## IP 주소 정보 조회 결과\n\n{result['text']}"
                     
                     # 추가 정보가 있으면 포함
                     if len(matched_results) > 1:
