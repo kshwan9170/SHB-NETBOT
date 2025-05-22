@@ -798,7 +798,47 @@ document.addEventListener('DOMContentLoaded', function() {
                     const isOfflineMode = document.body.classList.contains('offline-mode');
                     console.log('현재 모드:', isOfflineMode ? '오프라인' : '온라인');
                     
-                    // 서버에 메시지 전송 및 응답 받기
+                    // 이미 오프라인 모드이거나 IndexedDB가 사용 가능하면 로컬 데이터 검색 시도
+                    if (isOfflineMode || !navigator.onLine) {
+                        console.log('오프라인 모드에서 로컬 데이터 검색 시작');
+                        
+                        // 로컬 데이터로 응답 시도
+                        try {
+                            // IndexedDB 사용 가능한 경우 (OfflineStorage.js)
+                            if (window.OfflineStorage && window.OfflineCache) {
+                                console.log('IndexedDB 검색 시도 중...');
+                                
+                                // OfflineCache를 통한 검색
+                                const offlineResult = await OfflineCache.handleOfflineQuery(message);
+                                if (offlineResult && offlineResult.success) {
+                                    // 성공적으로 로컬 데이터에서 찾은 경우
+                                    const offlineResponse = '[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n' + 
+                                                           offlineResult.data.text;
+                                                           
+                                    // 응답 표시
+                                    addMessageWithTypingEffect(offlineResponse, 'bot');
+                                    return;
+                                }
+                            }
+                            
+                            // IndexedDB 검색에 실패한 경우 localStorage에서 기존 방식으로 검색
+                            const localResponse = getLocalResponse(message);
+                            if (localResponse) {
+                                addMessageWithTypingEffect('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n' + 
+                                                          localResponse, 'bot');
+                                return;
+                            } else {
+                                addMessageWithTypingEffect('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n' + 
+                                                          '현재 오프라인 상태입니다. 로컬 데이터에서 관련 정보를 찾을 수 없습니다.', 'bot');
+                                return;
+                            }
+                        } catch (offlineError) {
+                            console.error('오프라인 응답 생성 중 오류:', offlineError);
+                            // 오프라인 응답 실패 시 서버 요청 계속 진행
+                        }
+                    }
+                    
+                    // 서버에 메시지 전송 및 응답 받기 (오프라인 대응 실패 또는 온라인 모드)
                     const response = await fetch('/api/chat', {
                         method: 'POST',
                         headers: {
@@ -834,17 +874,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 } catch (error) {
                     console.error('API 호출 중 오류 발생:', error);
                     
-                    // 오프라인 모드인 경우 로컬 데이터를 활용한 응답 시도
-                    if (document.body.classList.contains('offline-mode')) {
-                        const query = userInput.value;
-                        const localResponse = getLocalResponse(query);
-                        if (localResponse) {
-                            addMessage('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n' + localResponse, 'bot');
-                        } else {
-                            addMessage('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n현재 오프라인 상태입니다. 로컬 데이터에서 관련 정보를 찾을 수 없습니다.', 'bot');
+                    // 오프라인 모드 설정 및 로컬 데이터로 응답 시도
+                    document.body.classList.add('offline-mode');
+                    
+                    // 상태 배지 업데이트
+                    const statusBadge = document.getElementById('connection-status');
+                    if (statusBadge) {
+                        statusBadge.textContent = '오프라인';
+                        statusBadge.className = 'status-badge offline';
+                    }
+                    
+                    // IndexedDB에서 검색 시도
+                    if (window.OfflineStorage && window.OfflineCache) {
+                        try {
+                            console.log('API 호출 실패 후 IndexedDB 검색 시도');
+                            const offlineResult = await OfflineCache.handleOfflineQuery(message);
+                            
+                            if (offlineResult && offlineResult.success) {
+                                const offlineResponse = '[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n' + 
+                                                       offlineResult.data.text;
+                                addMessageWithTypingEffect(offlineResponse, 'bot');
+                                return;
+                            }
+                        } catch (offlineError) {
+                            console.error('오프라인 응답 생성 중 오류:', offlineError);
                         }
+                    }
+                    
+                    // IndexedDB 실패 시 localStorage 검색
+                    const localResponse = getLocalResponse(message);
+                    if (localResponse) {
+                        addMessage('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n' + localResponse, 'bot');
                     } else {
-                        addMessage('서버와 통신 중 오류가 발생했습니다. 나중에 다시 시도해주세요.', 'bot');
+                        addMessage('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n현재 오프라인 상태입니다. 로컬 데이터에서 관련 정보를 찾을 수 없습니다.', 'bot');
                     }
                 } finally {
                     // 로딩 인디케이터 숨기기
