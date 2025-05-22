@@ -187,6 +187,12 @@ img {
     margin-bottom: 0.2rem; /* 간격 축소 */
 }
 
+/* SHB 로고 스타일 */
+.shb-logo {
+    height: 2.5rem; 
+    margin-bottom: 0.2rem; /* 간격 축소 */
+}
+
 /* 로고 수직 배치 스타일 */
 .logo-vertical {
     display: flex;
