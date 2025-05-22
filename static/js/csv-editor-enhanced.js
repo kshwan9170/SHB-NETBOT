@@ -135,12 +135,25 @@ function enableCsvEditing() {
     document.getElementById('csv-edit-btn').style.display = 'none';
     document.getElementById('csv-save-btn').style.display = 'inline-block';
     document.getElementById('csv-cancel-btn').style.display = 'inline-block';
-    document.getElementById('csv-add-row-btn').style.display = 'inline-block';
+    
+    // 행 관련 컨트롤 표시
+    const rowControls = document.querySelector('.csv-row-controls');
+    if (rowControls) {
+        rowControls.style.display = 'block';
+    }
+    
+    // 행 추가 버튼이 있으면 표시
+    const addRowBtn = document.getElementById('csv-add-row-btn');
+    if (addRowBtn) {
+        addRowBtn.style.display = 'inline-block';
+    }
     
     // 삭제 버튼이 있으면 표시
     const deleteRowBtn = document.getElementById('csv-delete-row-btn');
     if (deleteRowBtn) {
         deleteRowBtn.style.display = 'inline-block';
+        deleteRowBtn.style.opacity = '0.6';
+        deleteRowBtn.style.cursor = 'default';
         // 이벤트 리스너 추가
         deleteRowBtn.addEventListener('click', deleteSelectedRow);
     }
@@ -156,12 +169,11 @@ function cancelCsvEditing() {
     document.getElementById('csv-edit-btn').style.display = 'inline-block';
     document.getElementById('csv-save-btn').style.display = 'none';
     document.getElementById('csv-cancel-btn').style.display = 'none';
-    document.getElementById('csv-add-row-btn').style.display = 'none';
     
-    // 삭제 버튼 숨기기
-    const deleteRowBtn = document.getElementById('csv-delete-row-btn');
-    if (deleteRowBtn) {
-        deleteRowBtn.style.display = 'none';
+    // 행 관련 컨트롤 숨기기
+    const rowControls = document.querySelector('.csv-row-controls');
+    if (rowControls) {
+        rowControls.style.display = 'none';
     }
     
     // 선택 상태 초기화
@@ -203,6 +215,19 @@ function saveCsvChanges() {
     saveBtn.textContent = '저장 중...';
     saveBtn.disabled = true;
     
+    // 저장 중 스피너 효과
+    saveBtn.innerHTML = '<span class="spinner" style="display:inline-block;width:12px;height:12px;border:2px solid #fff;border-radius:50%;border-top-color:transparent;animation:spin 1s linear infinite;margin-right:5px;"></span> 저장 중...';
+    
+    // 스피너 애니메이션 스타일 추가
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(styleElement);
+    
     console.log("저장 API URL:", apiUrl);
     
     fetch(apiUrl, {
@@ -225,12 +250,11 @@ function saveCsvChanges() {
             document.getElementById('csv-edit-btn').style.display = 'inline-block';
             document.getElementById('csv-save-btn').style.display = 'none';
             document.getElementById('csv-cancel-btn').style.display = 'none';
-            document.getElementById('csv-add-row-btn').style.display = 'none';
             
-            // 삭제 버튼 숨기기
-            const deleteRowBtn = document.getElementById('csv-delete-row-btn');
-            if (deleteRowBtn) {
-                deleteRowBtn.style.display = 'none';
+            // 행 관련 컨트롤 숨기기
+            const rowControls = document.querySelector('.csv-row-controls');
+            if (rowControls) {
+                rowControls.style.display = 'none';
             }
             
             // 현재 상태를 원본 상태로 업데이트
@@ -246,7 +270,7 @@ function saveCsvChanges() {
     .finally(() => {
         // 저장 버튼 상태 복원
         const saveBtn = document.getElementById('csv-save-btn');
-        saveBtn.textContent = '변경사항 저장';
+        saveBtn.innerHTML = '변경사항 저장';
         saveBtn.disabled = false;
     });
 }

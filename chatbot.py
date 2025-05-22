@@ -1294,7 +1294,38 @@ def get_local_response(query: str) -> str:
         ip_address = ip_match.group(0)
         logger.info(f"IP 주소 감지: {ip_address}")
         
-        # CSV 자연어 캐시에서 IP 주소 검색
+        # CSV 자연어 변환 데이터를 먼저 활용 시도
+        if csv_converter and len(csv_narratives) > 0:
+            try:
+                # IP 주소로 직접 검색 (csv_converter 메소드 활용)
+                matched_results = csv_converter.search_by_ip(csv_narratives, ip_address)
+                
+                if matched_results and len(matched_results) > 0:
+                    # 결과가 있으면 첫 번째 결과 사용
+                    result = matched_results[0]
+                    logger.info(f"IP 주소 검색 매치 성공: {ip_address}")
+                    
+                    # 사용자 정보인지 확인 (IP_사용자_조회.csv 파일에서 왔는지)
+                    is_user_info = False
+                    if 'metadata' in result and 'filename' in result['metadata']:
+                        if '사용자' in result['metadata']['filename'] or 'IP' in result['metadata']['filename']:
+                            is_user_info = True
+                    
+                    # 응답 메시지 생성 (사용자 정보인 경우 다른 포맷 적용)
+                    if is_user_info:
+                        response = f"## IP 주소 사용자 정보\n\n{result['text']}"
+                    else:
+                        response = f"## IP 주소 정보 조회 결과\n\n{result['text']}"
+                    
+                    # 추가 정보가 있으면 포함
+                    if len(matched_results) > 1:
+                        response += f"\n\n추가로 {len(matched_results)-1}개의 관련 정보가 있습니다."
+                        
+                    return response
+            except Exception as e:
+                logger.error(f"IP 주소 검색 중 오류 발생: {str(e)}")
+        
+        # 수동 검색 방법 (이전 방식)
         matched_results = []
         
         for narrative in csv_narratives:
@@ -1310,7 +1341,7 @@ def get_local_response(query: str) -> str:
         if matched_results:
             # 결과가 있으면 첫 번째 결과 사용
             result = matched_results[0]
-            logger.info(f"IP 주소 검색 매치 성공: {ip_address}")
+            logger.info(f"IP 주소 검색 매치 성공 (수동 방식): {ip_address}")
             
             # 응답 메시지 생성
             response = f"## IP 주소 정보 조회 결과\n\n{result['text']}"
@@ -1323,7 +1354,7 @@ def get_local_response(query: str) -> str:
         
         # IP 주소에 대한 정보를 찾지 못한 경우
         logger.info(f"IP 주소 검색 매치 실패: {ip_address}")
-        return f"IP 주소 **{ip_address}**에 대한 정보를 찾을 수 없습니다. 😊\n\n다른 IP 주소로 검색하거나 네트워크 관리자에게 문의해 주세요."
+        return f"IP 주소 **{ip_address}**에 대한 정보를 찾을 수 없습니다.\n\n다른 IP 주소로 검색하거나 네트워크 관리자에게 문의해 주세요."
     
     # 키워드 검색 (IP 주소가 아닌 경우)
     # 검색어에서 키워드 추출 (2글자 이상 단어)
