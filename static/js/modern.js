@@ -43,6 +43,317 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // CSV 데이터 로컬 스토리지 키
+    const LOCAL_CSV_DATA_KEY = 'shb_netbot_csv_data';
+    const LOCAL_CSV_LAST_UPDATE = 'shb_netbot_csv_last_update';
+    
+    // CSV 데이터 가져와서 로컬 스토리지에 저장
+    async function fetchAndCacheCSVData() {
+        console.log('CSV 데이터 로컬 캐싱 시작');
+        
+        try {
+            // 마지막 업데이트 시간 확인 (1시간마다 갱신)
+            const lastUpdate = localStorage.getItem(LOCAL_CSV_LAST_UPDATE);
+            const now = new Date().getTime();
+            if (lastUpdate && (now - parseInt(lastUpdate) < 3600000)) {
+                console.log('최근에 업데이트된 CSV 데이터가 있습니다. 재사용합니다.');
+                return;
+            }
+            
+            // 서버에서 문서 목록 가져오기
+            const response = await fetch('/api/documents');
+            const data = await response.json();
+            
+            if (data.files) {
+                // CSV 파일만 필터링
+                const csvFiles = data.files.filter(file => 
+                    file.filename.toLowerCase().endsWith('.csv')
+                );
+                
+                console.log(`${csvFiles.length}개의 CSV 파일을 찾았습니다.`);
+                
+                // 각 CSV 파일의 내용 가져오기
+                const csvDataPromises = csvFiles.map(async file => {
+                    try {
+                        const viewResponse = await fetch(`/api/documents/view/${file.system_filename}`);
+                        const viewData = await viewResponse.json();
+                        
+                        if (viewData.content) {
+                            return {
+                                filename: file.filename,
+                                system_filename: file.system_filename,
+                                content: viewData.content,
+                                records: processCSVContent(viewData.content)
+                            };
+                        }
+                        return null;
+                    } catch (error) {
+                        console.error(`파일 가져오기 오류: ${file.filename}`, error);
+                        return null;
+                    }
+                });
+                
+                // 모든 CSV 파일 데이터 기다리기
+                const csvDataResults = await Promise.all(csvDataPromises);
+                const csvData = csvDataResults.filter(item => item !== null);
+                
+                // 로컬 스토리지에 저장
+                localStorage.setItem(LOCAL_CSV_DATA_KEY, JSON.stringify(csvData));
+                localStorage.setItem(LOCAL_CSV_LAST_UPDATE, now.toString());
+                
+                console.log(`${csvData.length}개의 CSV 파일을 로컬에 저장했습니다.`);
+            }
+        } catch (error) {
+            console.error('CSV 데이터 캐싱 중 오류:', error);
+        }
+    }
+    
+    // CSV 문자열을 레코드 배열로 변환
+    function processCSVContent(csvContent) {
+        if (!csvContent) return [];
+        
+        const lines = csvContent.split('\n');
+        if (lines.length < 2) return [];
+        
+        const headers = lines[0].split(',').map(h => h.trim());
+        const records = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            
+            const values = lines[i].split(',').map(v => v.trim());
+            const record = {};
+            
+            headers.forEach((header, index) => {
+                record[header] = index < values.length ? values[index] : '';
+            });
+            
+            records.push(record);
+        }
+        
+        return records;
+    }
+    
+    // 로컬 데이터에서 쿼리에 맞는 응답 찾기
+    function getLocalResponse(query) {
+        // IP 주소 패턴 검색
+        const ipPattern = /\b(?:\d{1,3}\.){3}\d{1,3}\b/;
+        const ipMatch = query.match(ipPattern);
+        
+        if (ipMatch) {
+            const targetIp = ipMatch[0];
+            const ipResponse = searchIpInLocalData(targetIp);
+            if (ipResponse) {
+                return ipResponse;
+            }
+        }
+        
+        // 키워드 검색 (2글자 이상 단어만)
+        const keywords = query.split(/\s+/).filter(word => word.length >= 2);
+        if (keywords.length > 0) {
+            const keywordResponse = searchKeywordsInLocalData(keywords);
+            if (keywordResponse) {
+                return keywordResponse;
+            }
+        }
+        
+        return null;
+    }
+    
+    // 로컬 CSV 데이터에서 IP 주소 검색
+    function searchIpInLocalData(ipAddress) {
+        try {
+            const csvDataString = localStorage.getItem(LOCAL_CSV_DATA_KEY);
+            if (!csvDataString) return null;
+            
+            const csvData = JSON.parse(csvDataString);
+            
+            // 모든 CSV 파일 검색
+            for (const file of csvData) {
+                // IP 주소 관련 파일 우선 검색
+                const isIpFile = file.filename.includes('IP') || 
+                                file.filename.includes('ip') || 
+                                file.filename.includes('사용자');
+                
+                if (isIpFile) {
+                    for (const record of file.records) {
+                        // 각 레코드의 모든 필드 검색
+                        for (const [key, value] of Object.entries(record)) {
+                            if (value === ipAddress) {
+                                // IP 주소 일치하는 레코드 발견
+                                return formatIpRecord(record, file.filename);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // IP 파일에서 찾지 못한 경우 다른 모든 파일 검색
+            for (const file of csvData) {
+                for (const record of file.records) {
+                    for (const [key, value] of Object.entries(record)) {
+                        if (value === ipAddress) {
+                            return formatRecord(record, file.filename);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('로컬 데이터 IP 검색 중 오류:', error);
+        }
+        
+        return null;
+    }
+    
+    // 로컬 CSV 데이터에서 키워드 검색
+    function searchKeywordsInLocalData(keywords) {
+        try {
+            const csvDataString = localStorage.getItem(LOCAL_CSV_DATA_KEY);
+            if (!csvDataString) return null;
+            
+            const csvData = JSON.parse(csvDataString);
+            const matchedRecords = [];
+            
+            // 모든 CSV 파일과 레코드 검색
+            for (const file of csvData) {
+                for (const record of file.records) {
+                    let matchScore = 0;
+                    
+                    // 각 레코드의 모든 필드를 각 키워드로 검색
+                    for (const keyword of keywords) {
+                        for (const [key, value] of Object.entries(record)) {
+                            if (value && value.includes(keyword)) {
+                                matchScore++;
+                                break; // 해당 키워드는 이미 매치됨
+                            }
+                        }
+                    }
+                    
+                    if (matchScore > 0) {
+                        matchedRecords.push({
+                            record,
+                            filename: file.filename,
+                            score: matchScore
+                        });
+                    }
+                }
+            }
+            
+            // 점수순으로 정렬하고 상위 3개 결과만 반환
+            if (matchedRecords.length > 0) {
+                matchedRecords.sort((a, b) => b.score - a.score);
+                const topResults = matchedRecords.slice(0, 3);
+                
+                return formatKeywordResults(topResults, keywords);
+            }
+        } catch (error) {
+            console.error('로컬 데이터 키워드 검색 중 오류:', error);
+        }
+        
+        return null;
+    }
+    
+    // IP 주소 관련 레코드 포맷팅
+    function formatIpRecord(record, filename) {
+        let userInfo = '';
+        
+        // 사용자 정보 우선 포함
+        if (record['사용자'] || record['이름'] || record['담당자']) {
+            userInfo = record['사용자'] || record['이름'] || record['담당자'];
+        }
+        
+        // 부서 정보 추가
+        let departmentInfo = '';
+        if (record['부서'] || record['팀']) {
+            departmentInfo = record['부서'] || record['팀'];
+        }
+        
+        // 연락처 정보 추가
+        let contactInfo = '';
+        if (record['연락처'] || record['전화번호']) {
+            contactInfo = record['연락처'] || record['전화번호'];
+        }
+        
+        // IP 주소 정보
+        let ipAddress = '';
+        for (const [key, value] of Object.entries(record)) {
+            if (/\b(?:\d{1,3}\.){3}\d{1,3}\b/.test(value)) {
+                ipAddress = value;
+                break;
+            }
+        }
+        
+        // 응답 메시지 생성
+        let response = `## IP 주소 사용자 정보\n\n`;
+        response += `**IP 주소**: ${ipAddress}\n`;
+        
+        if (userInfo) {
+            response += `**사용자**: ${userInfo}\n`;
+        }
+        
+        if (departmentInfo) {
+            response += `**부서**: ${departmentInfo}\n`;
+        }
+        
+        if (contactInfo) {
+            response += `**연락처**: ${contactInfo}\n`;
+        }
+        
+        // 기타 정보 추가
+        for (const [key, value] of Object.entries(record)) {
+            if (key !== 'IP' && 
+                key !== '사용자' && 
+                key !== '이름' && 
+                key !== '담당자' && 
+                key !== '부서' && 
+                key !== '팀' && 
+                key !== '연락처' && 
+                key !== '전화번호' && 
+                value) {
+                response += `**${key}**: ${value}\n`;
+            }
+        }
+        
+        response += `\n*정보 출처: ${filename}*`;
+        
+        return response;
+    }
+    
+    // 일반 레코드 포맷팅
+    function formatRecord(record, filename) {
+        let response = `## 데이터 조회 결과\n\n`;
+        
+        for (const [key, value] of Object.entries(record)) {
+            if (value) {
+                response += `**${key}**: ${value}\n`;
+            }
+        }
+        
+        response += `\n*정보 출처: ${filename}*`;
+        
+        return response;
+    }
+    
+    // 키워드 검색 결과 포맷팅
+    function formatKeywordResults(results, keywords) {
+        let response = `## 키워드 검색 결과\n\n`;
+        response += `검색어: ${keywords.join(', ')}\n\n`;
+        
+        results.forEach((result, index) => {
+            response += `### 결과 ${index + 1}\n`;
+            
+            for (const [key, value] of Object.entries(result.record)) {
+                if (value) {
+                    response += `**${key}**: ${value}\n`;
+                }
+            }
+            
+            response += `\n*정보 출처: ${result.filename}*\n\n`;
+        });
+        
+        return response;
+    }
+    
     // 연결 상태 UI 업데이트 함수
     function updateConnectionUI(isOnline) {
         console.log('연결 상태 업데이트:', isOnline ? '온라인' : '오프라인');
@@ -53,9 +364,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (isOnline) {
                 statusBadge.textContent = '온라인';
                 statusBadge.className = 'status-badge online';
+                
+                // 온라인 상태일 때도 주기적으로 CSV 데이터 캐싱
+                fetchAndCacheCSVData();
             } else {
                 statusBadge.textContent = '오프라인';
                 statusBadge.className = 'status-badge offline';
+                
+                // 오프라인 모드일 때 CSV 데이터 로컬 캐싱 시도
+                fetchAndCacheCSVData();
             }
         }
         
@@ -417,7 +734,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 } catch (error) {
                     console.error('API 호출 중 오류 발생:', error);
-                    addMessage('서버와 통신 중 오류가 발생했습니다. 나중에 다시 시도해주세요.', 'bot');
+                    
+                    // 오프라인 모드인 경우 로컬 데이터를 활용한 응답 시도
+                    if (document.body.classList.contains('offline-mode')) {
+                        const query = userInput.value;
+                        const localResponse = getLocalResponse(query);
+                        if (localResponse) {
+                            addMessage('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n' + localResponse, 'bot');
+                        } else {
+                            addMessage('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n현재 오프라인 상태입니다. 로컬 데이터에서 관련 정보를 찾을 수 없습니다.', 'bot');
+                        }
+                    } else {
+                        addMessage('서버와 통신 중 오류가 발생했습니다. 나중에 다시 시도해주세요.', 'bot');
+                    }
                 } finally {
                     // 로딩 인디케이터 숨기기
                     loadingIndicator.classList.remove('active');
