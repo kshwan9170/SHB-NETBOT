@@ -10,8 +10,8 @@
 const OfflineCache = {
     // 최근 캐시 업데이트 시간 (24시간마다 갱신)
     CACHE_EXPIRY: 24 * 60 * 60 * 1000, // 24시간
-    LAST_UPDATE_KEY: 'shb-netbot-last-update',
-    CSV_FILES_KEY: 'shb-netbot-csv-files',
+    LAST_UPDATE_KEY: 'shb-netbot-last-update-v2', // 버전 업데이트로 캐시 초기화 강제화
+    CSV_FILES_KEY: 'shb-netbot-csv-files-v2',     // 버전 업데이트로 캐시 초기화 강제화
     
     /**
      * CSV 파일을 자연어 문장과 메타데이터로 변환
