@@ -1166,20 +1166,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                 // OfflineCache를 통한 검색
                                 const offlineResult = await OfflineCache.handleOfflineQuery(message);
                                 if (offlineResult && offlineResult.success) {
-                                    // 성공적으로 로컬 데이터에서 찾은 경우
-                                    let offlineResponse = '[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n' + 
+                                    // 단일 결과만 표시하도록 수정
+                                    let offlineResponse = '[🔴 서버 연결이 끊겼습니다. 저장된 메뉴얼 데이터만으로 응답합니다.]\n\n' + 
                                                          offlineResult.data.text;
                                     
-                                    // 추가 관련 정보가 있으면 표시
-                                    if (offlineResult.data.additionalResults && 
-                                        offlineResult.data.additionalResults.length > 0) {
-                                        offlineResponse += '\n\n관련 정보:';
-                                        offlineResult.data.additionalResults.forEach((item, index) => {
-                                            offlineResponse += `\n${index + 1}. ${item}`;
-                                        });
-                                    }
-                                    
-                                    // 응답 표시
+                                    // 응답 표시 (관련 정보 제외)
                                     addMessageWithTypingEffect(offlineResponse, 'bot');
                                     return;
                                 }
@@ -1188,12 +1179,11 @@ document.addEventListener('DOMContentLoaded', function() {
                             // IndexedDB 검색에 실패한 경우 localStorage에서 기존 방식으로 검색
                             const localResponse = getLocalResponse(message);
                             if (localResponse) {
-                                addMessageWithTypingEffect('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n' + 
+                                addMessageWithTypingEffect('[🔴 서버 연결이 끊겼습니다. 저장된 메뉴얼 데이터만으로 응답합니다.]\n\n' + 
                                                           localResponse, 'bot');
                                 return;
                             } else {
-                                addMessageWithTypingEffect('[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다.]\n\n' + 
-                                                          '현재 오프라인 상태입니다. 로컬 데이터에서 관련 정보를 찾을 수 없습니다.', 'bot');
+                                addMessageWithTypingEffect('현재 오프라인 상태입니다. 저장된 메뉴얼 데이터만으로 응답할 수 있습니다.', 'bot');
                                 return;
                             }
                         } catch (offlineError) {
