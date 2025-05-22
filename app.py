@@ -68,16 +68,35 @@ def get_clean_filename(filename):
 def index():
     return render_template('index.html')
     
+@app.route('/simple')
+def simple():
+    return render_template('simple.html')
+    
+@app.route('/support')
+def support():
+    return render_template('support.html')
+    
 @app.route('/<path:subpath>')
 def catch_all(subpath):
     """
     해시 기반 라우팅을 지원하기 위한 캐치올 라우트
     /#support 같은 URL 패턴을 처리합니다
     """
-    # #support 또는 %23support 등의 URL 요청을 기본 페이지로 리디렉션
+    # 로그 추가
+    app.logger.info(f"캐치올 라우트 접근: {subpath}")
+    
+    # 해시 태그 처리 - 인덱스 페이지로 리디렉션하고 클라이언트에서 해시 처리
     if '#' in subpath or '%23' in subpath:
-        return redirect('/')
-    # 그 외의 경우에도 리디렉션 처리
+        app.logger.info(f"해시 URL 감지: {subpath}")
+        return render_template('index.html')
+        
+    # 지원 페이지 처리
+    elif subpath == 'support':
+        app.logger.info("support 경로 감지, support 라우트로 리디렉션")
+        return redirect(url_for('support'))
+        
+    # 알 수 없는 경로는 홈으로 리디렉션
+    app.logger.warning(f"알 수 없는 경로 감지: {subpath}, 홈으로 리디렉션")
     return redirect('/')
     
 @app.route('/file-manager')
