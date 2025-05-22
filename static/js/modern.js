@@ -256,13 +256,16 @@ document.addEventListener('DOMContentLoaded', function() {
         return null;
     }
     
-    // 로컬 CSV 데이터에서 IP 주소 검색
+    // 로컬 CSV 데이터에서 IP 주소 검색 - 자연어 응답 생성
     function searchIpInLocalData(ipAddress) {
         try {
             const csvDataString = localStorage.getItem(LOCAL_CSV_DATA_KEY);
             if (!csvDataString) return null;
             
             const csvData = JSON.parse(csvDataString);
+            
+            // 디버깅용 로그
+            console.log(`IP 주소 ${ipAddress} 검색 시작, 로컬 CSV 파일 ${csvData.length}개 대상`);
             
             // 결과를 직접 문자열로 생성 (formatIpRecord 함수 대신)
             let foundRecord = null;
@@ -279,10 +282,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     for (const record of file.records) {
                         // 각 레코드의 모든 필드 검색
                         for (const [key, value] of Object.entries(record)) {
-                            if (value === ipAddress) {
+                            if (typeof value === 'string' && (value === ipAddress || 
+                                (key.toLowerCase().includes('ip') && value.includes(ipAddress)))) {
                                 // IP 주소 일치하는 레코드 발견
                                 foundRecord = record;
                                 sourceFilename = file.filename;
+                                console.log(`IP 주소 ${ipAddress} 레코드 찾음:`, record);
                                 break;
                             }
                         }
@@ -297,9 +302,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 for (const file of csvData) {
                     for (const record of file.records) {
                         for (const [key, value] of Object.entries(record)) {
-                            if (value === ipAddress) {
+                            if (typeof value === 'string' && (value === ipAddress || 
+                                (key.toLowerCase().includes('ip') && value.includes(ipAddress)))) {
                                 foundRecord = record;
                                 sourceFilename = file.filename;
+                                console.log(`다른 파일에서 IP 주소 ${ipAddress} 레코드 찾음:`, record);
                                 break;
                             }
                         }
@@ -309,39 +316,106 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
             
-            // 레코드를 찾았으면 직접 자연어 응답 생성
+            // 레코드를 찾았으면 자연어 응답 생성
             if (foundRecord) {
-                // 필요한 정보 추출
-                const user = foundRecord['사용자'] || foundRecord['사용자명'] || foundRecord['이름'] || foundRecord['담당자'] || '';
-                const dept = foundRecord['부서'] || foundRecord['팀'] || foundRecord['소속'] || '';
-                const contact = foundRecord['연락처'] || foundRecord['전화번호'] || '';
-                const status = foundRecord['상태'] || '사용 중';
-                const date = foundRecord['최종 접속일'] || foundRecord['접속일'] || foundRecord['날짜'] || '';
-                const notes = foundRecord['비고'] || foundRecord['메모'] || '';
+                // IP 보관은 특수 케이스 처리
+                const rawIpAddr = ipAddress || foundRecord['IP 주소'] || foundRecord['IP주소'] || foundRecord['IP'] || '';
                 
-                // 자연어 응답 생성
+                // A:, B: 형식 매핑 (주의: 대소문자 구분)
+                const fieldMap = {
+                    'A': '사용자명', 'B': '부서', 'C': '연락처', 'D': '상태', 
+                    'E': '최종 접속일', 'F': '비고', 'G': '최종 수정일'
+                };
+                
+                // 모든 필드에서 정보 추출 시도
+                let extractedData = {};
+                
+                // 원본 필드명이나 A,B,C 매핑으로 데이터 추출
+                for (const [key, value] of Object.entries(foundRecord)) {
+                    if (!value) continue;
+                    
+                    // 대소문자 구분 없이 필드명 매칭
+                    const lowerKey = key.toLowerCase();
+                    
+                    // 원래 필드명으로 매핑
+                    if (lowerKey.includes('사용자') || lowerKey.includes('이름') || lowerKey.includes('담당자')) {
+                        extractedData['사용자명'] = value;
+                    } else if (lowerKey.includes('부서') || lowerKey.includes('팀') || lowerKey.includes('소속')) {
+                        extractedData['부서'] = value;
+                    } else if (lowerKey.includes('연락처') || lowerKey.includes('전화')) {
+                        extractedData['연락처'] = value;
+                    } else if (lowerKey.includes('상태')) {
+                        extractedData['상태'] = value;
+                    } else if (lowerKey.includes('접속일') || lowerKey.includes('날짜') || lowerKey.includes('일시')) {
+                        extractedData['최종 접속일'] = value;
+                    } else if (lowerKey.includes('비고') || lowerKey.includes('메모') || lowerKey.includes('참고')) {
+                        extractedData['비고'] = value;
+                    } else if (lowerKey.includes('수정일')) {
+                        extractedData['최종 수정일'] = value;
+                    }
+                    
+                    // A, B, C 매핑으로 추가 시도
+                    if (key.length === 1 && fieldMap[key]) {
+                        extractedData[fieldMap[key]] = value;
+                    }
+                }
+                
+                // 추출한 데이터로 자연어 문장 생성
+                const user = extractedData['사용자명'] || '';
+                const dept = extractedData['부서'] || '';
+                const contact = extractedData['연락처'] || '';
+                const status = extractedData['상태'] || '사용 중';
+                const date = extractedData['최종 접속일'] || '';
+                const notes = extractedData['비고'] || '';
+                const updatedDate = extractedData['최종 수정일'] || '';
+                
+                // 자연어 응답 구성
                 let response = '';
                 
                 if (dept && user) {
-                    response = `IP ${ipAddress}는 ${dept}의 ${user} 담당자가 ${status}입니다.`;
+                    if (status === '사용 중' || status === '정상') {
+                        response = `IP ${rawIpAddr}는 ${dept}의 ${user} 담당자가 사용 중입니다.`;
+                    } else {
+                        response = `IP ${rawIpAddr}는 ${dept}의 ${user} 담당자가 ${status} 상태입니다.`;
+                    }
                 } else if (user) {
-                    response = `IP ${ipAddress}는 ${user} 담당자가 ${status}입니다.`;
+                    if (status === '사용 중' || status === '정상') {
+                        response = `IP ${rawIpAddr}는 ${user} 담당자가 사용 중입니다.`;
+                    } else {
+                        response = `IP ${rawIpAddr}는 ${user} 담당자가 ${status} 상태입니다.`;
+                    }
                 } else {
-                    response = `IP ${ipAddress} 정보를 찾았습니다.`;
+                    response = `IP ${rawIpAddr}에 대한 정보를 찾았습니다.`;
+                    
+                    // 부서 정보만 있는 경우
+                    if (dept) {
+                        response += ` 이 IP는 ${dept}에서 관리합니다.`;
+                    }
                 }
                 
-                if (contact) {
+                // 추가 정보를 필요에 따라 순서대로 추가
+                if (contact && !response.includes(contact)) {
                     response += ` 연락처는 ${contact}입니다.`;
                 }
                 
-                if (date) {
+                if (date && !response.includes(date)) {
                     response += ` 최근 접속일은 ${date}입니다.`;
                 }
                 
-                if (notes) {
-                    response += ` 참고사항: ${notes}`;
+                if (notes && notes !== '없음' && !response.includes(notes)) {
+                    if (notes.includes('차단') || notes.includes('만료') || notes.includes('경고')) {
+                        response += ` 주의: ${notes}`;
+                    } else {
+                        response += ` 참고사항: ${notes}`;
+                    }
                 }
                 
+                // 마지막 수정일 정보 추가 (보통 생략)
+                if (updatedDate && sourceFilename.includes('관리') && !response.includes(updatedDate)) {
+                    response += ` (${updatedDate} 기준)`;
+                }
+                
+                console.log('최종 생성된 자연어 응답:', response);
                 return response;
             }
             
@@ -411,6 +485,28 @@ document.addEventListener('DOMContentLoaded', function() {
         let accessDate = record['최종 접속일'] || record['접속일'] || record['날짜'] || '';
         let notesText = record['비고'] || record['메모'] || '';
         
+        // A: B: 형식 매핑 (주의: 대소문자 구분)
+        const fieldMap = {
+            'A': '사용자명', 'B': '부서', 'C': '연락처', 'D': '상태', 
+            'E': '최종 접속일', 'F': '비고', 'G': '최종 수정일'
+        };
+                
+        // A, B, C 매핑으로 추가 데이터 추출
+        for (const [key, value] of Object.entries(record)) {
+            if (!value) continue;
+            
+            if (key.length === 1 && fieldMap[key]) {
+                const mappedField = fieldMap[key];
+                
+                if (mappedField === '사용자명' && !userName) userName = value;
+                if (mappedField === '부서' && !deptName) deptName = value;
+                if (mappedField === '연락처' && !contactNumber) contactNumber = value;
+                if (mappedField === '상태' && !statusValue) statusValue = value;
+                if (mappedField === '최종 접속일' && !accessDate) accessDate = value;
+                if (mappedField === '비고' && !notesText) notesText = value;
+            }
+        }
+        
         // 다른 키에서 IP 주소 찾기 (위에서 찾지 못한 경우)
         if (!ipValue) {
             for (const [key, value] of Object.entries(record)) {
@@ -427,42 +523,85 @@ document.addEventListener('DOMContentLoaded', function() {
         // 정보 기반으로 자연스러운 문장 생성
         if (ipValue) {
             if (deptName && userName) {
-                response = `IP ${ipValue}는 ${deptName}의 ${userName} 담당자가 ${statusValue}입니다.`;
+                if (statusValue === '사용 중' || statusValue === '정상') {
+                    response = `IP ${ipValue}는 ${deptName}의 ${userName} 담당자가 사용 중입니다.`;
+                } else {
+                    response = `IP ${ipValue}는 ${deptName}의 ${userName} 담당자가 ${statusValue} 상태입니다.`;
+                }
             } else if (userName) {
-                response = `IP ${ipValue}는 ${userName} 담당자가 ${statusValue}입니다.`;
+                if (statusValue === '사용 중' || statusValue === '정상') {
+                    response = `IP ${ipValue}는 ${userName} 담당자가 사용 중입니다.`;
+                } else {
+                    response = `IP ${ipValue}는 ${userName} 담당자가 ${statusValue} 상태입니다.`;
+                }
+            } else if (deptName) {
+                response = `IP ${ipValue}는 ${deptName}에서 관리하는 IP입니다.`;
+                if (statusValue !== '사용 중' && statusValue !== '정상') {
+                    response = `IP ${ipValue}는 ${deptName}에서 관리하며 현재 ${statusValue} 상태입니다.`;
+                }
             } else {
-                response = `IP ${ipValue} 정보를 찾았습니다.`;
+                response = `IP ${ipValue}에 대한 정보를 찾았습니다.`;
             }
             
-            if (contactNumber) {
+            // 추가 정보를 필요에 따라 순서대로 추가
+            if (contactNumber && !response.includes(contactNumber)) {
                 response += ` 연락처는 ${contactNumber}입니다.`;
             }
             
-            if (accessDate) {
+            if (accessDate && !response.includes(accessDate)) {
                 response += ` 최근 접속일은 ${accessDate}입니다.`;
             }
             
-            if (notesText) {
-                response += ` 참고사항: ${notesText}`;
+            if (notesText && notesText !== '없음' && !response.includes(notesText)) {
+                if (notesText.includes('차단') || notesText.includes('만료') || notesText.includes('경고')) {
+                    response += ` 주의: ${notesText}`;
+                } else {
+                    response += ` 참고사항: ${notesText}`;
+                }
             }
         } else {
             // IP 주소가 없는 경우 일반적인 정보 제공
-            response = "요청하신 IP 주소 정보를 찾았습니다:\n";
-            
-            // 주요 필드 우선 표시
-            const priorityFields = ['사용자명', '사용자', '부서', '연락처', '상태', '최종 접속일'];
-            priorityFields.forEach(field => {
-                if (record[field]) {
-                    response += `${field}: ${record[field]}. `;
+            if (userName && deptName) {
+                response = `${deptName}의 ${userName} 담당자`;
+                if (statusValue !== '사용 중' && statusValue !== '정상') {
+                    response += `는 현재 ${statusValue} 상태입니다.`;
+                } else {
+                    response += '의 정보입니다.';
                 }
-            });
-            
-            // 나머지 필드 표시
-            for (const [key, value] of Object.entries(record)) {
-                if (!priorityFields.includes(key) && value) {
-                    response += `${key}: ${value}. `;
+                
+                // 추가 정보 연결
+                if (contactNumber) {
+                    response += ` 연락처는 ${contactNumber}입니다.`;
+                }
+                
+                if (accessDate) {
+                    response += ` 최근 접속일은 ${accessDate}입니다.`;
+                }
+            } else {
+                // 값이 많이 없는 경우 직접 형식 구성
+                const foundValues = [];
+                if (userName) foundValues.push(`사용자: ${userName}`);
+                if (deptName) foundValues.push(`부서: ${deptName}`);
+                if (contactNumber) foundValues.push(`연락처: ${contactNumber}`);
+                if (statusValue !== '사용 중') foundValues.push(`상태: ${statusValue}`);
+                if (accessDate) foundValues.push(`접속일: ${accessDate}`);
+                if (notesText) foundValues.push(`참고: ${notesText}`);
+                
+                if (foundValues.length > 0) {
+                    response = `다음 정보를 찾았습니다: ${foundValues.join(', ')}`;
+                } else {
+                    response = "요청하신 정보를 찾지 못했습니다.";
                 }
             }
+        }
+        
+        // 출처 정보 추가 (마지막에 괄호로)
+        if (filename) {
+            // 파일명에서 UUID 제거
+            const displayName = filename.replace(/^[a-f0-9-]+_/, '').replace(/\.[^.]+$/, '');
+            // 너무 긴 파일명은 줄임
+            const shortName = displayName.length > 20 ? displayName.substring(0, 17) + '...' : displayName;
+            response += ` (출처: ${shortName})`;
         }
         
         return response;
@@ -543,32 +682,124 @@ document.addEventListener('DOMContentLoaded', function() {
     // 키워드 검색 결과 포맷팅 (자연어 응답)
     function formatKeywordResults(results, keywords) {
         let response = '[🔴 서버 연결이 끊겼습니다. 기본 안내 정보로 응답 중입니다]\n\n';
-        response += `"${keywords.join(', ')}" 키워드로 검색한 결과입니다.\n\n`;
+        response += `"${keywords.join(', ')}" 키워드와 관련된 정보를 찾았습니다.\n\n`;
         
         results.forEach((result, index) => {
             const entries = Object.entries(result.record);
+            
+            // IP 주소 정보가 포함된 경우 특별 처리
+            const hasIpInfo = entries.some(([key, value]) => 
+                (typeof value === 'string' && /\b(?:\d{1,3}\.){3}\d{1,3}\b/.test(value)) || 
+                key.toLowerCase().includes('ip')
+            );
+            
+            if (hasIpInfo) {
+                // IP 정보를 포함하는 레코드는 전용 포맷터로 처리
+                response += formatIpRecord(result.record, result.filename) + '\n\n';
+                return;
+            }
+            
+            // A: B: 형식 매핑 (주의: 대소문자 구분)
+            const fieldMap = {
+                'A': '사용자명', 'B': '부서', 'C': '연락처', 'D': '상태', 
+                'E': '최종 접속일', 'F': '비고', 'G': '최종 수정일'
+            };
+            
+            // 일반적인 레코드 처리 - 자연어 문장 생성
+            // 주요 필드 추출
+            let userName = '', deptName = '', statusValue = '', contactInfo = '', dateInfo = '', noteInfo = '';
+            
+            // 원본 필드명이나 A/B/C 매핑으로 데이터 추출
+            for (const [key, value] of entries) {
+                if (!value) continue;
+                
+                // 대소문자 구분 없이 필드명 매칭
+                const lowerKey = key.toLowerCase();
+                
+                // 원래 필드명으로 매핑
+                if (lowerKey.includes('사용자') || lowerKey.includes('이름') || lowerKey.includes('담당자')) {
+                    userName = value;
+                } else if (lowerKey.includes('부서') || lowerKey.includes('팀') || lowerKey.includes('소속')) {
+                    deptName = value;
+                } else if (lowerKey.includes('연락처') || lowerKey.includes('전화')) {
+                    contactInfo = value;
+                } else if (lowerKey.includes('상태')) {
+                    statusValue = value;
+                } else if (lowerKey.includes('접속일') || lowerKey.includes('날짜') || lowerKey.includes('일시')) {
+                    dateInfo = value;
+                } else if (lowerKey.includes('비고') || lowerKey.includes('메모') || lowerKey.includes('참고')) {
+                    noteInfo = value;
+                }
+                
+                // A, B, C 매핑으로 추가 시도
+                if (key.length === 1 && fieldMap[key]) {
+                    const mappedField = fieldMap[key];
+                    
+                    if (mappedField === '사용자명' && !userName) userName = value;
+                    if (mappedField === '부서' && !deptName) deptName = value;
+                    if (mappedField === '연락처' && !contactInfo) contactInfo = value;
+                    if (mappedField === '상태' && !statusValue) statusValue = value;
+                    if (mappedField === '최종 접속일' && !dateInfo) dateInfo = value;
+                    if (mappedField === '비고' && !noteInfo) noteInfo = value;
+                }
+            }
+            
+            // 자연어 문장 구성
+            let resultText = '';
             
             // 첫 번째 필드를 제목으로 사용
             const keyField = entries.length > 0 ? entries[0][0] : '';
             const valueField = entries.length > 0 ? entries[0][1] : '';
             
-            response += `${index + 1}. ${keyField}이(가) ${valueField}인 정보를 찾았습니다. `;
+            // 기본 시작 문장
+            if (userName && deptName) {
+                resultText = `${deptName}의 ${userName} 담당자`;
+                if (statusValue && statusValue !== '사용 중' && statusValue !== '정상') {
+                    resultText += `는 현재 ${statusValue} 상태입니다.`;
+                } else {
+                    resultText += '의 정보입니다.';
+                }
+            } else if (userName) {
+                resultText = `${userName} 담당자`;
+                if (statusValue && statusValue !== '사용 중' && statusValue !== '정상') {
+                    resultText += `는 현재 ${statusValue} 상태입니다.`;
+                } else {
+                    resultText += '의 정보입니다.';
+                }
+            } else if (valueField) {
+                // 가장 중요한 값으로 시작
+                resultText = `"${valueField}"에 대한 정보입니다.`;
+            } else {
+                resultText = `${index + 1}번째 검색 결과입니다.`;
+            }
             
-            // 주요 정보 수집
-            let mainInfo = [];
+            // 추가 정보
+            if (contactInfo && !resultText.includes(contactInfo)) {
+                resultText += ` 연락처는 ${contactInfo}입니다.`;
+            }
             
-            for (let i = 1; i < Math.min(entries.length, 4); i++) { // 주요 정보는 최대 3개만 표시
-                const [key, value] = entries[i];
-                if (value) {
-                    mainInfo.push(`${key}은(는) ${value}입니다`);
+            if (dateInfo && !resultText.includes(dateInfo)) {
+                resultText += ` 최근 접속일은 ${dateInfo}입니다.`;
+            }
+            
+            if (noteInfo && !resultText.includes(noteInfo)) {
+                if (noteInfo.includes('차단') || noteInfo.includes('만료') || noteInfo.includes('경고')) {
+                    resultText += ` 주의: ${noteInfo}`;
+                } else {
+                    resultText += ` 참고사항: ${noteInfo}`;
                 }
             }
             
-            if (mainInfo.length > 0) {
-                response += mainInfo.join('. ') + '.';
+            // 출처 정보 추가
+            if (result.filename) {
+                // 파일명에서 UUID 제거
+                const displayName = result.filename.replace(/^[a-f0-9-]+_/, '').replace(/\.[^.]+$/, '');
+                // 너무 긴 파일명은 줄임
+                const shortName = displayName.length > 20 ? displayName.substring(0, 17) + '...' : displayName;
+                resultText += ` (출처: ${shortName})`;
             }
             
-            response += `\n*출처: ${result.filename}*\n\n`;
+            response += resultText + '\n\n';
         });
         
         return response;
