@@ -53,41 +53,67 @@ function enableCsvEditing() {
     // 현재 테이블 상태 저장
     originalCsvData = document.getElementById('csv-table-container').innerHTML;
     
-    // 현재 파일명 가져오기 (모달 제목 태그에서 직접 추출)
+    // 현재 파일명 가져오기 (HTML 컨텍스트에서 파일 정보 찾기)
+    // 1. 제목 태그에서 찾기
     const viewingFile = document.querySelector('.file-preview-title');
     
+    // 2. URL 파라미터에서 파일명 찾기
+    const getFileNameFromUrl = () => {
+        // URL에서 파일명 추출 (마지막 / 이후)
+        const urlParts = window.location.href.split('/');
+        const lastPart = decodeURIComponent(urlParts[urlParts.length - 1]);
+        
+        // 파일명이 존재하고 .csv로 끝나는지 확인
+        if (lastPart && lastPart.toLowerCase().endsWith('.csv')) {
+            return lastPart;
+        }
+        return null;
+    };
+    
+    // 3. 테이블 요소에서 찾기 (시스템 파일명이 데이터 속성으로 저장된 경우)
+    const getFileNameFromTable = () => {
+        const csvTable = document.querySelector('.editable-csv-table');
+        if (csvTable && csvTable.dataset.filename) {
+            return csvTable.dataset.filename;
+        }
+        return null;
+    };
+    
+    // 모든 방법으로 시도
     if (viewingFile && viewingFile.getAttribute('data-system-filename')) {
         // 데이터 속성에서 시스템 파일명 가져오기
         currentFilename = viewingFile.getAttribute('data-system-filename');
         console.log("파일 제목 태그에서 찾은 파일명:", currentFilename);
+    } else if (getFileNameFromTable()) {
+        currentFilename = getFileNameFromTable();
+        console.log("CSV 테이블에서 찾은 파일명:", currentFilename);
+    } else if (getFileNameFromUrl()) {
+        currentFilename = getFileNameFromUrl();
+        console.log("URL에서 찾은 파일명:", currentFilename);
     } else if (viewingFile && viewingFile.textContent) {
-        // 텍스트 내용에서 파일명 추출 시도
-        const fileTitle = viewingFile.textContent.trim();
-        // CSV 파일 목록에서 일치하는 파일 찾기
-        const csvFiles = document.querySelectorAll('.file-item[data-type="csv"]');
-        let foundFilename = null;
-        
-        csvFiles.forEach(file => {
-            const displayName = file.querySelector('.file-name').textContent;
-            if (displayName === fileTitle && file.dataset.systemFilename) {
-                foundFilename = file.dataset.systemFilename;
-            }
-        });
-        
-        if (foundFilename) {
-            currentFilename = foundFilename;
-            console.log("파일 목록에서 찾은 파일명:", currentFilename);
+        // 표시된 제목에서 파일명 추출
+        const modalTitle = document.querySelector('.document-modal-header h3');
+        if (modalTitle && modalTitle.textContent) {
+            currentFilename = modalTitle.textContent.trim();
+            console.log("모달 제목에서 찾은 파일명:", currentFilename);
         } else {
-            alert('편집할 CSV 파일 정보를 찾을 수 없습니다. 페이지를 새로고침하고 다시 시도해주세요.');
-            console.error("CSV 파일명을 찾을 수 없음");
+            // 실패 처리
+            console.error("파일명을 찾을 수 없음: 제목에서 추출 실패");
+            alert('편집할 CSV 파일을 찾을 수 없습니다. 새로고침 후 다시 시도해주세요.');
             return;
         }
     } else {
-        // 백업 방법: URL에서 찾기
-        const filenamePath = window.location.pathname;
-        console.error("파일명을 찾을 수 없음:", filenamePath);
-        alert('편집할 CSV 파일을 찾을 수 없습니다. 파일 목록에서 CSV 파일을 선택해주세요.');
-        return;
+        // 백업 방법: 현재 표시된 테이블이 있는지 확인
+        const csvTable = document.querySelector('.editable-csv-table');
+        if (csvTable) {
+            // 테이블이 표시되어 있으면 임시 이름 사용
+            currentFilename = "current_csv_file.csv";
+            console.log("테이블 존재, 임시 파일명 사용:", currentFilename);
+        } else {
+            console.error("파일명을 찾을 수 없음: 모든 방법 실패");
+            alert('편집할 CSV 파일을 찾을 수 없습니다. 파일 목록에서 CSV 파일을 선택해주세요.');
+            return;
+        }
     }
     console.log("현재 편집 중인 파일명:", currentFilename);
     
