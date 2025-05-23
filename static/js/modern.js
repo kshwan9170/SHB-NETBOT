@@ -2034,11 +2034,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     uploadDropzone.querySelector('p').textContent = 'Drag and drop files here or browse';
                     fileInput.value = '';
                     
-                    // 문서 목록 업데이트 및 카드 스타일 적용
-                    loadDocuments().then(() => {
-                        // 업로드된 파일들에 성공 스타일 적용
-                        highlightUploadedFiles(uploadResults);
-                    });
+                    // 즉시 문서 목록 업데이트
+                    setTimeout(() => {
+                        loadDocuments().then(() => {
+                            // 업로드된 파일들에 성공 스타일 적용
+                            if (typeof highlightUploadedFiles === 'function') {
+                                highlightUploadedFiles(uploadResults);
+                            }
+                        });
+                    }, 500); // 0.5초 후 목록 새로고침
                 }
             } catch (error) {
                 console.error('Upload error:', error);
