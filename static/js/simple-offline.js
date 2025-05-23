@@ -1,6 +1,6 @@
 /**
  * SHB-NetBot 간소화된 오프라인 모드 지원
- * 업로드된 문서 데이터를 localStorage에 저장하여 오프라인 모드에서 사용
+ * 통합 오프라인 시스템과 연동하여 IndexedDB 및 localStorage 기반 오프라인 검색 제공
  */
 
 // 전역 네임스페이스로 노출
@@ -8,6 +8,7 @@ window.offlineHelper = {
     // 저장소 키
     STORAGE_KEY: 'shb_netbot_offline_data',
     DOCUMENTS_CACHE_KEY: 'shb_netbot_documents_cache',
+    isOfflineForced: false,  // 강제 오프라인 모드 플래그
     
     // 문서 데이터 가져오기
     fetchDocumentsData: async function() {
