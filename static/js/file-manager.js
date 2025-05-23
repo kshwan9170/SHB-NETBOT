@@ -4,6 +4,7 @@
  * - 즉시 UI 반영
  * - 일관된 성공/실패 메시지
  * - 안정적인 오류 처리
+ * - 채팅 기능 포함
  */
 
 class SHBFileManager {
@@ -11,6 +12,7 @@ class SHBFileManager {
         this.isUploading = false;
         this.currentFiles = [];
         this.CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
+        this.chatHistory = [];
         this.init();
     }
 
@@ -455,6 +457,131 @@ class SHBFileManager {
         }
     }
 
+    // 채팅 기능 추가
+    setupChatEvents() {
+        const chatForm = document.getElementById('chatForm');
+        const chatInput = document.getElementById('chatInput');
+        
+        if (chatForm) {
+            chatForm.addEventListener('submit', (e) => this.handleChatSubmit(e));
+        }
+        
+        if (chatInput) {
+            chatInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.handleChatSubmit(e);
+                }
+            });
+        }
+    }
+
+    async handleChatSubmit(e) {
+        e.preventDefault();
+        
+        const chatInput = document.getElementById('chatInput');
+        const query = chatInput.value.trim();
+        
+        if (!query) return;
+        
+        // UI에 사용자 메시지 추가
+        this.addChatMessage(query, 'user');
+        chatInput.value = '';
+        
+        // 로딩 상태 표시
+        const loadingId = this.addChatMessage('응답을 생성중입니다...', 'bot', true);
+        
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    query: query,
+                    chat_history: this.chatHistory
+                })
+            });
+            
+            const data = await response.json();
+            
+            // 로딩 메시지 제거
+            this.removeChatMessage(loadingId);
+            
+            if (response.ok) {
+                this.addChatMessage(data.response, 'bot');
+                this.chatHistory.push({role: 'user', content: query});
+                this.chatHistory.push({role: 'assistant', content: data.response});
+            } else {
+                this.addChatMessage('죄송합니다. 응답을 생성할 수 없습니다.', 'bot');
+            }
+        } catch (error) {
+            this.removeChatMessage(loadingId);
+            this.addChatMessage('네트워크 오류가 발생했습니다.', 'bot');
+        }
+    }
+
+    addChatMessage(content, sender, isLoading = false) {
+        const chatMessages = document.getElementById('chatMessages');
+        if (!chatMessages) return null;
+        
+        const messageId = 'msg_' + Date.now();
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${sender}-message${isLoading ? ' loading' : ''}`;
+        messageDiv.id = messageId;
+        
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                ${this.escapeHtml(content)}
+            </div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        return messageId;
+    }
+
+    removeChatMessage(messageId) {
+        const message = document.getElementById(messageId);
+        if (message) {
+            message.remove();
+        }
+    }
+
+    // 네비게이션 설정
+    setupNavigation() {
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('.section');
+        
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                const targetId = link.getAttribute('href').substring(1);
+                
+                // 모든 섹션 숨기기
+                sections.forEach(section => {
+                    section.style.display = 'none';
+                });
+                
+                // 모든 네비게이션 링크에서 active 클래스 제거
+                navLinks.forEach(navLink => {
+                    navLink.classList.remove('active');
+                });
+                
+                // 대상 섹션 보이기
+                const targetSection = document.getElementById(targetId);
+                if (targetSection) {
+                    targetSection.style.display = 'block';
+                }
+                
+                // 클릭된 링크에 active 클래스 추가
+                link.classList.add('active');
+            });
+        });
+    }
+
     // 유틸리티 함수들
     formatFileSize(bytes) {
         if (bytes < 1024) return bytes + ' bytes';
@@ -475,4 +602,19 @@ class SHBFileManager {
 // 전역으로 초기화
 document.addEventListener('DOMContentLoaded', () => {
     window.shbFileManager = new SHBFileManager();
+    
+    // 채팅 및 네비게이션 이벤트 설정
+    window.shbFileManager.setupChatEvents();
+    window.shbFileManager.setupNavigation();
+    
+    // AOS 애니메이션 초기화
+    if (typeof AOS !== 'undefined') {
+        AOS.init({
+            duration: 800,
+            easing: 'ease-in-out',
+            once: true
+        });
+    }
+    
+    console.log('✅ SHB-NetBot 통합 시스템 초기화 완료');
 });
