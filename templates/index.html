@@ -205,6 +205,25 @@
                     </div>
                     <div class="upload-content">
                         <p>Upload documents to enhance NetBot's knowledge.</p>
+                        
+                        <!-- 최근 업로드 도움말 섹션 추가 -->
+                        <div class="upload-help-section" style="background: linear-gradient(135deg, #f8fbff, #f0f7ff); border-radius: 8px; padding: 20px; margin-bottom: 25px; border-left: 4px solid #30507A;">
+                            <h4 style="color: #30507A; margin-bottom: 12px; font-size: 16px; font-weight: 600;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px; vertical-align: -2px;">
+                                    <path d="M9 11H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-4"></path>
+                                    <polyline points="9 11 12 14 15 11"></polyline>
+                                    <line x1="12" y1="2" x2="12" y2="14"></line>
+                                </svg>
+                                업로드 가이드
+                            </h4>
+                            <ul style="margin: 0; padding-left: 20px; color: #5A6373; font-size: 14px; line-height: 1.6;">
+                                <li>네트워크 관련 문서를 우선 업로드하세요</li>
+                                <li>IP 주소 목록, 장애 대응 매뉴얼 등이 특히 유용합니다</li>
+                                <li>파일당 최대 50MB까지 지원됩니다</li>
+                                <li>업로드된 문서는 AI 검색에 즉시 반영됩니다</li>
+                            </ul>
+                        </div>
+                        
                         <form id="uploadForm" class="upload-form">
                             <div class="upload-dropzone" id="uploadDropzone">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -228,7 +247,7 @@
                                     <span id="uploadProgressChunks">0/0 청크</span>
                                 </div>
                                 <div class="progress-bar-container" style="background-color: #f0f0f0; border-radius: 4px; height: 8px; overflow: hidden;">
-                                    <div id="uploadProgressBar" style="background-color: #0064E1; height: 100%; width: 0%; transition: width 0.3s;"></div>
+                                    <div id="uploadProgressBar" style="background-color: #30507A; height: 100%; width: 0%; transition: width 0.3s;"></div>
                                 </div>
                                 <div id="uploadFileName" style="margin-top: 5px; font-size: 12px; color: #666;"></div>
                             </div>
@@ -262,9 +281,9 @@
                                 <table id="documents-table" style="width: 100%; border-collapse: collapse; margin-bottom: 20px; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                                     <thead>
                                         <tr>
-                                            <th style="text-align: left; padding: 12px; border-bottom: 1px solid #eaeaea; background-color: #f5f8fd; width: 30%;">File Name</th>
-                                            <th style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea; background-color: #f5f8fd; width: 15%;">Size</th>
-                                            <th style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea; background-color: #f5f8fd; width: 55%;">Actions</th>
+                                            <th style="text-align: left; padding: 12px; border-bottom: 1px solid #eaeaea; background-color: #f5f8fd; width: 45%; font-weight: 600; color: #30507A;">File Name</th>
+                                            <th style="text-align: right; padding: 12px; border-bottom: 1px solid #eaeaea; background-color: #f5f8fd; width: 15%; font-weight: 600; color: #30507A;">Size</th>
+                                            <th style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea; background-color: #f5f8fd; width: 40%; font-weight: 600; color: #30507A;">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="documents-tbody">

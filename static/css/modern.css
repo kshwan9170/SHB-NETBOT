@@ -1052,6 +1052,121 @@ body.offline-mode .logo img {
     box-shadow: 0 4px 12px rgba(48, 80, 122, 0.3);
 }
 
+/* 문서 테이블 향상된 스타일 */
+#documents-table tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+#documents-table tbody tr:nth-child(even) {
+    background-color: #fafbfc;
+}
+
+#documents-table tbody tr:hover {
+    background-color: #f0f7ff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(48, 80, 122, 0.1);
+}
+
+#documents-table tbody td {
+    padding: 14px 12px;
+    vertical-align: middle;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+/* 파일명 셀 스타일 */
+#documents-table tbody td:first-child {
+    font-weight: 500;
+    color: #30507A;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    position: relative;
+}
+
+/* 파일명 툴팁 */
+#documents-table tbody td:first-child:hover::after {
+    content: attr(title);
+    position: absolute;
+    top: -35px;
+    left: 0;
+    background: #333;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+    max-width: 400px;
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+/* 크기 셀 정렬 */
+#documents-table tbody td:nth-child(2) {
+    text-align: right;
+    font-weight: 500;
+    color: #5A6373;
+}
+
+/* 액션 셀 중앙 정렬 */
+#documents-table tbody td:nth-child(3) {
+    text-align: center;
+}
+
+/* 페이지네이션 개선 */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.pagination button {
+    background: linear-gradient(135deg, #30507A, #3C5C88);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    min-width: 40px;
+}
+
+.pagination button:hover {
+    background: linear-gradient(135deg, #3C5C88, #4A6B9A);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(48, 80, 122, 0.3);
+}
+
+.pagination button.active {
+    background: linear-gradient(135deg, #2A4A6B, #30507A);
+    box-shadow: 0 2px 8px rgba(48, 80, 122, 0.4);
+}
+
+.pagination button:disabled {
+    background: #e9ecef;
+    color: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 다음 버튼 특별 스타일 */
+.pagination button.next-btn {
+    background: linear-gradient(135deg, #28a745, #34ce57);
+    padding: 8px 16px;
+}
+
+.pagination button.next-btn:hover {
+    background: linear-gradient(135deg, #34ce57, #28a745);
+}
+
 /* 기존 문서 카드 스타일 */
 .document-card {
     background: white;

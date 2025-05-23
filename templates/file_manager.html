@@ -56,16 +56,66 @@
             table-layout: fixed; /* 고정 너비 테이블 레이아웃 적용 */
         }
         th, td {
-            padding: 12px 15px;
+            padding: 14px 12px;
             text-align: left;
-            border-bottom: 1px solid #eaeaea;
+            border-bottom: 1px solid #f0f0f0;
             overflow: hidden;
             text-overflow: ellipsis;
+            vertical-align: middle;
+            font-size: 14px;
+            line-height: 1.4;
         }
+        
+        tbody tr {
+            transition: all 0.2s ease;
+        }
+        
+        tbody tr:nth-child(even) {
+            background-color: #fafbfc;
+        }
+        
+        tbody tr:hover {
+            background-color: #f0f7ff;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(48, 80, 122, 0.1);
+        }
+        
         th {
             background-color: #f7f9fc;
             font-weight: 600;
             color: #4a5568;
+        }
+        
+        /* 파일명 셀 스타일 */
+        td:first-child {
+            font-weight: 500;
+            color: #30507A;
+            position: relative;
+        }
+        
+        /* 파일명 툴팁 */
+        td:first-child:hover::after {
+            content: attr(title);
+            position: absolute;
+            top: -35px;
+            left: 0;
+            background: #333;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            max-width: 400px;
+            word-wrap: break-word;
+            white-space: normal;
+        }
+        
+        /* 크기 셀 정렬 */
+        td:nth-child(2) {
+            text-align: right;
+            font-weight: 500;
+            color: #5A6373;
         }
         .actions {
             text-align: center;
@@ -91,13 +141,15 @@
         }
         
         .delete-btn {
-            background-color: #ff3b30;
+            background: linear-gradient(135deg, #30507A, #3C5C88);
             color: white;
             border: none;
-            border-radius: 4px;
-            padding: 10px 20px;
+            border-radius: 6px;
+            padding: 8px 16px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 500;
+            font-size: 13px;
+            transition: all 0.3s ease;
             transition: all 0.2s;
             font-size: 14px;
             min-width: 100px;
