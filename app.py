@@ -105,6 +105,48 @@ def connection_status():
         print(f"OpenAI API 연결 오류: {str(e)}")
         return jsonify({'status': 'offline', 'reason': 'api_connection_error', 'error': str(e)}), 200
 
+@app.route('/api/sync_offline_data', methods=['POST'])
+def sync_offline_data():
+    """ChromaDB 데이터를 클라이언트로 전송하여 IndexedDB 동기화"""
+    try:
+        from csv_to_narrative import CsvNarrativeConverter
+        
+        # CSV 파일에서 모든 자연어 데이터 생성
+        converter = CsvNarrativeConverter()
+        all_narratives = []
+        
+        # 업로드된 CSV 파일들 처리
+        uploaded_files = os.listdir('uploaded_files')
+        csv_files = [f for f in uploaded_files if f.endswith('.csv') and not f.startswith('test')]
+        
+        print(f"오프라인 동기화: {len(csv_files)}개 CSV 파일 처리 시작")
+        
+        for csv_file in csv_files:
+            try:
+                csv_path = os.path.join('uploaded_files', csv_file)
+                narratives = converter.csv_to_narratives(csv_path)
+                all_narratives.extend(narratives)
+                print(f"CSV 파일 {csv_file}: {len(narratives)}개 레코드 처리 완료")
+            except Exception as e:
+                print(f"CSV 파일 {csv_file} 처리 오류: {str(e)}")
+                continue
+        
+        print(f"총 {len(all_narratives)}개 레코드를 클라이언트로 전송")
+        
+        return jsonify({
+            'status': 'success',
+            'data': all_narratives,
+            'total_records': len(all_narratives),
+            'csv_files_processed': len(csv_files)
+        })
+        
+    except Exception as e:
+        print(f"오프라인 데이터 동기화 오류: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f'오프라인 데이터 동기화 중 오류가 발생했습니다: {str(e)}'
+        }), 500
+
 @app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.get_json()
