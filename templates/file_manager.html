@@ -27,14 +27,11 @@
             align-items: center;
             margin-bottom: 30px;
         }
-        .header img {
-            height: 40px;
-            margin-right: 15px;
-        }
         .header h1 {
             margin: 0;
             font-size: 24px;
             font-weight: 600;
+            color: #30507A;
         }
         .card {
             background-color: white;
@@ -141,7 +138,7 @@
         }
         
         .delete-btn {
-            background: linear-gradient(135deg, #30507A, #3C5C88);
+            background: linear-gradient(135deg, #ff3b30, #e02e24);
             color: white;
             border: none;
             border-radius: 6px;
@@ -155,9 +152,9 @@
         }
         
         .delete-btn:hover {
-            background: linear-gradient(135deg, #3C5C88, #4A6B9A);
+            background: linear-gradient(135deg, #e02e24, #d12e20);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(48, 80, 122, 0.3);
+            box-shadow: 0 4px 12px rgba(224, 46, 36, 0.3);
         }
         .back-link {
             display: inline-block;
@@ -181,7 +178,7 @@
         <div class="navbar-container">
             <div class="logo">
                 <a href="/">
-                    <img src="{{ url_for('static', filename='images/shinhan_logo_refined.svg') }}" alt="신한은행 로고">
+                    <img src="{{ url_for('static', filename='images/shinhan_logo_new.png') }}" alt="신한은행 로고">
                     <span>SHB-NetBot</span>
                 </a>
             </div>
@@ -212,7 +209,6 @@
     </nav>
     
     <div class="header">
-        <img src="{{ url_for('static', filename='images/shinhan_logo_refined.svg') }}" alt="신한은행 로고">
         <h1>SHB-NetBot 파일 관리자</h1>
     </div>
     
