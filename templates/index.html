@@ -314,6 +314,31 @@
             </div>
         </div>
     </section>
+
+    <!-- 파일 미리보기 모달 -->
+    <div id="filePreviewModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 90%; max-height: 90%; width: auto; height: auto;">
+            <div class="modal-header">
+                <h3 id="modalFileName">파일 미리보기</h3>
+                <div class="modal-buttons">
+                    <button id="downloadButton" class="btn btn-primary" style="margin-right: 10px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        다운로드
+                    </button>
+                    <button class="close-modal">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent">
+                    <!-- 파일 내용이 여기에 로드됩니다 -->
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- Support 섹션 시작 -->
     <section id="support" class="section">
@@ -558,6 +583,148 @@
                 alert('서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
             });
         }
+    </script>
+    
+    <!-- 메인페이지 파일 미리보기 모달 스크립트 -->
+    <script>
+    // 파일 미리보기 모달 초기화
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeMainPageFilePreview();
+    });
+
+    function initializeMainPageFilePreview() {
+        const modal = document.getElementById('filePreviewModal');
+        const closeButtons = document.querySelectorAll('.close-modal');
+        
+        if (!modal) return;
+        
+        // 모달 닫기 이벤트
+        closeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+        });
+        
+        // 모달 배경 클릭 시 닫기
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+        
+        // ESC 키로 모달 닫기
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            }
+        });
+        
+        // 파일명을 클릭 가능하게 만들기
+        makeFilenamesClickable();
+    }
+
+    function makeFilenamesClickable() {
+        // 문서 테이블이 로드될 때까지 대기
+        const checkTable = setInterval(() => {
+            const tbody = document.getElementById('documents-tbody');
+            if (tbody && tbody.children.length > 0) {
+                clearInterval(checkTable);
+                
+                // 모든 파일명 셀에 클릭 이벤트 추가
+                const rows = tbody.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const filenameCell = row.querySelector('td:first-child');
+                    if (filenameCell) {
+                        const filename = filenameCell.textContent.trim();
+                        
+                        // 파일명을 클릭 가능하게 스타일링
+                        filenameCell.classList.add('clickable-filename');
+                        filenameCell.style.cursor = 'pointer';
+                        
+                        // 클릭 이벤트 추가
+                        filenameCell.addEventListener('click', () => {
+                            // 시스템 파일명 찾기 (삭제 버튼의 데이터에서)
+                            const deleteButton = row.querySelector('.document-delete-btn');
+                            if (deleteButton) {
+                                const systemFilename = deleteButton.getAttribute('data-system-filename');
+                                if (systemFilename) {
+                                    openMainPageFilePreview(systemFilename, filename);
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        }, 500);
+        
+        // 10초 후 타이머 정리
+        setTimeout(() => clearInterval(checkTable), 10000);
+    }
+
+    function openMainPageFilePreview(systemFilename, originalFilename) {
+        const modal = document.getElementById('filePreviewModal');
+        const modalFileName = document.getElementById('modalFileName');
+        const modalContent = document.getElementById('modalContent');
+        const downloadButton = document.getElementById('downloadButton');
+        
+        if (!modal || !modalFileName || !modalContent || !downloadButton) return;
+        
+        // 모달 제목 설정
+        modalFileName.textContent = originalFilename;
+        
+        // 로딩 표시
+        modalContent.innerHTML = '<div style="text-align: center; padding: 50px; color: #30507A; font-size: 16px;"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite; margin-bottom: 10px;"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg><br>파일을 로딩하고 있습니다...</div>';
+        
+        // 다운로드 버튼 설정
+        downloadButton.onclick = () => {
+            const link = document.createElement('a');
+            link.href = `/static/uploaded_files/${systemFilename}`;
+            link.download = originalFilename;
+            link.click();
+        };
+        
+        // 모달 표시
+        modal.style.display = 'flex';
+        
+        // 파일 내용 로드
+        fetch(`/api/documents/view/${encodeURIComponent(systemFilename)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    modalContent.innerHTML = data.content;
+                } else {
+                    modalContent.innerHTML = `<div style="text-align: center; padding: 50px; color: #e74c3c; font-size: 16px;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 10px;">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg><br>
+                        파일을 로드할 수 없습니다: ${data.error}
+                    </div>`;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading file preview:', error);
+                modalContent.innerHTML = `<div style="text-align: center; padding: 50px; color: #e74c3c; font-size: 16px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 10px;">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                    </svg><br>
+                    파일 로드 중 오류가 발생했습니다.
+                </div>`;
+            });
+    }
+    
+    // 스피너 애니메이션 CSS 추가
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
     </script>
 </body>
 </html>
