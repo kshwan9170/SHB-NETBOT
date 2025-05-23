@@ -2120,10 +2120,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (response.ok) {
                 if (data.files && data.files.length > 0) {
+                    // 메타데이터 파일 필터링
+                    const filteredFiles = data.files.filter(file => 
+                        !file.filename.endsWith('_metadata.json')
+                    );
+                    
                     // 문서 목록 표시
                     documentsList.innerHTML = '';
                     
-                    data.files.forEach(file => {
+                    filteredFiles.forEach(file => {
                         const fileExt = file.file_type;
                         let iconClass = 'txt';
                         
