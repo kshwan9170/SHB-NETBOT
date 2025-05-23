@@ -59,6 +59,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
+            console.log('Upload success response:', data);
             // 업로드 결과 확인 (서버는 results 배열로 응답)
             if (data.results && data.results.length > 0 && data.results[0].status === 'success') {
                 // 성공 피드백 표시
@@ -86,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Upload error:', error);
             submitBtn.innerHTML = '❌ 업로드 실패';
             submitBtn.style.backgroundColor = '#dc3545';
-            alert('업로드 중 오류가 발생했습니다.');
+            alert(`업로드 실패: ${error.message || '서버 연결 오류가 발생했습니다.'}`);
             
             setTimeout(() => {
                 submitBtn.textContent = originalText;
