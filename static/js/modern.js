@@ -2072,6 +2072,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } catch (error) {
                 console.error('Upload error:', error);
+                
+                // 🎯 업로드 오류 피드백 이벤트 발생
+                const files = Array.from(fileInput.files);
+                files.forEach((file, index) => {
+                    const uploadId = `upload_${Date.now()}_${index}`;
+                    const uploadErrorEvent = new CustomEvent('uploadError', {
+                        detail: { 
+                            uploadId: uploadId,
+                            error: error.message || '업로드 중 오류가 발생했습니다.'
+                        }
+                    });
+                    document.dispatchEvent(uploadErrorEvent);
+                });
+                
                 alert('An error occurred during the upload');
             } finally {
                 // 업로드 버튼 다시 활성화
