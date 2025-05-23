@@ -1,11 +1,11 @@
 /* 기본 스타일 */
 :root {
-    /* 컬러 팔레트 - 코발트 블루 계열 */
-    --primary: #0A74DA;
-    --primary-hover: #0862B8;
-    --primary-light: rgba(10, 116, 218, 0.1);
-    --secondary: #1E3A8A;
-    --accent: #3B82F6;
+    /* 컬러 팔레트 - 딥 네이비 계열 */
+    --primary: #1C2C48;
+    --primary-hover: #2F4466;
+    --primary-light: rgba(28, 44, 72, 0.1);
+    --secondary: #203659;
+    --accent: #2F4466;
     
     /* 중립 컬러 */
     --dark: #2C3E50;
@@ -415,11 +415,12 @@ body.offline-mode .logo img {
     font-weight: 800;
     margin-bottom: 2rem;
     letter-spacing: -1px;
-    background: linear-gradient(135deg, #0A74DA, #1E3A8A);
+    background: linear-gradient(135deg, #1C2C48, #203659);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
     animation: gradientShift 8s ease infinite;
+    text-shadow: 0 2px 4px rgba(28, 44, 72, 0.3);
 }
 
 @keyframes gradientShift {
@@ -440,8 +441,8 @@ body.offline-mode .logo img {
 .cta-button {
     display: inline-block;
     padding: 1.6rem 3.2rem;
-    background: linear-gradient(135deg, #0A74DA, #0862B8);
-    color: var(--white);
+    background: linear-gradient(135deg, #1C2C48, #203659);
+    color: #FFFFFF;
     font-weight: 600;
     border-radius: var(--border-radius-md);
     font-size: 1.8rem;
@@ -451,8 +452,8 @@ body.offline-mode .logo img {
 }
 
 .cta-button:hover {
-    background: linear-gradient(135deg, #1E3A8A, #0A74DA);
-    color: var(--white);
+    background: linear-gradient(135deg, #2F4466, #1C2C48);
+    color: #FFFFFF;
     transform: translateY(-3px);
     box-shadow: var(--shadow-lg);
 }
@@ -707,8 +708,8 @@ body.offline-mode .logo img {
 }
 
 .user-message {
-    background: linear-gradient(135deg, #0A74DA, #0862B8);
-    color: var(--text-on-primary);
+    background: linear-gradient(135deg, #1C2C48, #203659);
+    color: #FFFFFF;
     align-self: flex-end;
     border-bottom-right-radius: 0.6rem;
     box-shadow: 
