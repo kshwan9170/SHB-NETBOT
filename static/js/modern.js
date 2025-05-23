@@ -843,23 +843,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 네비게이션 바의 로고와 텍스트 관리
         function updateNavLogo() {
-            // 모바일에서도 동작하는 간단한 방식 적용 - 클래스 전환 방식
+            // 로고는 온라인/오프라인 상관없이 일관된 브랜딩 유지
             const logoWrapper = document.querySelector('.logo');
             if (logoWrapper) {
-                if (!isOnline) {
-                    logoWrapper.classList.add('offline');
-                } else {
-                    logoWrapper.classList.remove('offline');
-                }
+                // 오프라인 클래스 제거하여 일관된 스타일 유지
+                logoWrapper.classList.remove('offline');
                 
-                // SHB-NetBot 텍스트 색상 변경 (직접 스타일 적용)
+                // SHB-NetBot 텍스트는 항상 기본 색상 유지
                 const titleSpan = logoWrapper.querySelector('span');
                 if (titleSpan) {
-                    if (isOnline) {
-                        titleSpan.style.color = '';
-                    } else {
-                        titleSpan.style.color = '#ff3333';
-                    }
+                    titleSpan.style.color = '';
                 }
             }
         }

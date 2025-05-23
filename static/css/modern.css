@@ -274,43 +274,7 @@ img {
     letter-spacing: -0.5px;
 }
 
-/* 오프라인 모드 표시 */
-.logo.offline::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    right: -10px;
-    width: 10px;
-    height: 10px;
-    background-color: #ff3a55;
-    border-radius: 50%;
-}
-
-/* 오프라인 모드 스타일 - 모바일 포함 */
-body.offline-mode .logo span {
-    color: #ff3a55 !important;
-}
-
-body.offline-mode .logo img {
-    filter: invert(21%) sepia(100%) saturate(7414%) hue-rotate(359deg) brightness(94%) contrast(111%) !important;
-}
-
-.logo.offline::after {
-    box-shadow: 0 0 8px rgba(255, 58, 85, 0.6);
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 0 0 rgba(255, 58, 85, 0.6);
-    }
-    70% {
-        box-shadow: 0 0 0 6px rgba(255, 58, 85, 0);
-    }
-    100% {
-        box-shadow: 0 0 0 0 rgba(255, 58, 85, 0);
-    }
-}
+/* 오프라인 모드 스타일 제거됨 - 일관된 브랜딩 유지 */
 
 /* 제거된 연결 상태 표시기 스타일 */
 
