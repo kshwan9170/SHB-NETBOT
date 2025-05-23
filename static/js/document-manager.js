@@ -380,6 +380,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         fileListContainer.appendChild(paginationContainer);
+        
+        // Manage Files 버튼 추가
+        addManageFilesButton();
     }
     
     /**
