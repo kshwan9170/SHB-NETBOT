@@ -1085,6 +1085,61 @@ img {
     position: relative;
 }
 
+/* 📱 모바일에서 파일명 줄바꿈 처리 */
+@media (max-width: 768px) {
+    #documents-table tbody td:first-child {
+        max-width: none;
+        white-space: normal;
+        word-break: break-word;
+        overflow: visible;
+        text-overflow: unset;
+        line-height: 1.3;
+        padding: 12px 8px;
+    }
+    
+    /* 모바일에서 전체 테이블 셀 패딩 조정 */
+    #documents-table tbody td {
+        padding: 12px 8px;
+        font-size: 13px;
+        vertical-align: top;
+    }
+    
+    /* 모바일에서 테이블 헤더 최적화 */
+    #documents-table thead th {
+        padding: 12px 8px;
+        font-size: 13px;
+    }
+    
+    /* 모바일에서 삭제 버튼 크기 조정 */
+    .delete-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+        min-width: 70px;
+    }
+    
+    /* 모바일에서 파일 크기 셀 폰트 크기 조정 */
+    #documents-table tbody td:nth-child(2) {
+        font-size: 12px;
+    }
+    
+    /* 모바일에서 테이블 컨테이너 스크롤 개선 */
+    .documents-content {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* 모바일에서 문서 카드 마진 조정 */
+    .documents-list-card {
+        margin: 0 10px;
+    }
+    
+    /* 모바일에서 테이블 최소 너비 설정 */
+    #documents-table {
+        min-width: 100%;
+        width: auto;
+    }
+}
+
 /* 파일명 툴팁 */
 #documents-table tbody td:first-child:hover::after {
     content: attr(title);
@@ -1691,6 +1746,49 @@ img {
     grid-template-columns: 1fr 1fr;
     gap: 3rem;
     margin-top: 5rem;
+}
+
+/* 📱 모바일 반응형 레이아웃 - 768px 이하에서 세로 배치 */
+@media (max-width: 768px) {
+    .documents-grid {
+        display: block;
+        gap: 0;
+        margin-top: 3rem;
+    }
+    
+    .upload-card, 
+    .documents-list-card {
+        width: 100%;
+        margin-bottom: 2rem;
+    }
+    
+    .upload-card {
+        margin-bottom: 2.5rem;
+    }
+    
+    /* 모바일에서 패딩 조정 */
+    .upload-content, .documents-content {
+        padding: 1.5rem;
+    }
+    
+    .upload-header, .documents-header {
+        padding: 1.5rem;
+    }
+    
+    /* 모바일에서 드롭존 크기 조정 */
+    .upload-dropzone {
+        padding: 2rem 1rem;
+    }
+    
+    /* 모바일에서 폰트 크기 조정 */
+    .upload-title h3, .documents-title h3 {
+        font-size: 1.8rem;
+    }
+    
+    .section-title {
+        font-size: 3rem;
+        text-align: center;
+    }
 }
 
 .upload-card, .documents-list-card {
