@@ -2176,9 +2176,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // 페이지네이션 생성
                 createPagination(allDocuments.length);
-                
-                // Manage Files 버튼 추가
-                addManageFilesButtonToMain();
             }
         } catch (error) {
             console.error('문서 목록 조회 중 오류:', error);
