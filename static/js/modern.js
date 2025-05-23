@@ -870,7 +870,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // 모든 로고 이미지 원래대로 복원
             document.querySelectorAll('.logo img').forEach(img => {
                 img.style.filter = '';
-                img.src = '/static/images/shinhan_logo_refined.svg';
+                // 이미지 소스가 이미 설정되어 있는 경우에는 변경하지 않음
+                if (!img.getAttribute('src') || img.getAttribute('src') === '') {
+                    img.src = '/static/images/shinhan_logo_refined.svg';
+                }
             });
             
             // 모든 SHB-NetBot 텍스트 색상 원래대로 복원
@@ -881,30 +884,83 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             document.body.classList.add('offline-mode');
             
-            // 모바일에서 작동하는 간단한 방식 - 색상 필터 적용
+            // 오프라인 모드에서 로고 색상 필터만 적용하고 이미지 소스는 유지
             document.querySelectorAll('.logo img').forEach(img => {
                 // 이미지는 그대로 두고 붉은색 필터 적용
-                img.style.filter = 'grayscale(100%) brightness(40%) sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(0.8)';
+                if (img.getAttribute('src')) {
+                    img.style.filter = 'grayscale(100%) brightness(40%) sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(0.8)';
+                }
             });
         }
     }
     
-    // SVG 로드 완료 이벤트 처리 추가
+    // 페이지 로드 완료 시 연결 상태 확인 - 로고는 건드리지 않음
     document.addEventListener('DOMContentLoaded', function() {
-        const logoSvg = document.querySelector('.logo img');
-        if (logoSvg) {
-            logoSvg.addEventListener('load', function() {
-                // SVG 로드 완료 후 연결 상태 확인하여 UI 업데이트
-                checkConnectionStatus();
+        // 연결 상태만 확인하고, 로고 이미지는 건드리지 않음
+        checkConnectionStatus();
+        
+        // 로고 이미지가 로드되는 것을 감시하지 않음 - 이미지는 그대로 유지
+        const logoElements = document.querySelectorAll('.logo img');
+        logoElements.forEach(img => {
+            // 이미지 로드 에러 시 백업 처리
+            img.addEventListener('error', function() {
+                if (!this.src.includes('shinhan_logo_refined.svg')) {
+                    this.src = '/static/images/shinhan_logo_refined.svg';
+                }
             });
-        } else {
-            // SVG 요소가 없으면 기본 연결 상태 확인
-            checkConnectionStatus();
-        }
+        });
     });
     
-    // 30초마다 연결 상태 체크
-    setInterval(checkConnectionStatus, 30000);
+    // 연결 상태 체크 시간 간격 설정 (30초)
+    // 로고는 건드리지 않고 상태 정보만 업데이트하는 함수
+    function checkConnectionStatusOnly() {
+        // 브라우저의 navigator.onLine 속성으로 연결 상태 확인
+        const isOnline = navigator.onLine;
+        
+        // 오프라인 테스트 모드인 경우 강제로 오프라인 상태로 처리
+        if (localStorage.getItem('offline_test_mode') === 'true') {
+            console.log('오프라인 테스트 모드 활성화됨');
+            updateStatusBadge(false);
+            return;
+        }
+        
+        // 서버에 연결 상태 확인 API 호출 (더 정확한 확인을 위해)
+        fetch('/api/connection_status', { 
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            cache: 'no-cache'
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('서버 연결 상태:', data);
+            updateStatusBadge(data.status === 'online');
+        })
+        .catch(error => {
+            // API 호출 실패하면 브라우저의 navigator.onLine을 사용
+            updateStatusBadge(isOnline);
+        });
+    }
+    
+    // 상태 배지만 업데이트 (로고 이미지는 건드리지 않음)
+    function updateStatusBadge(isOnline) {
+        // 상태 배지 업데이트
+        const statusBadge = document.getElementById('connection-status');
+        if (statusBadge) {
+            if (isOnline) {
+                statusBadge.textContent = '온라인';
+                statusBadge.className = 'status-badge online';
+                
+                // 온라인 상태일 때 데이터 캐싱 (시간 간격 체크는 함수 내부에서 수행)
+                fetchAndCacheCSVData();
+            } else {
+                statusBadge.textContent = '오프라인';
+                statusBadge.className = 'status-badge offline';
+            }
+        }
+    }
+    
+    // 30초마다 연결 상태 체크 (로고는 건드리지 않는 함수 사용)
+    setInterval(checkConnectionStatusOnly, 30000);
     
     // 오프라인 모드 테스트 버튼 이벤트 처리
     document.addEventListener('DOMContentLoaded', function() {
