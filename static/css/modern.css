@@ -176,7 +176,7 @@ img {
 }
 
 .logo img {
-    height: 2.4rem;
+    height: 3.2rem;
 }
 
 /* 신한은행 로고 하얀색 필터 */
@@ -2447,4 +2447,13 @@ textarea.form-control {
 .status-badge.offline {
     background-color: rgba(255, 51, 51, 0.15);
     color: #ff3333;
+}
+
+/* 메인 화면의 파란색 로고 완전 숨기기 */
+.hero-logo {
+    display: none !important;
+}
+
+.hero-content img {
+    display: none !important;
 }
