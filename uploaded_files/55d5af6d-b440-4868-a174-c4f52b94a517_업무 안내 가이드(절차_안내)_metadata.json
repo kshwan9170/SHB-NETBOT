@@ -1,0 +1,86 @@
+{
+  "file_name": "55d5af6d-b440-4868-a174-c4f52b94a517_업무 안내 가이드(절차_안내).csv",
+  "file_path": "uploaded_files/55d5af6d-b440-4868-a174-c4f52b94a517_업무 안내 가이드(절차_안내).csv",
+  "encoding": "cp949",
+  "row_count": 4,
+  "column_count": 8,
+  "columns": [
+    {
+      "name": "절차 구분",
+      "type": "CATEGORY",
+      "sample_values": [
+        "IP 주소 신청",
+        "LAN선 공사 신청",
+        "전화기 설정"
+      ]
+    },
+    {
+      "name": "질문 키워드",
+      "type": "KEYWORD",
+      "sample_values": [
+        "ip 신청, address",
+        "lan 공사, 자리이동, 포트요청",
+        "전화기 ip, 연결, 설정"
+      ]
+    },
+    {
+      "name": "질문 예시",
+      "type": "UNKNOWN",
+      "sample_values": [
+        "IP 주소는 어떻게 신청하나요?",
+        "자리를 옮겼는데 LAN 공사 어떻게 하나요?",
+        "전화기 IP를 어떻게 설정하나요?"
+      ]
+    },
+    {
+      "name": "요약 응답",
+      "type": "UNKNOWN",
+      "sample_values": [
+        "네트워크 신청 시스템에서 신청할 수 있어요.",
+        "통신팀에 LAN 공사 요청서를 제출해야 합니다.",
+        "전화기 메뉴에서 설정 가능합니다."
+      ]
+    },
+    {
+      "name": "상세 안내",
+      "type": "DESCRIPTION",
+      "sample_values": [
+        "1. 시스템 접속 → 2. IP 주소 신청 메뉴 선택 → 3. 신청서 작성 후 제출",
+        "1. 담당자 연락 → 2. 위치 확인 → 3. 시공일자 조율 → 4. 시공 후 확인",
+        "전화기 메뉴 → 네트워크 설정 → IP 입력 → 재시작"
+      ]
+    },
+    {
+      "name": "관련 문서/링크",
+      "type": "UNKNOWN",
+      "sample_values": [
+        "https://intra.shinhan.com/ip",
+        "https://intra.shinhan.com/lan",
+        "https://example.com/phone"
+      ]
+    },
+    {
+      "name": "담당 부서",
+      "type": "DEPARTMENT",
+      "sample_values": [
+        "NW 운영팀",
+        "통신지원팀",
+        "통신지원팀"
+      ]
+    },
+    {
+      "name": "최종 수정일",
+      "type": "UNKNOWN",
+      "sample_values": [
+        "2025-05-19",
+        "2025-05-19",
+        "2025-05-19"
+      ]
+    }
+  ],
+  "common_prefix": "",
+  "generated_at": "2025-05-23T13:48:02.292437",
+  "suggestions": [
+    "키워드 검색에는 절차 구분, 질문 키워드 컬럼을, 설명 검색에는 상세 안내 컬럼을 활용하세요."
+  ]
+}
