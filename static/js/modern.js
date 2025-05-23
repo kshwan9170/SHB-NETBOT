@@ -2034,15 +2034,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     uploadDropzone.querySelector('p').textContent = 'Drag and drop files here or browse';
                     fileInput.value = '';
                     
-                    // 즉시 문서 목록 업데이트
-                    setTimeout(() => {
-                        loadDocuments().then(() => {
-                            // 업로드된 파일들에 성공 스타일 적용
-                            if (typeof highlightUploadedFiles === 'function') {
-                                highlightUploadedFiles(uploadResults);
-                            }
-                        });
-                    }, 500); // 0.5초 후 목록 새로고침
+                    // 즉시 문서 목록 업데이트 (다중 시도로 확실한 반영)
+                    refreshDocumentList();
+                    setTimeout(() => refreshDocumentList(), 500);
+                    setTimeout(() => refreshDocumentList(), 1000);
                 }
             } catch (error) {
                 console.error('Upload error:', error);
@@ -2059,7 +2054,132 @@ document.addEventListener('DOMContentLoaded', function() {
         loadDocuments();
     }
     
-    // 문서 목록 로드
+    // 통합된 문서 목록 새로고침 함수
+    async function refreshDocumentList() {
+        console.log('🔄 문서 목록 새로고침 시작...');
+        
+        // 모든 가능한 목록 컨테이너 찾기
+        const documentsList = document.getElementById('documentsList');
+        const documentsTable = document.getElementById('documents-table');
+        const documentsTableBody = document.getElementById('documents-tbody');
+        const fileList = document.getElementById('file-list');
+        
+        try {
+            const response = await fetch('/api/documents');
+            const data = await response.json();
+            
+            console.log('📄 새로고침된 문서 목록:', data);
+            
+            if (response.ok && data.files && Array.isArray(data.files)) {
+                // 테이블 형태 업데이트
+                if (documentsTable && documentsTableBody) {
+                    documentsTableBody.innerHTML = '';
+                    
+                    if (data.files.length > 0) {
+                        documentsTable.style.display = 'table';
+                        
+                        data.files.forEach(file => {
+                            const row = document.createElement('tr');
+                            const fileSize = formatFileSize(file.size);
+                            
+                            row.innerHTML = `
+                                <td style="padding: 12px; border-bottom: 1px solid #eaeaea;">
+                                    <span class="file-name-link" data-filename="${file.system_filename}" style="color: #30507A; cursor: pointer; text-decoration: underline; font-weight: 500;">${file.filename}</span>
+                                </td>
+                                <td style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea;">${fileSize}</td>
+                                <td style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea;">
+                                    <button class="delete-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}"
+                                            style="background-color: #ff5252; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; font-weight: bold;">
+                                        DELETE
+                                    </button>
+                                </td>
+                            `;
+                            
+                            documentsTableBody.appendChild(row);
+                        });
+                        
+                        // 이벤트 리스너 다시 연결
+                        attachEventListeners();
+                    } else {
+                        documentsTable.style.display = 'none';
+                    }
+                }
+                
+                // 리스트 형태 업데이트
+                if (documentsList) {
+                    documentsList.innerHTML = '';
+                    
+                    if (data.files.length > 0) {
+                        data.files.forEach(file => {
+                            const fileExt = file.file_type;
+                            let iconClass = 'txt';
+                            
+                            if (fileExt === 'pdf') iconClass = 'pdf';
+                            else if (fileExt === 'docx' || fileExt === 'doc') iconClass = 'docx';
+                            else if (fileExt === 'pptx' || fileExt === 'ppt') iconClass = 'pptx';
+                            else if (fileExt === 'xlsx' || fileExt === 'xls') iconClass = 'xlsx';
+                            
+                            const fileSize = formatFileSize(file.size);
+                            const uploadDate = new Date(file.uploaded_at * 1000).toLocaleString();
+                            
+                            const docItem = document.createElement('div');
+                            docItem.className = 'document-item';
+                            docItem.innerHTML = `
+                                <div class="document-info">
+                                    <div class="document-icon ${iconClass}">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
+                                    </div>
+                                    <div class="document-details">
+                                        <div class="document-name">${file.filename}</div>
+                                        <div class="document-status">
+                                            Size: ${fileSize} | Uploaded: ${uploadDate}
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            documentsList.appendChild(docItem);
+                        });
+                    } else {
+                        documentsList.innerHTML = `
+                            <div class="empty-state">
+                                <p>No documents uploaded yet</p>
+                            </div>
+                        `;
+                    }
+                }
+                
+                console.log(`✅ ${data.files.length}개 파일로 목록 새로고침 완료`);
+            }
+        } catch (error) {
+            console.error('❌ 문서 목록 새로고침 오류:', error);
+        }
+    }
+    
+    // 이벤트 리스너 연결 함수
+    function attachEventListeners() {
+        // 파일명 클릭 이벤트
+        document.querySelectorAll('.file-name-link').forEach(link => {
+            link.addEventListener('click', function() {
+                const filename = this.getAttribute('data-filename');
+                openDocument(filename);
+            });
+        });
+        
+        // 삭제 버튼 이벤트
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const systemFilename = this.getAttribute('data-filename');
+                const displayFilename = this.getAttribute('data-displayname');
+                deleteFile(systemFilename, displayFilename);
+            });
+        });
+    }
+    
+    // 문서 목록 로드 (기존 함수와 호환성 유지)
     async function loadDocuments() {
         const documentsList = document.getElementById('documentsList');
         if (!documentsList) return;
