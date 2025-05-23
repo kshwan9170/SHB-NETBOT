@@ -455,40 +455,56 @@ window.offlineHelper = {
         }
     },
     
-    // 유사도 기반 검색
+    // 강화된 오프라인 검색 (IndexedDB + localStorage 통합)
     search: function(query) {
-        // 저장된 데이터 가져오기
-        const data = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '[]');
+        // 1. 기본 localStorage 데이터 가져오기
+        const baseData = JSON.parse(localStorage.getItem(this.STORAGE_KEY) || '[]');
         
-        if (data.length === 0) {
+        // 2. IndexedDB 동기화 데이터 가져오기 (csvOfflineData)
+        const csvData = JSON.parse(localStorage.getItem('csvOfflineData') || '[]');
+        
+        // 3. 모든 데이터 통합
+        const allData = [...baseData, ...csvData];
+        
+        console.log(`오프라인 검색 - 총 ${allData.length}개 항목 (기본: ${baseData.length}, CSV: ${csvData.length})`);
+        
+        if (allData.length === 0) {
             return null;
         }
         
         // 정규화된 쿼리
         const normalizedQuery = query.toLowerCase().trim();
         
-        // 파일명이 정확히 포함된 항목 먼저 검색
-        for (const item of data) {
-            if (item.metadata && item.metadata.filename) {
-                const filename = item.metadata.filename.toLowerCase();
-                // 파일 이름이 쿼리에 포함되면 바로 반환
-                if (normalizedQuery.includes(filename.split('.')[0])) {
-                    return this.formatOfflineResponse(item.response);
-                }
+        // IP 주소 검색 우선 처리
+        const ipMatch = normalizedQuery.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/);
+        if (ipMatch) {
+            const ipAddress = ipMatch[0];
+            console.log(`IP 주소 검색: ${ipAddress}`);
+            
+            // IP 주소 관련 데이터 검색
+            const ipResults = allData.filter(item => {
+                const content = [
+                    item.query || '',
+                    item.response || '',
+                    JSON.stringify(item.metadata || {})
+                ].join(' ').toLowerCase();
+                
+                return content.includes(ipAddress);
+            });
+            
+            if (ipResults.length > 0) {
+                console.log(`IP 주소 ${ipAddress} 검색 결과 발견: ${ipResults.length}개`);
+                return this.formatOfflineResponse(ipResults[0].response);
             }
         }
         
-        // IP 주소가 포함된 경우 IP 주소 검색
-        const ipMatch = normalizedQuery.match(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/);
-        if (ipMatch) {
-            // IP 주소 패턴에 정확히 일치하는 항목이 있는지 확인
-            const ipResults = data.filter(item => 
-                (item.query && item.query.toLowerCase().includes(ipMatch[0])) || 
-                (item.response && item.response.toLowerCase().includes(ipMatch[0]))
-            );
-            
-            if (ipResults.length > 0) {
-                return this.formatOfflineResponse(ipResults[0].response);
+        // 파일명 정확 매칭 검색
+        for (const item of allData) {
+            if (item.metadata && item.metadata.filename) {
+                const filename = item.metadata.filename.toLowerCase();
+                if (normalizedQuery.includes(filename.split('.')[0])) {
+                    return this.formatOfflineResponse(item.response);
+                }
             }
         }
         
@@ -496,7 +512,7 @@ window.offlineHelper = {
         const queryWords = normalizedQuery.split(/[\s,.?!]+/).filter(word => word.length >= 2);
         
         // 각 항목에 대한 점수 계산
-        const scoredResults = data.map(item => {
+        const scoredResults = allData.map(item => {
             const itemQuery = item.query ? item.query.toLowerCase() : '';
             const itemResponse = item.response ? item.response.toLowerCase() : '';
             let score = 0;
@@ -511,13 +527,18 @@ window.offlineHelper = {
                 if (itemResponse.includes(word)) score += 1;
             }
             
-            // 메타데이터 매칭 (파일 이름 등)
+            // 메타데이터 매칭
             if (item.metadata) {
-                if (item.metadata.filename) {
-                    const filename = item.metadata.filename.toLowerCase();
-                    // 파일 이름이 쿼리 단어와 일치하면 높은 점수
+                const metaContent = JSON.stringify(item.metadata).toLowerCase();
+                for (const word of queryWords) {
+                    if (metaContent.includes(word)) score += 2;
+                }
+                
+                // 카테고리 매칭
+                if (item.metadata.category) {
+                    const category = item.metadata.category.toLowerCase();
                     for (const word of queryWords) {
-                        if (filename.includes(word)) score += 3;
+                        if (category.includes(word)) score += 3;
                     }
                 }
             }
@@ -528,8 +549,13 @@ window.offlineHelper = {
         // 점수에 따라 정렬
         scoredResults.sort((a, b) => b.score - a.score);
         
+        // 결과 로깅
+        if (scoredResults.length > 0) {
+            console.log(`검색 결과: 최고 점수 ${scoredResults[0].score}, 총 ${scoredResults.filter(r => r.score > 0).length}개 항목 매칭`);
+        }
+        
         // 가장 높은 점수의 결과 반환 (최소 점수 임계값 적용)
-        if (scoredResults.length > 0 && scoredResults[0].score >= 2) {
+        if (scoredResults.length > 0 && scoredResults[0].score >= 1) {
             return this.formatOfflineResponse(scoredResults[0].item.response);
         }
         
