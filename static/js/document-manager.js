@@ -49,11 +49,15 @@ document.addEventListener('DOMContentLoaded', function() {
             method: 'POST',
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
             // 업로드 결과 확인 (서버는 results 배열로 응답)
             if (data.results && data.results.length > 0 && data.results[0].status === 'success') {
-                console.log("Upload successful:", data);
                 // 성공 피드백 표시
                 submitBtn.innerHTML = '✅ 업로드 완료!';
                 submitBtn.style.backgroundColor = '#28a745';
@@ -70,16 +74,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     submitBtn.disabled = false;
                 }, 1000);
             } else {
-                // 오류 피드백 표시
-                submitBtn.innerHTML = '❌ 업로드 실패';
-                submitBtn.style.backgroundColor = '#dc3545';
-                alert('업로드 실패: ' + (data.message || '알 수 없는 오류'));
-                
-                setTimeout(() => {
-                    submitBtn.textContent = originalText;
-                    submitBtn.style.backgroundColor = '';
-                    submitBtn.disabled = false;
-                }, 2000);
+                // 실제 오류 처리
+                const errorMessage = data.results && data.results[0] ? data.results[0].message : '알 수 없는 오류';
+                throw new Error(errorMessage);
             }
         })
         .catch(error => {
