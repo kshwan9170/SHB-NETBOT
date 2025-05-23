@@ -2112,6 +2112,139 @@ document.addEventListener('DOMContentLoaded', function() {
     const filesPerPage = 5;
     let allDocuments = [];
     
+    // 메인페이지 파일 미리보기 함수
+    function openMainPageFilePreview(systemFilename, originalFilename) {
+        console.log('메인페이지 파일 미리보기 호출:', originalFilename);
+        
+        // 모달 생성
+        const modal = document.createElement('div');
+        modal.id = 'filePreviewModal';
+        modal.className = 'file-preview-modal';
+        modal.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        `;
+        
+        // 모달 내용
+        const modalContent = document.createElement('div');
+        modalContent.className = 'file-preview-content';
+        modalContent.style.cssText = `
+            background: white;
+            border-radius: 12px;
+            width: 90vw;
+            max-width: 1200px;
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        `;
+        
+        // 헤더
+        const header = document.createElement('div');
+        header.className = 'file-preview-header';
+        header.style.cssText = `
+            padding: 20px 25px;
+            border-bottom: 2px solid #e8e8e8;
+            background: linear-gradient(135deg, #30507A 0%, #1A2B4C 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        `;
+        
+        header.innerHTML = `
+            <div>
+                <h3 style="margin: 0; font-size: 18px; font-weight: 600;">📁 ${originalFilename}</h3>
+                <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">파일 미리보기</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <a href="/api/documents/view/${systemFilename}" 
+                   download="${originalFilename}"
+                   style="background: #4CD6B9; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                   ⬇️ 다운로드
+                </a>
+                <button id="closeFilePreview" 
+                        style="background: #ff5252; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-size: 18px; width: 40px; height: 40px;">
+                    ✕
+                </button>
+            </div>
+        `;
+        
+        // 본문 (파일 내용)
+        const content = document.createElement('div');
+        content.className = 'file-preview-body';
+        content.style.cssText = `
+            flex: 1;
+            overflow: auto;
+            padding: 20px;
+            background: #fafafa;
+        `;
+        
+        content.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #666;">
+                <div style="font-size: 24px; margin-bottom: 10px;">📄</div>
+                <p>파일을 불러오는 중입니다...</p>
+            </div>
+        `;
+        
+        // 모달 조립
+        modalContent.appendChild(header);
+        modalContent.appendChild(content);
+        modal.appendChild(modalContent);
+        document.body.appendChild(modal);
+        
+        // 닫기 이벤트
+        document.getElementById('closeFilePreview').addEventListener('click', () => {
+            modal.remove();
+        });
+        
+        // 모달 외부 클릭시 닫기
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.remove();
+            }
+        });
+        
+        // ESC 키로 닫기
+        document.addEventListener('keydown', function escHandler(e) {
+            if (e.key === 'Escape') {
+                modal.remove();
+                document.removeEventListener('keydown', escHandler);
+            }
+        });
+        
+        // 파일 내용 로드
+        fetch(`/api/documents/view/${systemFilename}`)
+            .then(response => response.text())
+            .then(data => {
+                content.innerHTML = `
+                    <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-height: calc(85vh - 140px); overflow: auto;">
+                        ${data}
+                    </div>
+                `;
+            })
+            .catch(error => {
+                console.error('파일 로드 오류:', error);
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #ff5252;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">⚠️</div>
+                        <p>파일을 불러올 수 없습니다.</p>
+                        <p style="font-size: 14px; color: #666;">오류: ${error.message}</p>
+                    </div>
+                `;
+            });
+    }
+
     // 문서 목록 로드 함수
     async function loadDocuments() {
         const documentsTable = document.getElementById('documents-table');
@@ -2154,10 +2287,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     const fileSize = formatFileSize(file.size);
                     
                     row.innerHTML = `
-                        <td style="padding: 12px; border-bottom: 1px solid #eaeaea;">${file.filename}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eaeaea; cursor: pointer; color: #30507A; text-decoration: underline; font-weight: 600;" 
+                            class="clickable-filename" 
+                            title="📁 클릭하여 파일 미리보기"
+                            data-system-filename="${file.system_filename}"
+                            data-original-filename="${file.filename}">${file.filename}</td>
                         <td style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea;">${fileSize}</td>
                         <td style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea;">
-                            <button class="delete-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}"
+                            <button class="delete-btn document-delete-btn" data-system-filename="${file.system_filename}" data-displayname="${file.filename}"
                                     style="background-color: #ff5252; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; font-weight: bold;">
                                 DELETE
                             </button>
@@ -2166,9 +2303,43 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     documentsTableBody.appendChild(row);
                     
+                    // 파일명 클릭 이벤트 추가
+                    const filenameCell = row.querySelector('.clickable-filename');
+                    if (filenameCell) {
+                        filenameCell.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const systemFilename = this.getAttribute('data-system-filename');
+                            const originalFilename = this.getAttribute('data-original-filename');
+                            console.log('파일명 클릭됨:', originalFilename, 'System:', systemFilename);
+                            
+                            // 메인페이지 파일 미리보기 함수 호출
+                            if (typeof openMainPageFilePreview === 'function') {
+                                openMainPageFilePreview(systemFilename, originalFilename);
+                            } else {
+                                console.error('openMainPageFilePreview 함수를 찾을 수 없습니다');
+                            }
+                        });
+                        
+                        // 호버 효과 추가
+                        filenameCell.addEventListener('mouseenter', function() {
+                            this.style.backgroundColor = '#f0f8ff';
+                            this.style.color = '#1e3a5f';
+                            this.style.padding = '8px';
+                            this.style.borderRadius = '4px';
+                        });
+                        
+                        filenameCell.addEventListener('mouseleave', function() {
+                            this.style.backgroundColor = 'transparent';
+                            this.style.color = '#30507A';
+                            this.style.padding = '12px';
+                            this.style.borderRadius = '0';
+                        });
+                    }
+                    
                     // 삭제 버튼에 이벤트 리스너 추가
                     row.querySelector('.delete-btn').addEventListener('click', function() {
-                        const systemFilename = this.getAttribute('data-filename');
+                        const systemFilename = this.getAttribute('data-system-filename');
                         const displayFilename = this.getAttribute('data-displayname');
                         deleteDocument(systemFilename, displayFilename);
                     });
