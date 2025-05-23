@@ -1,13 +1,18 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-    <title>파일 관리자 - SHB-NetBot</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHB-NetBot 파일 관리자 | 신한은행 네트워크 지원 챗봇</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern.css') }}?v={{ cache_buster }}">
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern.css') }}?v={{ cache_buster }}">
     <script src="{{ url_for('static', filename='js/offline-storage.js') }}?v={{ cache_buster }}"></script>
     <script src="{{ url_for('static', filename='js/offline-cache.js') }}?v={{ cache_buster }}"></script>
     <script src="{{ url_for('static', filename='js/csv-editor-functions.js') }}?v={{ cache_buster }}"></script>
@@ -177,16 +182,15 @@
     <nav class="navbar">
         <div class="navbar-container">
             <div class="logo">
-                <a href="/">
-                    <img src="{{ url_for('static', filename='images/shinhan_logo_new.png') }}" alt="신한은행 로고">
-                    <span>SHB-NetBot</span>
-                </a>
+                <img src="{{ url_for('static', filename='images/shinhan_logo_new.png') }}" alt="신한은행 로고" class="logo-img shinhan-logo-white">
+                <span>신한은행</span>
+                <span class="bot-name">SHB-NetBot</span>
             </div>
             <div class="nav-links">
-                <a href="/#home" class="nav-link">Home</a>
+                <a href="/" class="nav-link">Home</a>
                 <a href="/#about" class="nav-link">About</a>
                 <a href="/#chat" class="nav-link">Chat</a>
-                <a href="/#documents" class="nav-link active">Documents</a>
+                <a href="/file-manager" class="nav-link active">Documents</a>
                 <a href="/#support" class="nav-link">Support</a>
                 <button id="theme-toggle" class="theme-toggle">
                     <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
