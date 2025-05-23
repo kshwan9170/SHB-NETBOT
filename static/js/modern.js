@@ -2047,8 +2047,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     setTimeout(() => refreshDocumentList(), 1000);
                 }
             } catch (error) {
-                console.error('Upload process failed:', error);
-                showNotification('❌ 업로드 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+                // 실제 오류만 로깅 (빈 객체나 성공 응답은 제외)
+                if (error && error.message) {
+                    console.error('Upload process failed:', error.message);
+                    showNotification('❌ 업로드 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+                }
             } finally {
                 // 업로드 버튼 다시 활성화
                 const uploadButton = document.getElementById('uploadButton');
