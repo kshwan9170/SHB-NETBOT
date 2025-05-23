@@ -77,17 +77,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 submitBtn.disabled = false;
             }, 1500);
         })
-        .catch(error => {
-            // catch도 성공으로 처리 (서버가 정상 작동함)
-            console.log('Upload processed:', error);
-            submitBtn.innerHTML = '✅ 업로드 완료!';
-            submitBtn.style.backgroundColor = '#28a745';
+        .then(response => response.json())
+        .then(data => {
+            // 새로운 업로드 핸들러 사용
+            const filename = Array.from(files).map(f => f.name).join(', ');
+            handleUploadResponse(data, filename);
             
             // 파일 입력 초기화
             document.getElementById('files').value = '';
             
-            // 즉시 파일 목록 새로고침
-            loadDocuments();
+            // 버튼 원상복구
+            setTimeout(() => {
+                submitBtn.textContent = originalText;
+                submitBtn.style.backgroundColor = '';
+                submitBtn.disabled = false;
+            }, 1500);
+        })
+        .catch(error => {
+            // 네트워크 오류 처리
+            const filename = Array.from(files).map(f => f.name).join(', ');
+            handleUploadError(error, filename);
             
             // 버튼 원상복구
             setTimeout(() => {
