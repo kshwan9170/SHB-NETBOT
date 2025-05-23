@@ -34,6 +34,31 @@ class OfflineFlowSystem {
         }
     }
     
+    /**
+     * 선택지 텍스트를 분석하여 긍정적/부정적 선택인지 판단
+     * @param {string} label - 선택지 텍스트
+     * @returns {boolean} - 긍정적 선택이면 true, 부정적이면 false
+     */
+    isPositiveChoice(label) {
+        const positiveKeywords = ['예', '네', '맞음', '있음', '그렇다', '동의', '확인', '진행', '계속'];
+        const negativeKeywords = ['아니요', '아니오', '없음', '틀림', '거부', '취소', '중단', '아님'];
+        
+        const lowerLabel = label.toLowerCase().trim();
+        
+        // 긍정적 키워드 확인
+        if (positiveKeywords.some(keyword => lowerLabel.includes(keyword))) {
+            return true;
+        }
+        
+        // 부정적 키워드 확인
+        if (negativeKeywords.some(keyword => lowerLabel.includes(keyword))) {
+            return false;
+        }
+        
+        // 기본적으로 첫 번째 선택지는 긍정적으로 간주
+        return true;
+    }
+
     setupEventListeners() {
         // 온라인/오프라인 상태 감지
         window.addEventListener('online', () => {
@@ -140,32 +165,65 @@ class OfflineFlowSystem {
                 gap: 8px;
             `;
             
-            node.options.forEach(option => {
+            node.options.forEach((option, index) => {
                 const button = document.createElement('button');
                 button.className = 'flow-option-button';
-                button.textContent = option.label;
+                
+                // 선택지 텍스트 분석하여 스타일 결정
+                const isPositive = this.isPositiveChoice(option.label);
+                const emoji = isPositive ? '✅' : '❌';
+                const buttonText = `${emoji} ${option.label}`;
+                
+                button.innerHTML = buttonText;
+                
+                // 선택지별 차별화된 스타일
+                const baseStyle = isPositive ? {
+                    background: 'linear-gradient(135deg, #2E7D32, #4CAF50)', // 초록색 그라데이션
+                    hoverBackground: 'linear-gradient(135deg, #388E3C, #66BB6A)',
+                    shadowColor: 'rgba(76, 175, 80, 0.3)'
+                } : {
+                    background: 'linear-gradient(135deg, #616161, #757575)', // 회색 그라데이션
+                    hoverBackground: 'linear-gradient(135deg, #757575, #9E9E9E)',
+                    shadowColor: 'rgba(117, 117, 117, 0.3)'
+                };
+                
                 button.style.cssText = `
-                    padding: 12px 20px;
-                    background: linear-gradient(135deg, #30507A, #3C5C88);
+                    padding: 14px 24px;
+                    background: ${baseStyle.background};
                     color: white;
                     border: none;
-                    border-radius: 25px;
+                    border-radius: 28px;
                     cursor: pointer;
-                    font-size: 14px;
-                    font-weight: 500;
-                    transition: all 0.3s ease;
-                    text-align: left;
+                    font-size: 15px;
+                    font-weight: 600;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    text-align: center;
+                    box-shadow: 0 4px 12px ${baseStyle.shadowColor};
+                    min-width: 120px;
+                    position: relative;
+                    overflow: hidden;
                 `;
                 
-                // 호버 효과
+                // 향상된 호버 효과
                 button.addEventListener('mouseenter', () => {
-                    button.style.background = 'linear-gradient(135deg, #3C5C88, #4A6B9B)';
-                    button.style.transform = 'translateY(-2px)';
+                    button.style.background = baseStyle.hoverBackground;
+                    button.style.transform = 'translateY(-3px) scale(1.02)';
+                    button.style.boxShadow = `0 8px 20px ${baseStyle.shadowColor}`;
                 });
                 
                 button.addEventListener('mouseleave', () => {
-                    button.style.background = 'linear-gradient(135deg, #30507A, #3C5C88)';
-                    button.style.transform = 'translateY(0)';
+                    button.style.background = baseStyle.background;
+                    button.style.transform = 'translateY(0) scale(1)';
+                    button.style.boxShadow = `0 4px 12px ${baseStyle.shadowColor}`;
+                });
+                
+                // 클릭 애니메이션
+                button.addEventListener('mousedown', () => {
+                    button.style.transform = 'translateY(-1px) scale(0.98)';
+                });
+                
+                button.addEventListener('mouseup', () => {
+                    button.style.transform = 'translateY(-3px) scale(1.02)';
                 });
                 
                 // 클릭 이벤트
