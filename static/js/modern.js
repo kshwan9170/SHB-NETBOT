@@ -1972,6 +1972,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 let allUploadsSuccessful = true;
                 const files = Array.from(fileInput.files);
                 
+                // 🎯 업로드 시작 피드백 이벤트 발생
+                files.forEach((file, index) => {
+                    const uploadId = `upload_${Date.now()}_${index}`;
+                    const uploadStartEvent = new CustomEvent('uploadStarted', {
+                        detail: { filename: file.name, uploadId: uploadId }
+                    });
+                    document.dispatchEvent(uploadStartEvent);
+                });
+                
                 for (const file of files) {
                     console.log(`Processing file: ${file.name}, size: ${file.size} bytes`);
                     
@@ -2007,6 +2016,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (allUploadsSuccessful) {
                     // 업로드 완료 상태 표시
                     showUploadComplete(files.length);
+                    
+                    // 🎯 업로드 완료 피드백 이벤트 발생
+                    files.forEach((file, index) => {
+                        const uploadId = `upload_${Date.now()}_${index}`;
+                        const uploadCompleteEvent = new CustomEvent('uploadCompleted', {
+                            detail: { 
+                                uploadId: uploadId,
+                                results: [{
+                                    status: 'success',
+                                    filename: file.name,
+                                    chunk_count: file.size > 5 * 1024 * 1024 ? Math.ceil(file.size / (5 * 1024 * 1024)) : 1,
+                                    message: '문서가 성공적으로 업로드되고 AI 검색 인덱스에 등록되었습니다.'
+                                }]
+                            }
+                        });
+                        document.dispatchEvent(uploadCompleteEvent);
+                    });
                     
                     // 파일 입력 초기화
                     fileInput.value = '';

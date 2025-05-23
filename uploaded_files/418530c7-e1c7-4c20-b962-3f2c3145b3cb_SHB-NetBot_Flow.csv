@@ -1,0 +1,33 @@
+﻿ID,질문 또는 안내 문구,선택지
+start,현재 사용 중인 전화기가 IP 전화기인가요? (※ 무선전화기 및 DGW는 오프라인과 무관),"예:check_phone_power, 아니요:check_pc_lan_light"
+check_phone_power,전화기 디스플레이가 정상적으로 켜져 있고 수화기에서 '삐-' 신호음이 들리나요?,"예:check_pc_ip_phone_connection, 아니요:check_phone_lan_cable"
+check_phone_lan_cable,"전화기와 벽면 포트를 연결한 LAN 케이블을 분리 후 다시 연결해 보세요.
+불빛이 들어오지 않거나 전화기가 켜지지 않는다면 전화기 LAN 케이블 또는 회선 단절 가능성이 있습니다.
+▶ LAN선 장애 접수 필요
+☎ HelpDesk에 전화부탁드립니다.  
+📞 5-1234",(종료)
+check_pc_lan_light,PC 후면 LAN 포트에 불빛(초록색 또는 주황색)이 점등되고 있나요?,"예:reconnect_pc_lan, 아니요:check_pc_lan_cable"
+check_pc_lan_cable,"PC와 전화기 사이 또는 PC와 벽면 포트를 연결한 LAN 케이블을 재결합해 주세요.
+여전히 포트에 불이 들어오지 않으면 LAN 단선, 불량 포트 가능성이 있습니다.
+▶ LAN선 점검 및 교체 필요
+☎ HelpDesk에 전화부탁드립니다.  
+📞 5-1234",(종료)
+reconnect_pc_lan,LAN 케이블을 분리 후 재결합한 뒤에도 동일 증상이 지속되나요?,"예:ip_check, 아니요:end_resolved"
+check_pc_ip_phone_connection,"PC가 IP 전화기를 통해 네트워크에 연결되어 있다면 전화기와 PC 간 LAN 케이블을 재결합해 보세요.
+동일 증상일 경우 아래 IP 확인 절차를 따라주세요.","확인 후에도 동일:ip_check, 재결합 후 정상:end_resolved"
+ip_check,"[📡 IP 주소 확인 방법]
+① Windows + R → cmd 입력 후 엔터
+② ipconfig 명령어 입력
+③ IPv4 주소 확인
+
+✅ IP가 169.x.x.x 또는 없음 → 📞5-4466 문의 (IP 세팅 오류 or 날라감)
+✅ IP 정상이나 인터넷 불가 → 📞5-4222 → 7번 문의 (장기 미사용 차단, 물리적 연결 문제)",(종료)
+common_check_router_restart,"[공통] 공유기/스위치 장비를 사용하는 경우:
+- 장비가 과열되거나 메모리 누적으로 문제 발생 가능
+- 전원 어댑터를 5초 이상 분리 후 재연결하여 장비 재부팅을 시도해 보세요.
+- 재부팅 후에도 증상이 동일할 경우 통신 회선 상태 점검 필요",(종료)
+common_dns_issue,"[공통] 웹사이트 접속은 안 되는데 사내 시스템은 접속 가능한 경우:
+- DNS 설정 오류 또는 임시 장애 가능성
+- cmd에서 'nslookup naver.com' 입력 시 오류 발생하면 DNS 문제
+- ▶ DNS 서버 수동 설정 또는 네트워크 초기화 필요 (네트워크팀 문의)",(종료)
+end_resolved,재결합 후 네트워크가 정상적으로 작동합니다. 추가 조치 없이 사용 가능합니다.,(종료)
