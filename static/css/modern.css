@@ -131,7 +131,7 @@ img {
 
 .container {
     width: 100%;
-    max-width: var(--container-width);
+    max-width: 1000px;
     margin: 0 auto;
     padding: 0 2rem;
 }
@@ -172,11 +172,11 @@ img {
     display: flex;
     align-items: center;
     position: relative;
-    gap: 1rem;
+    gap: 0.5rem;
 }
 
 .logo img {
-    height: 3.2rem;
+    height: 2.4rem;
 }
 
 /* 신한은행 로고 하얀색 필터 */
@@ -184,10 +184,17 @@ img {
     filter: brightness(0) invert(1);
 }
 
+.logo span {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #FFFFFF;
+    letter-spacing: -0.5px;
+}
+
 .bot-name {
     font-size: 1.8rem !important;
     font-weight: 600 !important;
-    color: #BFD7FF !important;
+    color: #FFFFFF !important;
     margin-left: 0.5rem;
 }
 
