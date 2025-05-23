@@ -316,6 +316,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 페이지네이션 렌더링
         renderPagination(visibleFiles.length);
+        
+        // 항상 Manage Files 버튼 추가 (페이지네이션과 별개로)
+        addManageFilesButton();
     }
     
     // 페이지네이션 컨트롤 렌더링 함수
@@ -323,7 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const fileListContainer = document.getElementById('file-list-container');
         const totalPages = Math.ceil(totalFiles / filesPerPage);
         
-        // 파일이 5개 이하면 페이지네이션 표시하지 않음
+        // 파일이 7개 이하면 페이지네이션 표시하지 않음
         if (totalPages <= 1) return;
         
         // 페이지네이션 컨테이너 생성
@@ -377,9 +380,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         fileListContainer.appendChild(paginationContainer);
+    }
+    
+    /**
+     * Manage Files 버튼 추가 함수
+     */
+    function addManageFilesButton() {
+        const fileListContainer = document.getElementById('file-list-container');
+        if (!fileListContainer) return;
         
-        // Manage Files 버튼 추가 (페이지네이션 아래)
+        // 기존 Manage Files 버튼이 있으면 제거
+        const existingButton = fileListContainer.querySelector('.manage-files-container');
+        if (existingButton) {
+            existingButton.remove();
+        }
+        
+        // Manage Files 버튼 컨테이너 생성
         const manageFilesContainer = document.createElement('div');
+        manageFilesContainer.className = 'manage-files-container';
         manageFilesContainer.style.cssText = 'text-align: center; margin-top: 1.5rem;';
         
         const manageFilesButton = document.createElement('a');
