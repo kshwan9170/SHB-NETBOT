@@ -2154,7 +2154,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     const fileSize = formatFileSize(file.size);
                     
                     row.innerHTML = `
-                        <td style="padding: 12px; border-bottom: 1px solid #eaeaea;">${file.filename}</td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eaeaea;">
+                            <span class="file-name-link" data-filename="${file.system_filename}" style="color: #30507A; cursor: pointer; text-decoration: underline; font-weight: 500;">${file.filename}</span>
+                        </td>
                         <td style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea;">${fileSize}</td>
                         <td style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea;">
                             <button class="delete-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}"
@@ -2171,6 +2173,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         const systemFilename = this.getAttribute('data-filename');
                         const displayFilename = this.getAttribute('data-displayname');
                         deleteDocument(systemFilename, displayFilename);
+                    });
+                    
+                    // 파일명 클릭 이벤트 리스너 추가
+                    row.querySelector('.file-name-link').addEventListener('click', function() {
+                        const systemFilename = this.getAttribute('data-filename');
+                        openFileDetailModal(systemFilename);
                     });
                 });
                 
@@ -2324,6 +2332,115 @@ document.addEventListener('DOMContentLoaded', function() {
         documentsContent.appendChild(buttonContainer);
     }
     
+    // 파일 상세 화면 모달 열기 함수
+    async function openFileDetailModal(systemFilename) {
+        try {
+            // 파일 정보를 가져옵니다
+            const response = await fetch(`/api/documents/view/${systemFilename}`);
+            if (!response.ok) {
+                throw new Error('파일을 불러올 수 없습니다.');
+            }
+            
+            const data = await response.text();
+            
+            // 모달 HTML 생성
+            const modal = document.createElement('div');
+            modal.id = 'file-detail-modal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.7);
+                z-index: 10000;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            `;
+            
+            // 모달 내용 컨테이너
+            const modalContent = document.createElement('div');
+            modalContent.style.cssText = `
+                background: white;
+                border-radius: 12px;
+                width: 90%;
+                max-width: 1000px;
+                max-height: 80%;
+                overflow: hidden;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                display: flex;
+                flex-direction: column;
+            `;
+            
+            // 헤더 영역
+            const header = document.createElement('div');
+            header.style.cssText = `
+                padding: 20px;
+                border-bottom: 1px solid #eee;
+                background: #f8f9fa;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            `;
+            
+            const fileName = systemFilename.split('_').slice(1).join('_');
+            header.innerHTML = `
+                <h3 style="margin: 0; color: #30507A; font-size: 1.5rem;">${fileName}</h3>
+                <div>
+                    <button id="download-btn" style="background: #30507A; color: white; border: none; padding: 10px 20px; border-radius: 6px; margin-right: 10px; cursor: pointer;">
+                        다운로드
+                    </button>
+                    <button id="close-modal" style="background: #666; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
+                        닫기
+                    </button>
+                </div>
+            `;
+            
+            // 콘텐츠 영역
+            const content = document.createElement('div');
+            content.style.cssText = `
+                padding: 20px;
+                flex: 1;
+                overflow: auto;
+                max-height: 500px;
+            `;
+            
+            // 파일 확장자에 따른 미리보기 처리
+            const fileExtension = fileName.split('.').pop().toLowerCase();
+            if (fileExtension === 'csv') {
+                content.innerHTML = data;
+            } else {
+                content.innerHTML = `<pre style="white-space: pre-wrap; font-family: monospace;">${data}</pre>`;
+            }
+            
+            modalContent.appendChild(header);
+            modalContent.appendChild(content);
+            modal.appendChild(modalContent);
+            document.body.appendChild(modal);
+            
+            // 이벤트 리스너 추가
+            document.getElementById('close-modal').addEventListener('click', () => {
+                document.body.removeChild(modal);
+            });
+            
+            document.getElementById('download-btn').addEventListener('click', () => {
+                window.open(`/api/documents/download/${systemFilename}`, '_blank');
+            });
+            
+            // 모달 외부 클릭 시 닫기
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    document.body.removeChild(modal);
+                }
+            });
+            
+        } catch (error) {
+            console.error('파일 상세 화면 오류:', error);
+            alert('파일을 불러올 수 없습니다: ' + error.message);
+        }
+    }
+
     // 문서 삭제 함수
     function deleteDocument(systemFilename, displayFilename) {
         if (confirm(`정말 "${displayFilename}" 파일을 삭제하시겠습니까?`)) {
