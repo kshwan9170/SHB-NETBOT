@@ -2408,10 +2408,45 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 파일 확장자에 따른 미리보기 처리
             const fileExtension = fileName.split('.').pop().toLowerCase();
+            
             if (fileExtension === 'csv') {
+                // CSV 파일: 깨끗한 테이블 형태로 표시
                 content.innerHTML = data;
+            } else if (fileExtension === 'pdf') {
+                // PDF 파일: iframe으로 표시
+                if (data.startsWith('data:application/pdf;base64,')) {
+                    content.innerHTML = `
+                        <div style="width: 100%; height: 500px; border: 1px solid #dee2e6; border-radius: 4px;">
+                            <iframe src="${data}" 
+                                    style="width: 100%; height: 100%; border: none;" 
+                                    type="application/pdf">
+                                <p>PDF를 표시할 수 없습니다. <a href="${data}" target="_blank">새 창에서 열기</a></p>
+                            </iframe>
+                        </div>
+                    `;
+                } else {
+                    content.innerHTML = `<pre style="white-space: pre-wrap; font-family: monospace;">${data}</pre>`;
+                }
+            } else if (fileExtension === 'json') {
+                // JSON 파일: 예쁘게 포맷팅
+                try {
+                    const jsonData = JSON.parse(data);
+                    const formattedJson = JSON.stringify(jsonData, null, 2);
+                    content.innerHTML = `
+                        <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; max-height: 400px; overflow: auto;">
+                            <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.4; white-space: pre-wrap;">${formattedJson}</pre>
+                        </div>
+                    `;
+                } catch (e) {
+                    content.innerHTML = `<pre style="white-space: pre-wrap; font-family: monospace;">${data}</pre>`;
+                }
             } else {
-                content.innerHTML = `<pre style="white-space: pre-wrap; font-family: monospace;">${data}</pre>`;
+                // 텍스트 파일: 코드블록 스타일
+                content.innerHTML = `
+                    <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; max-height: 400px; overflow: auto;">
+                        <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.4; white-space: pre-wrap;">${data}</pre>
+                    </div>
+                `;
             }
             
             modalContent.appendChild(header);
