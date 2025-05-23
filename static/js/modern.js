@@ -2267,19 +2267,30 @@ document.addEventListener('DOMContentLoaded', function() {
         const documentsContent = document.querySelector('.documents-content');
         if (!documentsContent) return;
         
-        // Manage Files 버튼 컨테이너 생성
+        // Manage Files 버튼 컨테이너 생성 (제목과 버튼을 좌우 정렬)
         const buttonContainer = document.createElement('div');
         buttonContainer.id = 'main-manage-files-button';
         buttonContainer.style.cssText = `
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
+            align-items: center;
             margin-top: 20px;
             margin-bottom: 10px;
+            padding: 0 10px;
         `;
         
-        // Manage Files 버튼 생성 (Upload Files 버튼과 동일한 스타일)
+        // 왼쪽 제목 추가 (기존 Available Documents와 일치)
+        const titleDiv = document.createElement('div');
+        titleDiv.style.cssText = `
+            font-size: 1.4rem;
+            color: #333;
+            font-weight: 600;
+        `;
+        titleDiv.textContent = 'Document Management:';
+        
+        // Manage 버튼 생성 (Upload Files 버튼과 동일한 스타일)
         const manageButton = document.createElement('button');
-        manageButton.textContent = 'Manage Files';
+        manageButton.textContent = 'Manage';
         manageButton.style.cssText = `
             background-color: #30507A;
             color: white;
@@ -2310,6 +2321,8 @@ document.addEventListener('DOMContentLoaded', function() {
             window.location.href = '/file-manager';
         });
         
+        // 제목과 버튼을 컨테이너에 추가
+        buttonContainer.appendChild(titleDiv);
         buttonContainer.appendChild(manageButton);
         documentsContent.appendChild(buttonContainer);
     }
