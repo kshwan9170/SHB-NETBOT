@@ -51,8 +51,9 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-            console.log("Upload response:", response.status, data);
+            // 성공적인 업로드만 로그에 기록
             if (data.success || (data.results && data.results.length > 0)) {
+                console.log("Upload successful:", data);
                 // 성공 피드백 표시
                 submitBtn.innerHTML = '✅ 업로드 완료!';
                 submitBtn.style.backgroundColor = '#28a745';
