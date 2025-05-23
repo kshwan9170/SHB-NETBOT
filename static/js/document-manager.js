@@ -798,25 +798,91 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 안전하게 콘텐츠 처리
                 const content = data.content || '';
                 
-                if (data.file_type === 'csv' || data.file_type === 'json') {
-                    // CSV 또는 JSON 파일 콘텐츠 표시 (HTML 형식으로 반환됨)
-                    console.log('CSV/JSON 파일 표시');
+                if (data.file_type === 'pdf') {
+                    // PDF 파일 처리 - iframe으로 렌더링
+                    console.log('PDF 파일 표시');
                     modalBody.innerHTML = content;
-                } else if (data.html_content) {
-                    // HTML로 포맷된 내용
+                } else if (data.file_type === 'csv') {
+                    // CSV 파일 처리 - HTML 테이블로 렌더링
+                    console.log('CSV 파일 표시');
+                    modalBody.innerHTML = content;
+                    
+                    // CSV 테이블 스타일 개선
+                    const tables = modalBody.querySelectorAll('table');
+                    tables.forEach(table => {
+                        table.style.cssText = `
+                            width: 100%;
+                            border-collapse: collapse;
+                            font-size: 13px;
+                            font-family: Arial, sans-serif;
+                            margin: 10px 0;
+                        `;
+                        
+                        // 헤더 스타일
+                        const headers = table.querySelectorAll('th');
+                        headers.forEach(th => {
+                            th.style.cssText = `
+                                background-color: #f8f9fa;
+                                border: 1px solid #dee2e6;
+                                padding: 8px 12px;
+                                text-align: left;
+                                font-weight: bold;
+                                color: #495057;
+                            `;
+                        });
+                        
+                        // 셀 스타일
+                        const cells = table.querySelectorAll('td');
+                        cells.forEach(td => {
+                            td.style.cssText = `
+                                border: 1px solid #dee2e6;
+                                padding: 8px 12px;
+                                color: #333;
+                                background-color: white;
+                            `;
+                        });
+                        
+                        // 행 호버 효과
+                        const rows = table.querySelectorAll('tr');
+                        rows.forEach(row => {
+                            row.addEventListener('mouseenter', () => {
+                                if (!row.querySelector('th')) {
+                                    row.style.backgroundColor = '#f8f9fa';
+                                }
+                            });
+                            row.addEventListener('mouseleave', () => {
+                                if (!row.querySelector('th')) {
+                                    row.style.backgroundColor = 'white';
+                                }
+                            });
+                        });
+                    });
+                } else if (data.html_content === true) {
+                    // HTML로 포맷된 내용 (Excel, 기타 HTML 콘텐츠)
+                    console.log('HTML 콘텐츠 표시');
                     modalBody.innerHTML = content;
                 } else {
-                    // 일반 텍스트 (TXT 파일 등)
-                    modalBody.style.fontFamily = 'monospace';
+                    // 일반 텍스트 파일 (TXT, JSON 등)
+                    console.log('텍스트 콘텐츠 표시');
+                    modalBody.style.fontFamily = 'Consolas, Monaco, "Courier New", monospace';
                     modalBody.style.whiteSpace = 'pre-wrap';
+                    modalBody.style.fontSize = '14px';
+                    modalBody.style.lineHeight = '1.5';
+                    modalBody.style.color = '#333';
+                    modalBody.style.backgroundColor = '#f8f9fa';
+                    modalBody.style.border = '1px solid #dee2e6';
+                    modalBody.style.borderRadius = '4px';
+                    modalBody.style.padding = '15px';
                     modalBody.textContent = content;
                 }
             } catch(err) {
                 console.error('문서 내용 표시 중 오류 발생:', err);
-                modalBody.innerHTML = `<div style="color: red; padding: 20px;">
-                    <h3>문서 표시 중 오류가 발생했습니다</h3>
-                    <p>죄송합니다. 문서를 표시하는 중 오류가 발생했습니다.</p>
-                    <p>오류 내용: ${err.message || '알 수 없는 오류'}</p>
+                modalBody.innerHTML = `<div style="color: red; padding: 20px; text-align: center; border: 1px solid #f5c6cb; background-color: #f8d7da; border-radius: 4px;">
+                    <h3 style="margin-top: 0; color: #721c24;">문서 표시 중 오류가 발생했습니다</h3>
+                    <p style="margin-bottom: 10px;">죄송합니다. 문서를 표시하는 중 오류가 발생했습니다.</p>
+                    <p style="font-size: 14px; color: #856404; background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 4px;">
+                        오류 내용: ${err.message || '알 수 없는 오류'}
+                    </p>
                 </div>`;
             }
             
