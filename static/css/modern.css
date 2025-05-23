@@ -1300,19 +1300,29 @@ body.offline-mode .logo img {
     background-color: var(--hover-color);
 }
 
-/* 업로드 완료 파일 카드 스타일 */
+/* 업로드 완료 파일 카드 스타일 - 고정 색상 */
 .file-item.uploaded-success {
-    background: linear-gradient(135deg, rgba(76, 214, 185, 0.1), rgba(40, 167, 69, 0.05));
-    border-left: 4px solid #4CD6B9;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(76, 214, 185, 0.2);
-    transition: all 0.4s ease;
+    background: linear-gradient(135deg, rgba(76, 214, 185, 0.12), rgba(40, 167, 69, 0.08)) !important;
+    border-left: 4px solid #4CD6B9 !important;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(76, 214, 185, 0.15);
+    transition: all 0.3s ease;
 }
 
 .file-item.uploaded-success:hover {
-    background: linear-gradient(135deg, rgba(76, 214, 185, 0.15), rgba(40, 167, 69, 0.08));
-    transform: translateY(-3px);
-    box-shadow: 0 6px 16px rgba(76, 214, 185, 0.3);
+    background: linear-gradient(135deg, rgba(76, 214, 185, 0.18), rgba(40, 167, 69, 0.12)) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 214, 185, 0.25);
+}
+
+/* 업로드된 파일의 텍스트 색상 강화 */
+.file-item.uploaded-success .document-info h4 {
+    color: #1A7A5E !important;
+    font-weight: 600;
+}
+
+.file-item.uploaded-success .document-meta {
+    color: #2A6B4F !important;
 }
 
 .file-item.uploaded-success .document-info h4 {
