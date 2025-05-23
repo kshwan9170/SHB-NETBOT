@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 from datetime import datetime
 from werkzeug.utils import secure_filename
-from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, abort, send_file
+from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, abort
 import openai
 from openai import OpenAI
 
@@ -25,9 +25,6 @@ from config import FAQ_KEYWORDS, FINE_TUNED_MODEL, RAG_SYSTEM
 chatbot.initialize_csv_narratives()
 
 app = Flask(__name__)
-
-# JSON 응답에서 한글 텍스트가 제대로 표시되도록 설정
-app.config['JSON_AS_ASCII'] = False
 
 # 데이터베이스 초기화
 init_db()
@@ -149,14 +146,6 @@ def sync_offline_data():
             'status': 'error',
             'message': f'오프라인 데이터 동기화 중 오류가 발생했습니다: {str(e)}'
         }), 500
-
-@app.route('/uploads/<path:filename>')
-def upload_file_direct(filename):
-    """업로드된 파일 직접 접근을 위한 라우트"""
-    try:
-        return send_from_directory('uploaded_files', filename, as_attachment=False)
-    except FileNotFoundError:
-        abort(404)
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
@@ -361,17 +350,13 @@ def get_documents():
                     
                     # 파일 통계 정보
                     file_stats = os.stat(file_path)
-                    file_ext = original_filename.split('.')[-1].lower()
-                    
-                    # JSON 파일은 숨기기 처리 (메타데이터 파일이므로 사용자에게 노출하지 않음)
-                    if file_ext != 'json':
-                        files.append({
-                            'filename': original_filename,
-                            'size': file_stats.st_size,
-                            'uploaded_at': file_stats.st_mtime,
-                            'file_type': file_ext,
-                            'system_filename': filename  # 시스템 내부 파일명 추가 (삭제 기능을 위해)
-                        })
+                    files.append({
+                        'filename': original_filename,
+                        'size': file_stats.st_size,
+                        'uploaded_at': file_stats.st_mtime,
+                        'file_type': original_filename.split('.')[-1].lower(),
+                        'system_filename': filename  # 시스템 내부 파일명 추가 (삭제 기능을 위해)
+                    })
         
         return jsonify({
             'document_count': document_status.get('document_count', 0),
@@ -605,8 +590,7 @@ def view_document(system_filename):
                     metadata_filename=os.path.basename(metadata_path)
                 )
                 
-                # UTF-8 문자열이 제대로 전달되도록 Flask 설정
-                response = jsonify({
+                return jsonify({
                     'status': 'success',
                     'html_content': True,
                     'file_type': 'csv',
@@ -614,8 +598,6 @@ def view_document(system_filename):
                     'metadata_generated': True,
                     'encoding': used_encoding
                 })
-                response.headers['Content-Type'] = 'application/json; charset=utf-8'
-                return response
                 
             except Exception as e:
                 print(f"CSV 파일 처리 중 오류: {str(e)}")
@@ -688,44 +670,14 @@ def view_document(system_filename):
                     'message': f'JSON 파일을 읽는 중 오류가 발생했습니다: {str(e)}'
                 }), 500
 
-        # PDF 파일 처리 - 414 오류 방지를 위해 직접 파일 서빙 방식 사용
+        # PDF 파일 처리
         elif file_extension == 'pdf':
-            try:
-                # 파일 크기 확인
-                file_size = os.path.getsize(file_path)
-                
-                # PDF 미리보기를 위한 iframe 생성 (직접 파일 경로 사용)
-                pdf_url = f"/uploads/{system_filename}"
-                
-                content = f'''
-                <div class="pdf-container">
-                    <div style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
-                        <h3 style="margin: 0; color: #333;">PDF 파일 미리보기</h3>
-                        <p style="margin: 5px 0 0;">파일명: {original_filename}</p>
-                        <p style="margin: 5px 0 0; font-size: 0.9em; color: #666;">파일 크기: {file_size:,} bytes</p>
-                    </div>
-                    <div style="width: 100%; height: 500px; border: 1px solid #dee2e6; border-radius: 4px;">
-                        <iframe src="{pdf_url}" 
-                                style="width: 100%; height: 100%; border: none;" 
-                                type="application/pdf">
-                            <p>PDF를 표시할 수 없습니다. <a href="{pdf_url}" target="_blank">새 창에서 열기</a></p>
-                        </iframe>
-                    </div>
-                </div>
-                '''
-                
-                return jsonify({
-                    'status': 'success',
-                    'html_content': True,
-                    'content': content,
-                    'file_type': 'pdf'
-                })
-                
-            except Exception as e:
-                return jsonify({
-                    'status': 'error',
-                    'message': f'PDF 파일을 읽는 중 오류가 발생했습니다: {str(e)}'
-                }), 500
+            import base64
+            with open(file_path, 'rb') as f:
+                pdf_content = f.read()
+                # PDF를 base64로 인코딩
+                pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
+                content = f"data:application/pdf;base64,{pdf_base64}"
         
         # CSV 파일 처리 (이 부분은 위에서 이미 처리됨)
         elif file_extension == 'csv':
@@ -807,53 +759,12 @@ def view_document(system_filename):
                     'message': f'Word 문서를 읽는 중 오류가 발생했습니다: {str(e)}'
                 }), 500
         
-        # 텍스트 파일 및 기타 파일 처리
+        # 지원하지 않는 파일 형식
         else:
-            try:
-                # 텍스트 파일로 시도
-                try:
-                    # UTF-8로 시도
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        text_content = f.read()
-                        used_encoding = 'utf-8'
-                except UnicodeDecodeError:
-                    # CP949로 시도 (한글 파일명 대응)
-                    with open(file_path, 'r', encoding='cp949') as f:
-                        text_content = f.read()
-                        used_encoding = 'cp949'
-                
-                # 텍스트 미리보기 (최대 10000자)
-                if len(text_content) > 10000:
-                    preview_content = text_content[:10000] + '\n\n... (파일이 잘렸습니다. 전체 내용을 보려면 다운로드하세요.)'
-                else:
-                    preview_content = text_content
-                
-                content = f'''
-                <div class="text-container">
-                    <div style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
-                        <h3 style="margin: 0; color: #333;">텍스트 파일 내용</h3>
-                        <p style="margin: 5px 0 0;">파일명: {original_filename} | 인코딩: {used_encoding}</p>
-                    </div>
-                    <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; max-height: 400px; overflow: auto;">
-                        <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.4; white-space: pre-wrap;">{preview_content}</pre>
-                    </div>
-                </div>
-                '''
-                
-                return jsonify({
-                    'status': 'success',
-                    'html_content': True,
-                    'content': content,
-                    'file_type': 'text',
-                    'encoding': used_encoding
-                })
-                
-            except Exception as e:
-                # 텍스트로 읽을 수 없는 경우
-                return jsonify({
-                    'status': 'error',
-                    'message': f'이 파일 형식({file_extension})은 텍스트로 읽을 수 없습니다: {str(e)}'
-                }), 400
+            return jsonify({
+                'status': 'error',
+                'message': f'이 파일 형식({file_extension})은 내용 조회를 지원하지 않습니다.'
+            }), 400
         
         return jsonify({
             'status': 'success',
@@ -868,27 +779,6 @@ def view_document(system_filename):
             'status': 'error',
             'message': f'문서 조회 중 오류가 발생했습니다: {str(e)}'
         }), 500
-
-@app.route('/api/documents/download/<system_filename>')
-def download_document(system_filename):
-    """문서 다운로드 API"""
-    try:
-        file_path = os.path.join(UPLOAD_FOLDER, system_filename)
-        if not os.path.exists(file_path):
-            return jsonify({'error': '파일을 찾을 수 없습니다.'}), 404
-        
-        # 원본 파일명 추출 (UUID_ 제거)
-        original_filename = '_'.join(system_filename.split('_')[1:])
-        
-        return send_file(
-            file_path,
-            as_attachment=True,
-            download_name=original_filename,
-            mimetype='application/octet-stream'
-        )
-    except Exception as e:
-        print(f"다운로드 오류: {str(e)}")
-        return jsonify({'error': '다운로드 중 오류가 발생했습니다.'}), 500
 
 # 이전 편집 기능 비활성화 코드 (CSV 편집 기능으로 대체됨)
 # @app.route('/api/documents/edit/<path:system_filename>', methods=['POST'])
