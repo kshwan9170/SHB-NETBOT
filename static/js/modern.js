@@ -2030,7 +2030,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 업로드 버튼 다시 활성화
                 const uploadButton = document.getElementById('uploadButton');
                 uploadButton.disabled = false;
-                uploadButton.textContent = 'Upload Files';
+                uploadButton.textContent = '파일 업로드';
+                
+                // 업로드 중 상태 제거
+                uploadDropzone.classList.remove('uploading');
             }
         });
         
