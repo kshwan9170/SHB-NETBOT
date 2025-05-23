@@ -2026,8 +2026,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     uploadDropzone.querySelector('p').textContent = 'Drag and drop files here or browse';
                     fileInput.value = '';
                     
-                    // 문서 목록 업데이트
-                    loadDocuments();
+                    // 문서 목록 업데이트 및 카드 스타일 적용
+                    loadDocuments().then(() => {
+                        // 업로드된 파일들에 성공 스타일 적용
+                        highlightUploadedFiles(uploadResults);
+                    });
                 }
             } catch (error) {
                 console.error('Upload error:', error);
