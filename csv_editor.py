@@ -261,13 +261,13 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
                 </svg>
                 편집 모드
             </button>
-            <button id="csv-save-btn" class="btn btn-success" style="display:none; padding: 8px 16px; border-radius: 4px; font-weight: 500; display: flex; align-items: center; gap: 5px;">
+            <button id="csv-save-btn" class="btn btn-success" style="display:none; padding: 8px 16px; border-radius: 4px; font-weight: 500; align-items: center; gap: 5px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                     <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
                 </svg>
                 변경사항 저장
             </button>
-            <button id="csv-cancel-btn" class="btn btn-secondary" style="display:none; padding: 8px 16px; border-radius: 4px; font-weight: 500; display: flex; align-items: center; gap: 5px;">
+            <button id="csv-cancel-btn" class="btn btn-secondary" style="display:none; padding: 8px 16px; border-radius: 4px; font-weight: 500; align-items: center; gap: 5px;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                     <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
                 </svg>
@@ -348,55 +348,71 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
     const csvFilename = '""" + system_filename + """';
     let originalCsvData = null;
     
-    // 문서 로드 완료 후 이벤트 리스너 등록
-    document.addEventListener('DOMContentLoaded', function() {
-        // 버튼 요소 가져오기
-        const editBtn = document.getElementById('csv-edit-btn');
-        const saveBtn = document.getElementById('csv-save-btn');
-        const cancelBtn = document.getElementById('csv-cancel-btn');
-        
-        // 편집 버튼 이벤트 리스너
-        if (editBtn) {
-            editBtn.addEventListener('click', function() {
-                // 현재 테이블 상태 저장
-                originalCsvData = document.getElementById('csv-table-container').innerHTML;
-                
-                // 테이블 셀 편집 가능하게 변경
-                const table = document.querySelector('.editable-csv-table');
-                const cells = table.querySelectorAll('td');
-                
-                cells.forEach(cell => {
-                    cell.contentEditable = true;
-                    cell.style.backgroundColor = '#fffde7';
-                    cell.addEventListener('focus', function() {
-                        this.style.backgroundColor = '#fff9c4';
-                    });
-                    cell.addEventListener('blur', function() {
-                        this.style.backgroundColor = '#fffde7';
-                    });
+    // 즉시 실행: 버튼 이벤트 리스너 등록
+    (function() {
+        // 페이지 로딩 완료를 위한 충분한 지연
+        setTimeout(function() {
+            const editBtn = document.getElementById('csv-edit-btn');
+            const saveBtn = document.getElementById('csv-save-btn');
+            const cancelBtn = document.getElementById('csv-cancel-btn');
+            
+            console.log('CSV 편집 버튼 찾기:', editBtn, saveBtn, cancelBtn);
+            
+            // 편집 버튼 이벤트 리스너
+            if (editBtn) {
+                editBtn.addEventListener('click', function() {
+                    console.log('편집 모드 버튼 클릭됨!');
+                    // 현재 테이블 상태 저장
+                    originalCsvData = document.getElementById('csv-table-container').innerHTML;
+                    
+                    // 테이블 셀 편집 가능하게 변경
+                    const table = document.querySelector('.editable-csv-table');
+                    if (table) {
+                        const cells = table.querySelectorAll('td');
+                        
+                        cells.forEach(cell => {
+                            cell.contentEditable = true;
+                            cell.style.backgroundColor = '#fffde7';
+                            cell.style.border = '2px solid #4CAF50';
+                            cell.addEventListener('focus', function() {
+                                this.style.backgroundColor = '#fff9c4';
+                            });
+                            cell.addEventListener('blur', function() {
+                                this.style.backgroundColor = '#fffde7';
+                            });
+                        });
+                        
+                        // 편집 모드 안내 표시
+                        const notice = document.createElement('div');
+                        notice.id = 'edit-mode-notice';
+                        notice.innerHTML = '<div style="background: #e8f5e8; padding: 10px; border-radius: 4px; margin: 10px 0; border-left: 4px solid #4CAF50;"><strong>편집 모드:</strong> 셀을 클릭하여 내용을 수정할 수 있습니다.</div>';
+                        table.parentNode.insertBefore(notice, table);
+                    }
+                    
+                    // 버튼 상태 변경
+                    editBtn.style.display = 'none';
+                    saveBtn.style.display = 'inline-flex';
+                    cancelBtn.style.display = 'inline-flex';
                 });
-                
-                // 버튼 상태 변경
-                editBtn.style.display = 'none';
-                saveBtn.style.display = 'inline-block';
-                cancelBtn.style.display = 'inline-block';
-
-            });
-        }
-        
-        // 취소 버튼 이벤트 리스너
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', function() {
-                // 원래 테이블로 복원
-                document.getElementById('csv-table-container').innerHTML = originalCsvData;
-                
-                // 버튼 상태 변경
-                editBtn.style.display = 'inline-block';
-                saveBtn.style.display = 'none';
-                cancelBtn.style.display = 'none';
-
-            });
-        }
+            }
+            
+            // 취소 버튼 이벤트 리스너
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                    console.log('취소 버튼 클릭됨!');
+                    // 편집 모드 안내 제거
+                    const notice = document.getElementById('edit-mode-notice');
+                    if (notice) notice.remove();
+                    
+                    // 원래 테이블로 복원
+                    document.getElementById('csv-table-container').innerHTML = originalCsvData;
+                    
+                    // 버튼 상태 변경
+                    editBtn.style.display = 'inline-flex';
+                    saveBtn.style.display = 'none';
+                    cancelBtn.style.display = 'none';
+                });
+            }
         
         // CSV 행/열 추가 기능 제거됨
         
@@ -525,7 +541,8 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
                 });
             });
         }
-    });
+        }, 1000); // 1초 지연으로 충분한 로딩 시간 확보
+    })();
     
     // 메타데이터 보기 함수
     function viewMetadata(metadataFilename) {
