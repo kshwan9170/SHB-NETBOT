@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 from datetime import datetime
 from werkzeug.utils import secure_filename
-from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, abort
+from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, abort, send_file
 import openai
 from openai import OpenAI
 
@@ -350,13 +350,17 @@ def get_documents():
                     
                     # 파일 통계 정보
                     file_stats = os.stat(file_path)
-                    files.append({
-                        'filename': original_filename,
-                        'size': file_stats.st_size,
-                        'uploaded_at': file_stats.st_mtime,
-                        'file_type': original_filename.split('.')[-1].lower(),
-                        'system_filename': filename  # 시스템 내부 파일명 추가 (삭제 기능을 위해)
-                    })
+                    file_ext = original_filename.split('.')[-1].lower()
+                    
+                    # JSON 파일은 숨기기 처리 (메타데이터 파일이므로 사용자에게 노출하지 않음)
+                    if file_ext != 'json':
+                        files.append({
+                            'filename': original_filename,
+                            'size': file_stats.st_size,
+                            'uploaded_at': file_stats.st_mtime,
+                            'file_type': file_ext,
+                            'system_filename': filename  # 시스템 내부 파일명 추가 (삭제 기능을 위해)
+                        })
         
         return jsonify({
             'document_count': document_status.get('document_count', 0),
