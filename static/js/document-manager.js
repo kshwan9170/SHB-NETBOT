@@ -225,8 +225,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // JSON 파일 필터링 함수
     function filterJsonFiles(files) {
         return files.filter(file => {
-            // .json 확장자를 가진 파일 숨기기
-            return file.file_type.toLowerCase() !== 'json';
+            // .json 확장자를 가진 파일만 숨기기, Excel/CSV는 모두 표시
+            const fileType = file.file_type ? file.file_type.toLowerCase() : '';
+            return fileType !== 'json';
         });
     }
     
