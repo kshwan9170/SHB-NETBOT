@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
      * 업로드 오류 처리
      */
     function handleUploadError(error, filename) {
-        console.error('Upload error:', error);
+        console.error('Upload failed for file:', filename, error);
         showMessage('error', `❌ ${filename} 업로드 중 오류가 발생했습니다: ${error.message}`);
     }
     

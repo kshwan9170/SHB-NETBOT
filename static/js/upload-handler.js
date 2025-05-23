@@ -92,7 +92,7 @@ function handleUploadResponse(response, filename) {
 }
 
 function handleUploadError(error, filename) {
-    console.error('Upload error:', error);
+    console.error('Upload failed for file:', filename, error);
     showUploadMessage('error', `❌ ${filename} 업로드 중 네트워크 오류가 발생했습니다.`);
 }
 
