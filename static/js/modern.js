@@ -2116,6 +2116,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function openMainPageFilePreview(systemFilename, originalFilename) {
         console.log('메인페이지 파일 미리보기 호출:', originalFilename);
         
+        // 기존 모달이 있으면 제거
+        const existingModal = document.getElementById('filePreviewModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // AbortController로 fetch 요청 취소 가능하게 설정
+        const abortController = new AbortController();
+        
         // 모달 생성
         const modal = document.createElement('div');
         modal.id = 'filePreviewModal';
@@ -2133,6 +2142,9 @@ document.addEventListener('DOMContentLoaded', function() {
             z-index: 10000;
             backdrop-filter: blur(5px);
         `;
+        
+        // 모달에 abortController 참조 저장
+        modal._abortController = abortController;
         
         // 모달 내용
         const modalContent = document.createElement('div');
@@ -2205,7 +2217,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 모달 닫기 함수
         function closeModal() {
-            // 모든 이벤트 리스너 제거
+            // fetch 요청 취소
+            if (modal._abortController) {
+                modal._abortController.abort();
+            }
+            
+            // 이벤트 리스너 제거
             const escHandler = modal._escHandler;
             if (escHandler) {
                 document.removeEventListener('keydown', escHandler);
@@ -2218,6 +2235,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 메모리 정리
             modal._escHandler = null;
+            modal._abortController = null;
         }
         
         // 닫기 이벤트
@@ -2239,18 +2257,25 @@ document.addEventListener('DOMContentLoaded', function() {
         modal._escHandler = escHandler;
         document.addEventListener('keydown', escHandler);
         
-        // 파일 내용 로드 (JSON 응답 처리)
-        fetch(`/api/documents/view/${systemFilename}`)
+        // 파일 내용 로드 (AbortController와 함께)
+        fetch(`/api/documents/view/${systemFilename}`, {
+            signal: abortController.signal
+        })
             .then(response => {
+                // 요청이 취소되었는지 확인
+                if (abortController.signal.aborted) {
+                    return null;
+                }
+                
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 return response.json();
             })
             .then(data => {
-                // 모달이 이미 닫혔는지 확인
-                if (!document.body.contains(modal)) {
-                    return; // 모달이 닫혔으면 처리 중단
+                // 요청이 취소되었거나 모달이 닫혔는지 확인
+                if (!data || abortController.signal.aborted || !document.body.contains(modal)) {
+                    return;
                 }
                 
                 if (data && data.status === 'success') {
@@ -2274,9 +2299,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .catch(error => {
+                // AbortError는 무시 (정상적인 취소)
+                if (error.name === 'AbortError' || abortController.signal.aborted) {
+                    return;
+                }
+                
                 // 모달이 이미 닫혔는지 확인
                 if (!document.body.contains(modal)) {
-                    return; // 모달이 닫혔으면 오류 표시하지 않음
+                    return;
                 }
                 
                 console.error('파일 로드 오류:', error);
