@@ -2109,7 +2109,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 페이지네이션 관련 변수
     let currentPage = 1;
-    const filesPerPage = 5;
+    const filesPerPage = 7;
     let allDocuments = [];
     
     // 메인페이지 파일 미리보기 함수 (파일관리자와 동일한 기능)
