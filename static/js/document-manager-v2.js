@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 전역 변수로 페이지네이션 상태 관리
     let currentPage = 1;
-    const filesPerPage = 10; // 페이지당 10개 파일 표시
+    const filesPerPage = 8; // 페이지당 8개 파일 표시
     let allFiles = [];
     let filteredFiles = [];
     
