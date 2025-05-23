@@ -11,10 +11,87 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log("Document manager initialized");
     console.log("File list element exists:", fileList !== null);
     
+    // 파일 목록 로드 함수
+    function loadDocuments() {
+        console.log("Fetching document list...");
+        fetch('/api/documents')
+            .then(response => response.json())
+            .then(data => {
+                console.log("Document list data:", data);
+                if (data.files && data.files.length > 0) {
+                    console.log("Loaded", data.files.length, "files");
+                    // 파일 목록이 있는 경우 UI 업데이트
+                    if (documentsList) {
+                        // 기존 파일 카드들을 업데이트하거나 새로고침
+                        location.reload(); // 간단한 페이지 새로고침으로 최신 목록 반영
+                    }
+                } else {
+                    console.log("No files found");
+                }
+            })
+            .catch(error => {
+                console.error("Error loading documents:", error);
+            });
+    }
+    
     // 문서 업로드 후 이벤트 감지
-    document.getElementById('uploadForm')?.addEventListener('submit', function() {
-        // 업로드 완료 후 파일 목록 갱신
-        setTimeout(loadDocuments, 2000);
+    document.getElementById('uploadForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        
+        // 업로드 진행 상태 표시
+        submitBtn.textContent = '업로드 중...';
+        submitBtn.disabled = true;
+        
+        fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 성공 피드백 표시
+                submitBtn.innerHTML = '✅ 업로드 완료!';
+                submitBtn.style.backgroundColor = '#28a745';
+                
+                // 파일 입력 초기화
+                document.getElementById('files').value = '';
+                
+                // 파일 목록 즉시 새로고침
+                setTimeout(() => {
+                    loadDocuments();
+                    // 버튼 원상복구
+                    submitBtn.textContent = originalText;
+                    submitBtn.style.backgroundColor = '';
+                    submitBtn.disabled = false;
+                }, 1000);
+            } else {
+                // 오류 피드백 표시
+                submitBtn.innerHTML = '❌ 업로드 실패';
+                submitBtn.style.backgroundColor = '#dc3545';
+                alert('업로드 실패: ' + data.message);
+                
+                setTimeout(() => {
+                    submitBtn.textContent = originalText;
+                    submitBtn.style.backgroundColor = '';
+                    submitBtn.disabled = false;
+                }, 2000);
+            }
+        })
+        .catch(error => {
+            console.error('Upload error:', error);
+            submitBtn.innerHTML = '❌ 업로드 실패';
+            submitBtn.style.backgroundColor = '#dc3545';
+            alert('업로드 중 오류가 발생했습니다.');
+            
+            setTimeout(() => {
+                submitBtn.textContent = originalText;
+                submitBtn.style.backgroundColor = '';
+                submitBtn.disabled = false;
+            }, 2000);
+        });
     });
     
     // 정적으로 생성된 삭제 버튼에 이벤트 리스너 추가
