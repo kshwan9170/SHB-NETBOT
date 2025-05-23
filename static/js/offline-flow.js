@@ -159,10 +159,12 @@ class OfflineFlowSystem {
             const optionsDiv = document.createElement('div');
             optionsDiv.className = 'flow-options';
             optionsDiv.style.cssText = `
-                margin-top: 15px;
+                margin-top: 16px;
                 display: flex;
-                flex-direction: column;
-                gap: 8px;
+                flex-direction: row;
+                gap: 12px;
+                justify-content: center;
+                flex-wrap: wrap;
             `;
             
             node.options.forEach((option, index) => {
@@ -171,59 +173,55 @@ class OfflineFlowSystem {
                 
                 // 선택지 텍스트 분석하여 스타일 결정
                 const isPositive = this.isPositiveChoice(option.label);
-                const emoji = isPositive ? '✅' : '❌';
-                const buttonText = `${emoji} ${option.label}`;
+                button.textContent = option.label; // 이모지 제거
                 
-                button.innerHTML = buttonText;
-                
-                // 선택지별 차별화된 스타일
+                // 선택지별 차별화된 스타일 (파란색 vs 회색)
                 const baseStyle = isPositive ? {
-                    background: 'linear-gradient(135deg, #2E7D32, #4CAF50)', // 초록색 그라데이션
-                    hoverBackground: 'linear-gradient(135deg, #388E3C, #66BB6A)',
-                    shadowColor: 'rgba(76, 175, 80, 0.3)'
+                    background: '#2563EB', // 파란색
+                    hoverBackground: '#1D4ED8',
+                    shadowColor: 'rgba(37, 99, 235, 0.25)'
                 } : {
-                    background: 'linear-gradient(135deg, #616161, #757575)', // 회색 그라데이션
-                    hoverBackground: 'linear-gradient(135deg, #757575, #9E9E9E)',
-                    shadowColor: 'rgba(117, 117, 117, 0.3)'
+                    background: '#9CA3AF', // 중립 회색
+                    hoverBackground: '#6B7280',
+                    shadowColor: 'rgba(156, 163, 175, 0.25)'
                 };
                 
                 button.style.cssText = `
-                    padding: 14px 24px;
+                    padding: 12px 24px;
                     background: ${baseStyle.background};
                     color: white;
                     border: none;
-                    border-radius: 28px;
+                    border-radius: 8px;
                     cursor: pointer;
-                    font-size: 15px;
-                    font-weight: 600;
-                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    font-size: 14px;
+                    font-weight: 500;
+                    transition: all 0.2s ease;
                     text-align: center;
-                    box-shadow: 0 4px 12px ${baseStyle.shadowColor};
-                    min-width: 120px;
-                    position: relative;
-                    overflow: hidden;
+                    box-shadow: 0 2px 8px ${baseStyle.shadowColor};
+                    min-width: 100px;
+                    margin: 0 4px;
                 `;
                 
-                // 향상된 호버 효과
+                // 호버 효과
                 button.addEventListener('mouseenter', () => {
                     button.style.background = baseStyle.hoverBackground;
-                    button.style.transform = 'translateY(-3px) scale(1.02)';
-                    button.style.boxShadow = `0 8px 20px ${baseStyle.shadowColor}`;
+                    button.style.transform = 'translateY(-1px) scale(1.02)';
+                    button.style.boxShadow = `0 4px 12px ${baseStyle.shadowColor}`;
                 });
                 
                 button.addEventListener('mouseleave', () => {
                     button.style.background = baseStyle.background;
                     button.style.transform = 'translateY(0) scale(1)';
-                    button.style.boxShadow = `0 4px 12px ${baseStyle.shadowColor}`;
+                    button.style.boxShadow = `0 2px 8px ${baseStyle.shadowColor}`;
                 });
                 
                 // 클릭 애니메이션
                 button.addEventListener('mousedown', () => {
-                    button.style.transform = 'translateY(-1px) scale(0.98)';
+                    button.style.transform = 'scale(0.98)';
                 });
                 
                 button.addEventListener('mouseup', () => {
-                    button.style.transform = 'translateY(-3px) scale(1.02)';
+                    button.style.transform = 'translateY(-1px) scale(1.02)';
                 });
                 
                 // 클릭 이벤트
@@ -240,23 +238,38 @@ class OfflineFlowSystem {
             const restartDiv = document.createElement('div');
             restartDiv.className = 'flow-restart';
             restartDiv.style.cssText = `
-                margin-top: 15px;
+                margin-top: 16px;
                 text-align: center;
             `;
             
             const restartButton = document.createElement('button');
             restartButton.className = 'flow-restart-button';
-            restartButton.textContent = '🔄 처음으로 돌아가기';
+            restartButton.textContent = '처음으로';
             restartButton.style.cssText = `
                 padding: 10px 20px;
-                background: linear-gradient(135deg, #28a745, #34ce57);
-                color: white;
-                border: none;
-                border-radius: 20px;
+                background: white;
+                color: #6B7280;
+                border: 1px solid #D1D5DB;
+                border-radius: 8px;
                 cursor: pointer;
                 font-size: 13px;
-                transition: all 0.3s ease;
+                font-weight: 500;
+                transition: all 0.2s ease;
+                min-width: 80px;
             `;
+            
+            // 호버 효과
+            restartButton.addEventListener('mouseenter', () => {
+                restartButton.style.background = '#F9FAFB';
+                restartButton.style.borderColor = '#9CA3AF';
+                restartButton.style.transform = 'translateY(-1px)';
+            });
+            
+            restartButton.addEventListener('mouseleave', () => {
+                restartButton.style.background = 'white';
+                restartButton.style.borderColor = '#D1D5DB';
+                restartButton.style.transform = 'translateY(0)';
+            });
             
             restartButton.addEventListener('click', () => {
                 this.restartFlow();
