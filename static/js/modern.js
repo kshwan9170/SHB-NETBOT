@@ -2109,7 +2109,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 페이지네이션 관련 변수
     let currentPage = 1;
-    const filesPerPage = 5;
+    const filesPerPage = 7; // 5개에서 7개로 증가
     let allDocuments = [];
     
     // 문서 목록 로드 함수
@@ -2176,6 +2176,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // 페이지네이션 생성
                 createPagination(allDocuments.length);
+                
+                // Manage Files 버튼 추가
+                addManageFilesButtonToMain();
             }
         } catch (error) {
             console.error('문서 목록 조회 중 오류:', error);
@@ -2250,6 +2253,65 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 페이지네이션을 문서 목록 아래에 추가
         documentsContent.appendChild(paginationContainer);
+    }
+    
+    // Manage Files 버튼을 메인 페이지에 추가하는 함수
+    function addManageFilesButtonToMain() {
+        // 기존 Manage Files 버튼이 있으면 제거
+        const existingButton = document.getElementById('main-manage-files-button');
+        if (existingButton) {
+            existingButton.remove();
+        }
+        
+        // Documents 섹션 찾기
+        const documentsContent = document.querySelector('.documents-content');
+        if (!documentsContent) return;
+        
+        // Manage Files 버튼 컨테이너 생성
+        const buttonContainer = document.createElement('div');
+        buttonContainer.id = 'main-manage-files-button';
+        buttonContainer.style.cssText = `
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        `;
+        
+        // Manage Files 버튼 생성 (Upload Files 버튼과 동일한 스타일)
+        const manageButton = document.createElement('button');
+        manageButton.textContent = 'Manage Files';
+        manageButton.style.cssText = `
+            background-color: #30507A;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        `;
+        
+        // 호버 효과
+        manageButton.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#3C5C88';
+            this.style.transform = 'translateY(-2px)';
+        });
+        
+        manageButton.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '#30507A';
+            this.style.transform = 'translateY(0)';
+        });
+        
+        // 클릭 이벤트 - 파일 관리 페이지로 이동
+        manageButton.addEventListener('click', function() {
+            window.location.href = '/file-manager';
+        });
+        
+        buttonContainer.appendChild(manageButton);
+        documentsContent.appendChild(buttonContainer);
     }
     
     // 문서 삭제 함수
