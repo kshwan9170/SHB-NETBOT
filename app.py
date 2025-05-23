@@ -594,7 +594,8 @@ def view_document(system_filename):
                     metadata_filename=os.path.basename(metadata_path)
                 )
                 
-                return jsonify({
+                # UTF-8 문자열이 제대로 전달되도록 Flask 설정
+                response = jsonify({
                     'status': 'success',
                     'html_content': True,
                     'file_type': 'csv',
@@ -602,6 +603,8 @@ def view_document(system_filename):
                     'metadata_generated': True,
                     'encoding': used_encoding
                 })
+                response.headers['Content-Type'] = 'application/json; charset=utf-8'
+                return response
                 
             except Exception as e:
                 print(f"CSV 파일 처리 중 오류: {str(e)}")
@@ -674,26 +677,28 @@ def view_document(system_filename):
                     'message': f'JSON 파일을 읽는 중 오류가 발생했습니다: {str(e)}'
                 }), 500
 
-        # PDF 파일 처리
+        # PDF 파일 처리 - 414 오류 방지를 위해 직접 파일 서빙 방식 사용
         elif file_extension == 'pdf':
-            import base64
             try:
-                with open(file_path, 'rb') as f:
-                    pdf_content = f.read()
-                    pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
+                # 파일 크기 확인
+                import os
+                file_size = os.path.getsize(file_path)
                 
-                # PDF iframe으로 실제 미리보기 제공
+                # PDF 미리보기를 위한 iframe 생성 (직접 파일 경로 사용)
+                pdf_url = f"/api/documents/download/{system_filename}"
+                
                 content = f'''
                 <div class="pdf-container">
                     <div style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
                         <h3 style="margin: 0; color: #333;">PDF 파일 미리보기</h3>
                         <p style="margin: 5px 0 0;">파일명: {original_filename}</p>
+                        <p style="margin: 5px 0 0; font-size: 0.9em; color: #666;">파일 크기: {file_size:,} bytes</p>
                     </div>
                     <div style="width: 100%; height: 500px; border: 1px solid #dee2e6; border-radius: 4px;">
-                        <iframe src="data:application/pdf;base64,{pdf_base64}" 
+                        <iframe src="{pdf_url}" 
                                 style="width: 100%; height: 100%; border: none;" 
                                 type="application/pdf">
-                            <p>PDF를 표시할 수 없습니다. <a href="data:application/pdf;base64,{pdf_base64}" target="_blank">새 창에서 열기</a></p>
+                            <p>PDF를 표시할 수 없습니다. <a href="{pdf_url}" target="_blank">새 창에서 열기</a></p>
                         </iframe>
                     </div>
                 </div>
