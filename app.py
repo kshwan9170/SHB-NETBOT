@@ -26,6 +26,9 @@ chatbot.initialize_csv_narratives()
 
 app = Flask(__name__)
 
+# JSON 응답에서 한글 텍스트가 제대로 표시되도록 설정
+app.config['JSON_AS_ASCII'] = False
+
 # 데이터베이스 초기화
 init_db()
 
