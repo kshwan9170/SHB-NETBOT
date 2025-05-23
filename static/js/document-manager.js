@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 전역 변수로 페이지네이션 상태 관리
     let currentPage = 1;
-    const filesPerPage = 7; // 페이지당 7개 파일 표시
+    const filesPerPage = 10; // 페이지당 10개 파일 표시
     let allFiles = [];
     let filteredFiles = [];
     const VERSION = new Date().getTime(); // 캐시 방지용 버전
@@ -377,46 +377,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         fileListContainer.appendChild(paginationContainer);
-        
-        // Manage Files 버튼 추가 (페이지네이션 아래)
-        const manageFilesContainer = document.createElement('div');
-        manageFilesContainer.style.cssText = 'text-align: center; margin-top: 1.5rem;';
-        
-        const manageFilesButton = document.createElement('a');
-        manageFilesButton.href = '/file-manager';
-        manageFilesButton.className = 'upload-button';
-        manageFilesButton.style.cssText = `
-            text-decoration: none; 
-            display: inline-flex; 
-            align-items: center; 
-            gap: 0.8rem;
-            background-color: #30507A;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-weight: 500;
-            transition: background-color 0.2s ease;
-        `;
-        
-        manageFilesButton.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 20h9"></path>
-                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-            </svg>
-            Manage Files
-        `;
-        
-        // 호버 효과 추가
-        manageFilesButton.addEventListener('mouseenter', function() {
-            this.style.backgroundColor = '#3C5C88';
-        });
-        
-        manageFilesButton.addEventListener('mouseleave', function() {
-            this.style.backgroundColor = '#30507A';
-        });
-        
-        manageFilesContainer.appendChild(manageFilesButton);
-        fileListContainer.appendChild(manageFilesContainer);
     }
     
     /**
