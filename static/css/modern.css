@@ -1300,6 +1300,62 @@ body.offline-mode .logo img {
     background-color: var(--hover-color);
 }
 
+/* 업로드 완료 파일 카드 스타일 */
+.file-item.uploaded-success {
+    background: linear-gradient(135deg, rgba(76, 214, 185, 0.1), rgba(40, 167, 69, 0.05));
+    border-left: 4px solid #4CD6B9;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 214, 185, 0.2);
+    transition: all 0.4s ease;
+}
+
+.file-item.uploaded-success:hover {
+    background: linear-gradient(135deg, rgba(76, 214, 185, 0.15), rgba(40, 167, 69, 0.08));
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(76, 214, 185, 0.3);
+}
+
+.file-item.uploaded-success .document-info h4 {
+    color: #1A7A5E;
+    font-weight: 600;
+}
+
+.file-item.uploaded-success .document-meta {
+    color: #2A6B4F;
+}
+
+/* 업로드 중 애니메이션 */
+.file-item.uploading {
+    background: linear-gradient(135deg, rgba(51, 102, 153, 0.1), rgba(30, 80, 122, 0.05));
+    border-left: 4px solid #336699;
+    animation: uploadPulse 1.5s infinite;
+}
+
+@keyframes uploadPulse {
+    0%, 100% { 
+        background: linear-gradient(135deg, rgba(51, 102, 153, 0.1), rgba(30, 80, 122, 0.05));
+        box-shadow: 0 2px 8px rgba(51, 102, 153, 0.2);
+    }
+    50% { 
+        background: linear-gradient(135deg, rgba(51, 102, 153, 0.15), rgba(30, 80, 122, 0.08));
+        box-shadow: 0 4px 12px rgba(51, 102, 153, 0.3);
+    }
+}
+
+/* 다크 테마 지원 */
+[data-theme="dark"] .file-item.uploaded-success {
+    background: linear-gradient(135deg, rgba(76, 214, 185, 0.15), rgba(40, 167, 69, 0.08));
+    border-left-color: #5AE0C4;
+}
+
+[data-theme="dark"] .file-item.uploaded-success .document-info h4 {
+    color: #5AE0C4;
+}
+
+[data-theme="dark"] .file-item.uploaded-success .document-meta {
+    color: #4BC2A8;
+}
+
 .file-info {
     display: flex;
     align-items: center;
