@@ -798,69 +798,63 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 안전하게 콘텐츠 처리
                 const content = data.content || '';
                 
-                if (data.file_type === 'pdf') {
-                    // PDF 파일 처리 - iframe으로 렌더링
-                    console.log('PDF 파일 표시');
-                    modalBody.innerHTML = content;
-                } else if (data.file_type === 'csv') {
-                    // CSV 파일 처리 - HTML 테이블로 렌더링
-                    console.log('CSV 파일 표시');
+                if (data.html_content === true) {
+                    // HTML 콘텐츠 - 실제 HTML로 렌더링 (PDF, CSV, Excel 등)
+                    console.log('HTML 콘텐츠 렌더링:', data.file_type);
                     modalBody.innerHTML = content;
                     
-                    // CSV 테이블 스타일 개선
-                    const tables = modalBody.querySelectorAll('table');
-                    tables.forEach(table => {
-                        table.style.cssText = `
-                            width: 100%;
-                            border-collapse: collapse;
-                            font-size: 13px;
-                            font-family: Arial, sans-serif;
-                            margin: 10px 0;
-                        `;
-                        
-                        // 헤더 스타일
-                        const headers = table.querySelectorAll('th');
-                        headers.forEach(th => {
-                            th.style.cssText = `
-                                background-color: #f8f9fa;
-                                border: 1px solid #dee2e6;
-                                padding: 8px 12px;
-                                text-align: left;
-                                font-weight: bold;
-                                color: #495057;
+                    // CSV나 기타 HTML 파일에 대한 테이블 스타일 개선
+                    if (data.file_type === 'csv') {
+                        const tables = modalBody.querySelectorAll('table');
+                        tables.forEach(table => {
+                            table.style.cssText = `
+                                width: 100%;
+                                border-collapse: collapse;
+                                font-size: 13px;
+                                font-family: Arial, sans-serif;
+                                margin: 10px 0;
                             `;
-                        });
-                        
-                        // 셀 스타일
-                        const cells = table.querySelectorAll('td');
-                        cells.forEach(td => {
-                            td.style.cssText = `
-                                border: 1px solid #dee2e6;
-                                padding: 8px 12px;
-                                color: #333;
-                                background-color: white;
-                            `;
-                        });
-                        
-                        // 행 호버 효과
-                        const rows = table.querySelectorAll('tr');
-                        rows.forEach(row => {
-                            row.addEventListener('mouseenter', () => {
-                                if (!row.querySelector('th')) {
-                                    row.style.backgroundColor = '#f8f9fa';
-                                }
+                            
+                            // 헤더 스타일
+                            const headers = table.querySelectorAll('th');
+                            headers.forEach(th => {
+                                th.style.cssText = `
+                                    background-color: #f8f9fa;
+                                    border: 1px solid #dee2e6;
+                                    padding: 8px 12px;
+                                    text-align: left;
+                                    font-weight: bold;
+                                    color: #495057;
+                                `;
                             });
-                            row.addEventListener('mouseleave', () => {
-                                if (!row.querySelector('th')) {
-                                    row.style.backgroundColor = 'white';
-                                }
+                            
+                            // 셀 스타일
+                            const cells = table.querySelectorAll('td');
+                            cells.forEach(td => {
+                                td.style.cssText = `
+                                    border: 1px solid #dee2e6;
+                                    padding: 8px 12px;
+                                    color: #333;
+                                    background-color: white;
+                                `;
+                            });
+                            
+                            // 행 호버 효과
+                            const rows = table.querySelectorAll('tr');
+                            rows.forEach(row => {
+                                row.addEventListener('mouseenter', () => {
+                                    if (!row.querySelector('th')) {
+                                        row.style.backgroundColor = '#f8f9fa';
+                                    }
+                                });
+                                row.addEventListener('mouseleave', () => {
+                                    if (!row.querySelector('th')) {
+                                        row.style.backgroundColor = 'white';
+                                    }
+                                });
                             });
                         });
-                    });
-                } else if (data.html_content === true) {
-                    // HTML로 포맷된 내용 (Excel, 기타 HTML 콘텐츠)
-                    console.log('HTML 콘텐츠 표시');
-                    modalBody.innerHTML = content;
+                    }
                 } else {
                     // 일반 텍스트 파일 (TXT, JSON 등)
                     console.log('텍스트 콘텐츠 표시');
