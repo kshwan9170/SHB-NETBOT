@@ -28,12 +28,6 @@
     
     /* 그림자 */
     --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.05);
-    
-    /* 성공/상태 컬러 */
-    --success: #27AE60;
-    --success-light: rgba(39, 174, 96, 0.1);
-    --info: #3498DB;
-    --warning: #F39C12;
     --shadow-md: 0 5px 20px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.1);
     --shadow-inset: inset 0 2px 5px rgba(0, 0, 0, 0.05);
@@ -1298,72 +1292,6 @@ body.offline-mode .logo img {
 
 .file-item:hover {
     background-color: var(--hover-color);
-}
-
-/* 업로드 완료 파일 카드 스타일 - 고정 색상 */
-.file-item.uploaded-success {
-    background: linear-gradient(135deg, rgba(76, 214, 185, 0.12), rgba(40, 167, 69, 0.08)) !important;
-    border-left: 4px solid #4CD6B9 !important;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(76, 214, 185, 0.15);
-    transition: all 0.3s ease;
-}
-
-.file-item.uploaded-success:hover {
-    background: linear-gradient(135deg, rgba(76, 214, 185, 0.18), rgba(40, 167, 69, 0.12)) !important;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(76, 214, 185, 0.25);
-}
-
-/* 업로드된 파일의 텍스트 색상 강화 */
-.file-item.uploaded-success .document-info h4 {
-    color: #1A7A5E !important;
-    font-weight: 600;
-}
-
-.file-item.uploaded-success .document-meta {
-    color: #2A6B4F !important;
-}
-
-.file-item.uploaded-success .document-info h4 {
-    color: #1A7A5E;
-    font-weight: 600;
-}
-
-.file-item.uploaded-success .document-meta {
-    color: #2A6B4F;
-}
-
-/* 업로드 중 애니메이션 */
-.file-item.uploading {
-    background: linear-gradient(135deg, rgba(51, 102, 153, 0.1), rgba(30, 80, 122, 0.05));
-    border-left: 4px solid #336699;
-    animation: uploadPulse 1.5s infinite;
-}
-
-@keyframes uploadPulse {
-    0%, 100% { 
-        background: linear-gradient(135deg, rgba(51, 102, 153, 0.1), rgba(30, 80, 122, 0.05));
-        box-shadow: 0 2px 8px rgba(51, 102, 153, 0.2);
-    }
-    50% { 
-        background: linear-gradient(135deg, rgba(51, 102, 153, 0.15), rgba(30, 80, 122, 0.08));
-        box-shadow: 0 4px 12px rgba(51, 102, 153, 0.3);
-    }
-}
-
-/* 다크 테마 지원 */
-[data-theme="dark"] .file-item.uploaded-success {
-    background: linear-gradient(135deg, rgba(76, 214, 185, 0.15), rgba(40, 167, 69, 0.08));
-    border-left-color: #5AE0C4;
-}
-
-[data-theme="dark"] .file-item.uploaded-success .document-info h4 {
-    color: #5AE0C4;
-}
-
-[data-theme="dark"] .file-item.uploaded-success .document-meta {
-    color: #4BC2A8;
 }
 
 .file-info {

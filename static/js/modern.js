@@ -1799,52 +1799,29 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!uploadForm || !fileInput || !uploadDropzone || !documentsList) return;
         
-        // 드래그 앤 드롭 기능 - 개선된 호버 효과
+        // 드래그 앤 드롭 기능
         uploadDropzone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            uploadDropzone.style.cssText = `
-                border: 2px dashed #4CD6B9 !important;
-                background-color: rgba(76, 214, 185, 0.1) !important;
-                transform: scale(1.02);
-                box-shadow: 0 8px 25px rgba(76, 214, 185, 0.3);
-                transition: all 0.3s ease;
-            `;
-            uploadDropzone.querySelector('p').style.color = '#4CD6B9';
-            uploadDropzone.querySelector('p').style.fontWeight = 'bold';
+            uploadDropzone.style.borderColor = '#4CD6B9';
+            uploadDropzone.style.backgroundColor = 'var(--primary-light)';
         });
         
         uploadDropzone.addEventListener('dragleave', (e) => {
             e.preventDefault();
-            // 완전히 영역을 벗어났을 때만 스타일 제거
-            if (!uploadDropzone.contains(e.relatedTarget)) {
-                uploadDropzone.style.cssText = '';
-                uploadDropzone.querySelector('p').style.color = '';
-                uploadDropzone.querySelector('p').style.fontWeight = '';
-            }
+            uploadDropzone.style.borderColor = 'var(--border-color)';
+            uploadDropzone.style.backgroundColor = '';
         });
         
         uploadDropzone.addEventListener('drop', (e) => {
             e.preventDefault();
-            // 드롭 시 스타일 초기화
-            uploadDropzone.style.cssText = '';
-            uploadDropzone.querySelector('p').style.color = '';
-            uploadDropzone.querySelector('p').style.fontWeight = '';
+            uploadDropzone.style.borderColor = 'var(--border-color)';
+            uploadDropzone.style.backgroundColor = '';
             
             if (e.dataTransfer.files.length > 0) {
                 fileInput.files = e.dataTransfer.files;
                 // 파일 이름 표시
                 const fileNames = Array.from(fileInput.files).map(file => file.name).join(', ');
                 uploadDropzone.querySelector('p').textContent = fileNames;
-                
-                // 드롭 성공 효과
-                uploadDropzone.style.cssText = `
-                    border: 2px solid #28a745 !important;
-                    background-color: rgba(40, 167, 69, 0.1) !important;
-                    transition: all 0.3s ease;
-                `;
-                setTimeout(() => {
-                    uploadDropzone.style.cssText = '';
-                }, 1000);
             }
         });
         
@@ -1976,7 +1953,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 uploadButton.textContent = 'Uploading...';
                 
                 let allUploadsSuccessful = true;
-                const uploadResults = []; // 업로드 결과 저장
                 const files = Array.from(fileInput.files);
                 
                 for (const file of files) {
@@ -2002,61 +1978,29 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                         
                         const data = await response.json();
-                        console.log('Upload response:', response.status, data);
                         
-                        // 성공 응답 확인 (results 배열이 있고 모든 status가 success인 경우)
-                        let isSuccess = false;
-                        if (data.results && Array.isArray(data.results)) {
-                            isSuccess = data.results.every(result => result.status === 'success');
-                        } else if (data.status === 'success' || data.success) {
-                            isSuccess = true;
-                        }
-                        
-                        if (!response.ok || !isSuccess) {
-                            console.error('Upload failed:', data);
-                            alert(`업로드 실패: ${data.error || data.message || '알 수 없는 오류'}`);
+                        if (!response.ok) {
+                            console.error('Upload error:', data);
+                            alert(`Upload failed: ${data.error || 'Unknown error'}`);
                             allUploadsSuccessful = false;
-                        } else {
-                            console.log(`${file.name} 업로드 성공!`);
-                            // 성공 응답에 대해서는 uploadResults에 저장
-                            uploadResults.push({
-                                filename: file.name,
-                                status: 'success',
-                                data: data
-                            });
                         }
                     }
                 }
                 
                 if (allUploadsSuccessful) {
-                    // 업로드 성공 메시지
-                    const successMessage = files.length === 1 ? 
-                        `✅ ${files[0].name} 파일이 성공적으로 업로드되었습니다!` : 
-                        `✅ ${files.length}개 파일이 모두 성공적으로 업로드되었습니다!`;
-                    
-                    // 성공 팝업 표시
-                    showNotification(successMessage, 'success');
-                    
-                    // UI 초기화
+                    // 업로드 성공
                     uploadDropzone.querySelector('p').textContent = 'Drag and drop files here or browse';
                     fileInput.value = '';
                     
-                    // 즉시 문서 목록 업데이트 (다중 시도로 확실한 반영)
-                    refreshDocumentList();
-                    setTimeout(() => refreshDocumentList(), 500);
-                    setTimeout(() => refreshDocumentList(), 1000);
+                    // 문서 목록 업데이트
+                    loadDocuments();
+                    
+                    // 성공 메시지
+                    alert('Files uploaded successfully');
                 }
             } catch (error) {
-                // 실제 오류만 로깅 (빈 객체나 성공 응답은 제외)
-                if (error && error.message) {
-                    console.error('Upload process failed:', error.message);
-                    // showNotification이 정의되어 있는지 확인 후 사용
-                    if (typeof showNotification === 'function') {
-                        showNotification('❌ 업로드 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
-                    } else {
-                        alert('❌ 업로드 중 오류가 발생했습니다. 다시 시도해주세요.');
-                    }
-                }
+                console.error('Upload error:', error);
+                alert('An error occurred during the upload');
             } finally {
                 // 업로드 버튼 다시 활성화
                 const uploadButton = document.getElementById('uploadButton');
@@ -2069,132 +2013,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loadDocuments();
     }
     
-    // 통합된 문서 목록 새로고침 함수
-    async function refreshDocumentList() {
-        console.log('🔄 문서 목록 새로고침 시작...');
-        
-        // 모든 가능한 목록 컨테이너 찾기
-        const documentsList = document.getElementById('documentsList');
-        const documentsTable = document.getElementById('documents-table');
-        const documentsTableBody = document.getElementById('documents-tbody');
-        const fileList = document.getElementById('file-list');
-        
-        try {
-            const response = await fetch('/api/documents');
-            const data = await response.json();
-            
-            console.log('📄 새로고침된 문서 목록:', data);
-            
-            if (response.ok && data.files && Array.isArray(data.files)) {
-                // 테이블 형태 업데이트
-                if (documentsTable && documentsTableBody) {
-                    documentsTableBody.innerHTML = '';
-                    
-                    if (data.files.length > 0) {
-                        documentsTable.style.display = 'table';
-                        
-                        data.files.forEach(file => {
-                            const row = document.createElement('tr');
-                            const fileSize = formatFileSize(file.size);
-                            
-                            row.innerHTML = `
-                                <td style="padding: 12px; border-bottom: 1px solid #eaeaea;">
-                                    <span class="file-name-link" data-filename="${file.system_filename}" style="color: #30507A; cursor: pointer; text-decoration: underline; font-weight: 500;">${file.filename}</span>
-                                </td>
-                                <td style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea;">${fileSize}</td>
-                                <td style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea;">
-                                    <button class="delete-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}"
-                                            style="background-color: #ff5252; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer; font-weight: bold;">
-                                        DELETE
-                                    </button>
-                                </td>
-                            `;
-                            
-                            documentsTableBody.appendChild(row);
-                        });
-                        
-                        // 이벤트 리스너 다시 연결
-                        attachEventListeners();
-                    } else {
-                        documentsTable.style.display = 'none';
-                    }
-                }
-                
-                // 리스트 형태 업데이트
-                if (documentsList) {
-                    documentsList.innerHTML = '';
-                    
-                    if (data.files.length > 0) {
-                        data.files.forEach(file => {
-                            const fileExt = file.file_type;
-                            let iconClass = 'txt';
-                            
-                            if (fileExt === 'pdf') iconClass = 'pdf';
-                            else if (fileExt === 'docx' || fileExt === 'doc') iconClass = 'docx';
-                            else if (fileExt === 'pptx' || fileExt === 'ppt') iconClass = 'pptx';
-                            else if (fileExt === 'xlsx' || fileExt === 'xls') iconClass = 'xlsx';
-                            
-                            const fileSize = formatFileSize(file.size);
-                            const uploadDate = new Date(file.uploaded_at * 1000).toLocaleString();
-                            
-                            const docItem = document.createElement('div');
-                            docItem.className = 'document-item';
-                            docItem.innerHTML = `
-                                <div class="document-info">
-                                    <div class="document-icon ${iconClass}">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                            <polyline points="14 2 14 8 20 8"></polyline>
-                                        </svg>
-                                    </div>
-                                    <div class="document-details">
-                                        <div class="document-name">${file.filename}</div>
-                                        <div class="document-status">
-                                            Size: ${fileSize} | Uploaded: ${uploadDate}
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                            
-                            documentsList.appendChild(docItem);
-                        });
-                    } else {
-                        documentsList.innerHTML = `
-                            <div class="empty-state">
-                                <p>No documents uploaded yet</p>
-                            </div>
-                        `;
-                    }
-                }
-                
-                console.log(`✅ ${data.files.length}개 파일로 목록 새로고침 완료`);
-            }
-        } catch (error) {
-            console.error('❌ 문서 목록 새로고침 오류:', error);
-        }
-    }
-    
-    // 이벤트 리스너 연결 함수
-    function attachEventListeners() {
-        // 파일명 클릭 이벤트
-        document.querySelectorAll('.file-name-link').forEach(link => {
-            link.addEventListener('click', function() {
-                const filename = this.getAttribute('data-filename');
-                openDocument(filename);
-            });
-        });
-        
-        // 삭제 버튼 이벤트
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const systemFilename = this.getAttribute('data-filename');
-                const displayFilename = this.getAttribute('data-displayname');
-                deleteFile(systemFilename, displayFilename);
-            });
-        });
-    }
-    
-    // 문서 목록 로드 (기존 함수와 호환성 유지)
+    // 문서 목록 로드
     async function loadDocuments() {
         const documentsList = document.getElementById('documentsList');
         if (!documentsList) return;
@@ -2290,7 +2109,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 페이지네이션 관련 변수
     let currentPage = 1;
-    const filesPerPage = 7; // 5개에서 7개로 증가
+    const filesPerPage = 5;
     let allDocuments = [];
     
     // 문서 목록 로드 함수
@@ -2335,9 +2154,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const fileSize = formatFileSize(file.size);
                     
                     row.innerHTML = `
-                        <td style="padding: 12px; border-bottom: 1px solid #eaeaea;">
-                            <span class="file-name-link" data-filename="${file.system_filename}" style="color: #30507A; cursor: pointer; text-decoration: underline; font-weight: 500;">${file.filename}</span>
-                        </td>
+                        <td style="padding: 12px; border-bottom: 1px solid #eaeaea;">${file.filename}</td>
                         <td style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea;">${fileSize}</td>
                         <td style="text-align: center; padding: 12px; border-bottom: 1px solid #eaeaea;">
                             <button class="delete-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}"
@@ -2354,12 +2171,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         const systemFilename = this.getAttribute('data-filename');
                         const displayFilename = this.getAttribute('data-displayname');
                         deleteDocument(systemFilename, displayFilename);
-                    });
-                    
-                    // 파일명 클릭 이벤트 리스너 추가
-                    row.querySelector('.file-name-link').addEventListener('click', function() {
-                        const systemFilename = this.getAttribute('data-filename');
-                        openFileDetailModal(systemFilename);
                     });
                 });
                 
@@ -2441,222 +2252,6 @@ document.addEventListener('DOMContentLoaded', function() {
         documentsContent.appendChild(paginationContainer);
     }
     
-    // Manage Files 버튼을 메인 페이지에 추가하는 함수
-    function addManageFilesButtonToMain() {
-        // 기존 Manage Files 버튼이 있으면 제거
-        const existingButton = document.getElementById('main-manage-files-button');
-        if (existingButton) {
-            existingButton.remove();
-        }
-        
-        // Documents 섹션 찾기
-        const documentsContent = document.querySelector('.documents-content');
-        if (!documentsContent) return;
-        
-        // Manage Files 버튼 컨테이너 생성 (제목과 버튼을 좌우 정렬)
-        const buttonContainer = document.createElement('div');
-        buttonContainer.id = 'main-manage-files-button';
-        buttonContainer.style.cssText = `
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 20px;
-            margin-bottom: 10px;
-            padding: 0 10px;
-        `;
-        
-        // 왼쪽 제목 추가 (기존 Available Documents와 일치)
-        const titleDiv = document.createElement('div');
-        titleDiv.style.cssText = `
-            font-size: 1.4rem;
-            color: #333;
-            font-weight: 600;
-        `;
-        titleDiv.textContent = 'Document Management:';
-        
-        // Manage 버튼 생성 (Upload Files 버튼과 동일한 스타일)
-        const manageButton = document.createElement('button');
-        manageButton.textContent = 'Manage';
-        manageButton.style.cssText = `
-            background-color: #30507A;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 12px 24px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-        `;
-        
-        // 호버 효과
-        manageButton.addEventListener('mouseenter', function() {
-            this.style.backgroundColor = '#3C5C88';
-            this.style.transform = 'translateY(-2px)';
-        });
-        
-        manageButton.addEventListener('mouseleave', function() {
-            this.style.backgroundColor = '#30507A';
-            this.style.transform = 'translateY(0)';
-        });
-        
-        // 클릭 이벤트 - 파일 관리 페이지로 이동
-        manageButton.addEventListener('click', function() {
-            window.location.href = '/file-manager';
-        });
-        
-        // 제목과 버튼을 컨테이너에 추가
-        buttonContainer.appendChild(titleDiv);
-        buttonContainer.appendChild(manageButton);
-        documentsContent.appendChild(buttonContainer);
-    }
-    
-    // 파일 상세 화면 모달 열기 함수
-    async function openFileDetailModal(systemFilename) {
-        try {
-            // 파일 정보를 가져옵니다
-            const response = await fetch(`/api/documents/view/${systemFilename}`);
-            if (!response.ok) {
-                throw new Error('파일을 불러올 수 없습니다.');
-            }
-            
-            const data = await response.text();
-            
-            // 모달 HTML 생성
-            const modal = document.createElement('div');
-            modal.id = 'file-detail-modal';
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background-color: rgba(0, 0, 0, 0.7);
-                z-index: 10000;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            `;
-            
-            // 모달 내용 컨테이너
-            const modalContent = document.createElement('div');
-            modalContent.style.cssText = `
-                background: white;
-                border-radius: 12px;
-                width: 90%;
-                max-width: 1000px;
-                max-height: 80%;
-                overflow: hidden;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-                display: flex;
-                flex-direction: column;
-            `;
-            
-            // 헤더 영역
-            const header = document.createElement('div');
-            header.style.cssText = `
-                padding: 20px;
-                border-bottom: 1px solid #eee;
-                background: #f8f9fa;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            `;
-            
-            const fileName = systemFilename.split('_').slice(1).join('_');
-            header.innerHTML = `
-                <h3 style="margin: 0; color: #30507A; font-size: 1.5rem;">${fileName}</h3>
-                <div>
-                    <button id="download-btn" style="background: #30507A; color: white; border: none; padding: 10px 20px; border-radius: 6px; margin-right: 10px; cursor: pointer;">
-                        다운로드
-                    </button>
-                    <button id="close-modal" style="background: #666; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">
-                        닫기
-                    </button>
-                </div>
-            `;
-            
-            // 콘텐츠 영역
-            const content = document.createElement('div');
-            content.style.cssText = `
-                padding: 20px;
-                flex: 1;
-                overflow: auto;
-                max-height: 500px;
-            `;
-            
-            // 파일 확장자에 따른 미리보기 처리
-            const fileExtension = fileName.split('.').pop().toLowerCase();
-            
-            if (fileExtension === 'csv') {
-                // CSV 파일: 깨끗한 테이블 형태로 표시
-                content.innerHTML = data;
-            } else if (fileExtension === 'pdf') {
-                // PDF 파일: iframe으로 표시
-                if (data.startsWith('data:application/pdf;base64,')) {
-                    content.innerHTML = `
-                        <div style="width: 100%; height: 500px; border: 1px solid #dee2e6; border-radius: 4px;">
-                            <iframe src="${data}" 
-                                    style="width: 100%; height: 100%; border: none;" 
-                                    type="application/pdf">
-                                <p>PDF를 표시할 수 없습니다. <a href="${data}" target="_blank">새 창에서 열기</a></p>
-                            </iframe>
-                        </div>
-                    `;
-                } else {
-                    content.innerHTML = `<pre style="white-space: pre-wrap; font-family: monospace;">${data}</pre>`;
-                }
-            } else if (fileExtension === 'json') {
-                // JSON 파일: 예쁘게 포맷팅
-                try {
-                    const jsonData = JSON.parse(data);
-                    const formattedJson = JSON.stringify(jsonData, null, 2);
-                    content.innerHTML = `
-                        <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; max-height: 400px; overflow: auto;">
-                            <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.4; white-space: pre-wrap;">${formattedJson}</pre>
-                        </div>
-                    `;
-                } catch (e) {
-                    content.innerHTML = `<pre style="white-space: pre-wrap; font-family: monospace;">${data}</pre>`;
-                }
-            } else {
-                // 텍스트 파일: 코드블록 스타일
-                content.innerHTML = `
-                    <div style="background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; max-height: 400px; overflow: auto;">
-                        <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.4; white-space: pre-wrap;">${data}</pre>
-                    </div>
-                `;
-            }
-            
-            modalContent.appendChild(header);
-            modalContent.appendChild(content);
-            modal.appendChild(modalContent);
-            document.body.appendChild(modal);
-            
-            // 이벤트 리스너 추가
-            document.getElementById('close-modal').addEventListener('click', () => {
-                document.body.removeChild(modal);
-            });
-            
-            document.getElementById('download-btn').addEventListener('click', () => {
-                window.open(`/api/documents/download/${systemFilename}`, '_blank');
-            });
-            
-            // 모달 외부 클릭 시 닫기
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    document.body.removeChild(modal);
-                }
-            });
-            
-        } catch (error) {
-            console.error('파일 상세 화면 오류:', error);
-            alert('파일을 불러올 수 없습니다: ' + error.message);
-        }
-    }
-
     // 문서 삭제 함수
     function deleteDocument(systemFilename, displayFilename) {
         if (confirm(`정말 "${displayFilename}" 파일을 삭제하시겠습니까?`)) {

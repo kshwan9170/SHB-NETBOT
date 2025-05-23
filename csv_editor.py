@@ -191,33 +191,6 @@ def update_csv_file(file_path: str, headers: List[str], data: List[List[str]], e
         print(f"CSV 파일 업데이트 중 오류: {str(e)}")
         return False
 
-def fix_unicode_in_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    """
-    데이터프레임의 모든 문자열 값에서 유니코드 이스케이프를 실제 한글로 변환합니다.
-    """
-    import codecs
-    
-    # 데이터프레임 복사
-    df_fixed = df.copy()
-    
-    # 모든 열에 대해 유니코드 디코딩 적용
-    for col in df_fixed.columns:
-        # 컬럼명도 수정
-        if isinstance(col, str) and '\\u' in col:
-            try:
-                new_col = codecs.decode(col, 'unicode_escape')
-                df_fixed = df_fixed.rename(columns={col: new_col})
-                col = new_col
-            except:
-                pass
-        
-        # 컬럼 데이터 수정
-        df_fixed[col] = df_fixed[col].apply(lambda x: 
-            codecs.decode(x, 'unicode_escape') if isinstance(x, str) and '\\u' in x else x
-        )
-    
-    return df_fixed
-
 def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, metadata_filename: str = None) -> str:
     """
     CSV 파일을 편집 가능한 HTML 테이블로 변환합니다.
@@ -231,8 +204,6 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
     Returns:
         HTML 문자열
     """
-    # 유니코드 이스케이프 문제 수정
-    df = fix_unicode_in_dataframe(df)
     # 메타데이터 파일 존재 여부 확인
     metadata_exists = metadata_filename and os.path.exists(metadata_filename)
     
@@ -242,11 +213,11 @@ def get_csv_preview_html(df: pd.DataFrame, filename: str, system_filename: str, 
     if metadata_exists:
         metadata_button = f'<button class="btn btn-info" style="padding: 8px 16px; border-radius: 4px; font-weight: 500;" onclick="viewMetadata(\'{metadata_filename}\')">메타데이터 보기</button>'
     
-    # 테이블 HTML 생성 (한글 텍스트 표시 문제 해결)
-    # escape=False를 추가하여 HTML 엔티티 이스케이프 방지
+    # 테이블 HTML 생성 (특수 스타일 적용)
+    # 테이블 스크롤을 고려하여 고정 너비를 제거함
     table_html = df.to_html(classes='editable-csv-table', index=True, na_rep='', 
                            border=1, justify='left', 
-                           col_space=120, escape=False)  # escape=False 추가
+                           col_space=120)  # 컬럼 최소 너비 설정
     
     # 모든 컬럼이 제대로 표시되는지 확인
     print(f"CSV 열 목록: {df.columns.tolist()}")
