@@ -415,12 +415,11 @@ body.offline-mode .logo img {
     font-weight: 800;
     margin-bottom: 2rem;
     letter-spacing: -1px;
-    background: linear-gradient(135deg, #1C2C48, #203659);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    animation: gradientShift 8s ease infinite;
-    text-shadow: 0 2px 4px rgba(28, 44, 72, 0.3);
+    color: #1C2C48;
+    text-shadow: 
+        0 2px 4px rgba(28, 44, 72, 0.2),
+        0 4px 8px rgba(32, 54, 89, 0.1);
+    position: relative;
 }
 
 @keyframes gradientShift {
