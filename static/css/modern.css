@@ -179,6 +179,11 @@ img {
     height: 3.2rem;
 }
 
+/* 신한은행 로고 하얀색 필터 */
+.shinhan-logo-white {
+    filter: brightness(0) invert(1);
+}
+
 .bot-name {
     font-size: 1.8rem !important;
     font-weight: 600 !important;
