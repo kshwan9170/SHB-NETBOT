@@ -2112,7 +2112,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const filesPerPage = 5;
     let allDocuments = [];
     
-    // 메인페이지 파일 미리보기 함수
+    // 메인페이지 파일 미리보기 함수 (파일관리자와 동일한 기능)
     function openMainPageFilePreview(systemFilename, originalFilename) {
         console.log('메인페이지 파일 미리보기 호출:', originalFilename);
         
@@ -2140,9 +2140,9 @@ document.addEventListener('DOMContentLoaded', function() {
         modalContent.style.cssText = `
             background: white;
             border-radius: 12px;
-            width: 90vw;
-            max-width: 1200px;
-            height: 85vh;
+            width: 95vw;
+            max-width: 1400px;
+            height: 90vh;
             display: flex;
             flex-direction: column;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
@@ -2165,7 +2165,7 @@ document.addEventListener('DOMContentLoaded', function() {
         header.innerHTML = `
             <div>
                 <h3 style="margin: 0; font-size: 18px; font-weight: 600;">📁 ${originalFilename}</h3>
-                <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">파일 미리보기</p>
+                <p style="margin: 5px 0 0 0; font-size: 14px; opacity: 0.9;">파일 보기 및 편집</p>
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
                 <a href="/api/documents/view/${systemFilename}" 
@@ -2186,7 +2186,7 @@ document.addEventListener('DOMContentLoaded', function() {
         content.style.cssText = `
             flex: 1;
             overflow: auto;
-            padding: 20px;
+            padding: 0;
             background: #fafafa;
         `;
         
@@ -2223,15 +2223,28 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // 파일 내용 로드
+        // 파일 내용 로드 (JSON 응답 처리)
         fetch(`/api/documents/view/${systemFilename}`)
-            .then(response => response.text())
+            .then(response => response.json())
             .then(data => {
-                content.innerHTML = `
-                    <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-height: calc(85vh - 140px); overflow: auto;">
-                        ${data}
-                    </div>
-                `;
+                if (data.status === 'success') {
+                    if (data.html_content && data.file_type === 'csv') {
+                        // CSV 파일의 경우 편집 가능한 HTML 콘텐츠 표시
+                        content.innerHTML = data.content;
+                        
+                        // CSV 편집 기능 활성화
+                        initializeCSVEditingInModal(modal, systemFilename, data.encoding || 'utf-8');
+                    } else {
+                        // 일반 텍스트 파일
+                        content.innerHTML = `
+                            <div style="background: white; border-radius: 8px; margin: 20px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                <pre style="white-space: pre-wrap; font-family: 'Courier New', monospace; line-height: 1.5;">${data.content || data}</pre>
+                            </div>
+                        `;
+                    }
+                } else {
+                    throw new Error(data.message || '파일을 불러올 수 없습니다.');
+                }
             })
             .catch(error => {
                 console.error('파일 로드 오류:', error);
@@ -2243,6 +2256,120 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 `;
             });
+    }
+    
+    // 모달 내에서 CSV 편집 기능 초기화
+    function initializeCSVEditingInModal(modal, systemFilename, encoding) {
+        // 편집 모드 버튼 이벤트
+        const editButton = modal.querySelector('#edit-mode-btn');
+        const saveButton = modal.querySelector('#save-changes-btn');
+        const cancelButton = modal.querySelector('#cancel-edit-btn');
+        const table = modal.querySelector('.editable-csv-table');
+        
+        if (editButton && table) {
+            editButton.addEventListener('click', function() {
+                // 편집 모드 활성화
+                table.classList.add('editing');
+                editButton.style.display = 'none';
+                if (saveButton) saveButton.style.display = 'inline-block';
+                if (cancelButton) cancelButton.style.display = 'inline-block';
+                
+                // 테이블 셀을 편집 가능하게 만들기
+                const cells = table.querySelectorAll('td');
+                cells.forEach(cell => {
+                    cell.contentEditable = true;
+                    cell.style.border = '2px solid #4CD6B9';
+                    cell.style.backgroundColor = '#f8ffff';
+                });
+            });
+        }
+        
+        if (saveButton) {
+            saveButton.addEventListener('click', function() {
+                saveCSVChangesInModal(modal, systemFilename, encoding);
+            });
+        }
+        
+        if (cancelButton) {
+            cancelButton.addEventListener('click', function() {
+                // 편집 모드 취소 - 페이지 새로고침
+                location.reload();
+            });
+        }
+    }
+    
+    // 모달 내에서 CSV 변경사항 저장
+    function saveCSVChangesInModal(modal, systemFilename, encoding) {
+        const table = modal.querySelector('.editable-csv-table');
+        if (!table) return;
+        
+        // 헤더와 데이터 수집
+        const headers = [];
+        const data = [];
+        
+        const headerRow = table.querySelector('thead tr');
+        if (headerRow) {
+            headerRow.querySelectorAll('th').forEach(th => {
+                headers.push(th.textContent.trim());
+            });
+        }
+        
+        const dataRows = table.querySelectorAll('tbody tr');
+        dataRows.forEach(row => {
+            const rowData = [];
+            row.querySelectorAll('td').forEach(td => {
+                rowData.push(td.textContent.trim());
+            });
+            data.push(rowData);
+        });
+        
+        // 서버에 저장 요청
+        fetch(`/api/documents/edit/${systemFilename}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                headers: headers,
+                data: data,
+                encoding: encoding
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.status === 'success') {
+                alert('✅ 파일이 성공적으로 저장되었습니다!');
+                
+                // 편집 모드 해제
+                table.classList.remove('editing');
+                const cells = table.querySelectorAll('td');
+                cells.forEach(cell => {
+                    cell.contentEditable = false;
+                    cell.style.border = '';
+                    cell.style.backgroundColor = '';
+                });
+                
+                // 버튼 상태 복원
+                const editButton = modal.querySelector('#edit-mode-btn');
+                const saveButton = modal.querySelector('#save-changes-btn');
+                const cancelButton = modal.querySelector('#cancel-edit-btn');
+                
+                if (editButton) editButton.style.display = 'inline-block';
+                if (saveButton) saveButton.style.display = 'none';
+                if (cancelButton) cancelButton.style.display = 'none';
+                
+                // 문서 목록 새로고침
+                if (typeof loadDocuments === 'function') {
+                    loadDocuments();
+                }
+            } else {
+                alert('❌ 저장 중 오류가 발생했습니다: ' + result.message);
+            }
+        })
+        .catch(error => {
+            console.error('저장 오류:', error);
+            alert('❌ 저장 중 오류가 발생했습니다.');
+        });
     }
 
     // 문서 목록 로드 함수
