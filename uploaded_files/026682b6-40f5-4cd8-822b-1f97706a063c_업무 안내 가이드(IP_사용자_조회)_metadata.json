@@ -1,6 +1,6 @@
 {
-  "file_name": "4ae4fb1e-9f9b-4c79-b5a3-f6cde39ee7cd_업무 안내 가이드(IP_사용자_조회).csv",
-  "file_path": "uploaded_files/4ae4fb1e-9f9b-4c79-b5a3-f6cde39ee7cd_업무 안내 가이드(IP_사용자_조회).csv",
+  "file_name": "026682b6-40f5-4cd8-822b-1f97706a063c_업무 안내 가이드(IP_사용자_조회).csv",
+  "file_path": "uploaded_files/026682b6-40f5-4cd8-822b-1f97706a063c_업무 안내 가이드(IP_사용자_조회).csv",
   "encoding": "cp949",
   "row_count": 5,
   "column_count": 8,
@@ -78,7 +78,7 @@
     }
   ],
   "common_prefix": "",
-  "generated_at": "2025-05-23T15:07:42.423632",
+  "generated_at": "2025-05-23T15:07:43.167511",
   "suggestions": [
     "'비고' 컬럼은 60.0%가 빈 값입니다. 이 컬럼 사용 시 주의하세요."
   ]
