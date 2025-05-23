@@ -147,6 +147,14 @@ def sync_offline_data():
             'message': f'오프라인 데이터 동기화 중 오류가 발생했습니다: {str(e)}'
         }), 500
 
+@app.route('/uploads/<path:filename>')
+def upload_file_direct(filename):
+    """업로드된 파일 직접 접근을 위한 라우트"""
+    try:
+        return send_from_directory('uploaded_files', filename, as_attachment=False)
+    except FileNotFoundError:
+        abort(404)
+
 @app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.get_json()
@@ -681,11 +689,10 @@ def view_document(system_filename):
         elif file_extension == 'pdf':
             try:
                 # 파일 크기 확인
-                import os
                 file_size = os.path.getsize(file_path)
                 
                 # PDF 미리보기를 위한 iframe 생성 (직접 파일 경로 사용)
-                pdf_url = f"/api/documents/download/{system_filename}"
+                pdf_url = f"/uploads/{system_filename}"
                 
                 content = f'''
                 <div class="pdf-container">

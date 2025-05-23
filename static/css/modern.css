@@ -28,6 +28,12 @@
     
     /* 그림자 */
     --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.05);
+    
+    /* 성공/상태 컬러 */
+    --success: #27AE60;
+    --success-light: rgba(39, 174, 96, 0.1);
+    --info: #3498DB;
+    --warning: #F39C12;
     --shadow-md: 0 5px 20px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.1);
     --shadow-inset: inset 0 2px 5px rgba(0, 0, 0, 0.05);
