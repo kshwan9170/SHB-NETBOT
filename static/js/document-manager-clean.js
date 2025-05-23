@@ -92,14 +92,17 @@ document.addEventListener('DOMContentLoaded', function() {
             if (allSuccess) {
                 showMessage('success', `✅ ${filename} 파일이 성공적으로 업로드되었습니다!`);
                 
-                // 즉시 파일 목록 새로고침 (여러 번 시도로 확실히 반영)
-                loadDocuments();
-                setTimeout(() => {
+                // 즉시 파일 목록 새로고침 (통합 함수 사용)
+                if (typeof refreshDocumentList === 'function') {
+                    refreshDocumentList();
+                    setTimeout(() => refreshDocumentList(), 500);
+                    setTimeout(() => refreshDocumentList(), 1000);
+                } else {
+                    // 폴백: 기존 방식
                     loadDocuments();
-                }, 500);
-                setTimeout(() => {
-                    loadDocuments();
-                }, 1000);
+                    setTimeout(() => loadDocuments(), 500);
+                    setTimeout(() => loadDocuments(), 1000);
+                }
             } else {
                 const failedFiles = data.results.filter(r => r.status !== 'success');
                 showMessage('error', `❌ 업로드 실패: ${failedFiles[0].message || '처리 중 오류가 발생했습니다.'}`);
