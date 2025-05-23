@@ -34,8 +34,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    // 문서 업로드 후 이벤트 감지
-    document.getElementById('uploadForm')?.addEventListener('submit', function(e) {
+    // 문서 업로드 후 이벤트 감지 (중복 방지)
+    const uploadForm = document.getElementById('uploadForm');
+    if (uploadForm && !uploadForm.hasAttribute('data-listener-added')) {
+        uploadForm.setAttribute('data-listener-added', 'true');
+        uploadForm.addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
         const submitBtn = this.querySelector('button[type="submit"]');
