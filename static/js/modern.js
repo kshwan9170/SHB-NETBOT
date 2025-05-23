@@ -2011,6 +2011,31 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 파일 입력 초기화
                     fileInput.value = '';
                     
+                    // 🔄 SHB-NetBot_Flow.csv 파일 업로드 감지 및 Flow 업데이트 이벤트 발생
+                    const hasFlowFile = files.some(file => 
+                        file.name.includes('SHB-NetBot_Flow') && file.name.endsWith('.csv')
+                    );
+                    
+                    if (hasFlowFile) {
+                        console.log('🔄 SHB-NetBot_Flow.csv 업로드 완료 - Flow 업데이트 이벤트 발생');
+                        
+                        // 즉시 Flow 업데이트 이벤트 발생
+                        setTimeout(() => {
+                            const flowUpdateEvent = new CustomEvent('flowUpdated', {
+                                detail: { 
+                                    source: 'fileUpload',
+                                    files: files.filter(f => f.name.includes('SHB-NetBot_Flow'))
+                                }
+                            });
+                            document.dispatchEvent(flowUpdateEvent);
+                            
+                            // 사용자에게 업데이트 알림
+                            showFlowUpdateNotification();
+                            
+                            console.log('✅ Flow 업데이트 이벤트 발생 완료');
+                        }, 2000); // 2초 후 실행 (JSON 변환 완료 충분한 대기)
+                    }
+                    
                     // 문서 목록 업데이트
                     loadDocuments();
                     
@@ -2095,6 +2120,86 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
         
+        // Flow 업데이트 알림 함수
+        function showFlowUpdateNotification() {
+            // 기존 알림이 있다면 제거
+            const existingNotification = document.querySelector('.flow-update-notification');
+            if (existingNotification) {
+                existingNotification.remove();
+            }
+            
+            // 새로운 알림 생성
+            const notification = document.createElement('div');
+            notification.className = 'flow-update-notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #2563EB, #1D4ED8);
+                color: white;
+                padding: 16px 24px;
+                border-radius: 12px;
+                box-shadow: 0 8px 32px rgba(37, 99, 235, 0.3);
+                z-index: 10000;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                font-size: 14px;
+                font-weight: 500;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                animation: slideInFromRight 0.4s ease-out;
+            `;
+            
+            notification.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 12l2 2 4-4"></path>
+                    <circle cx="12" cy="12" r="10"></circle>
+                </svg>
+                <span>🔄 Flow 데이터가 업데이트되었습니다!</span>
+            `;
+            
+            // 스타일 추가 (애니메이션)
+            if (!document.querySelector('#flow-notification-styles')) {
+                const style = document.createElement('style');
+                style.id = 'flow-notification-styles';
+                style.textContent = `
+                    @keyframes slideInFromRight {
+                        from {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                        to {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                    }
+                    @keyframes slideOutToRight {
+                        from {
+                            transform: translateX(0);
+                            opacity: 1;
+                        }
+                        to {
+                            transform: translateX(100%);
+                            opacity: 0;
+                        }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            document.body.appendChild(notification);
+            
+            // 4초 후 자동 제거
+            setTimeout(() => {
+                notification.style.animation = 'slideOutToRight 0.4s ease-in';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 400);
+            }, 4000);
+        }
+
         // 업로드 시작 상태 표시 함수
         function showUploadStarted() {
             uploadDropzone.classList.add('uploading');

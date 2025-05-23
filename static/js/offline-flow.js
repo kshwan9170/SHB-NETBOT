@@ -12,6 +12,56 @@ class OfflineFlowSystem {
         this.flowHistory = [];
         
         this.init();
+        this.setupFlowUpdateListener();
+    }
+    
+    setupFlowUpdateListener() {
+        // 파일 업로드 완료 이벤트 리스너 (SHB-NetBot_Flow.csv 감지용)
+        document.addEventListener('flowUpdated', () => {
+            console.log('🔄 Flow 업데이트 감지 - 새로운 Flow 데이터 로드 중...');
+            this.reloadFlowData();
+        });
+        
+        // 정기적으로 Flow 데이터 갱신 확인 (5초마다)
+        setInterval(() => {
+            this.checkForFlowUpdates();
+        }, 5000);
+    }
+    
+    async reloadFlowData() {
+        console.log('🔄 Flow 데이터 새로고침 시작...');
+        await this.loadFlowData();
+        
+        // 현재 Flow 모드에 있다면 시작점으로 리셋
+        if (this.isFlowMode) {
+            this.resetToStart();
+            console.log('✅ Flow 데이터 업데이트 완료 - 시작점으로 리셋됨');
+        }
+    }
+    
+    async checkForFlowUpdates() {
+        try {
+            const lastCheck = localStorage.getItem('shb_flow_last_check');
+            const now = Date.now();
+            
+            // 마지막 확인 후 30초 이상 경과한 경우만 체크
+            if (!lastCheck || (now - parseInt(lastCheck)) > 30000) {
+                const response = await fetch('/static/data/offline_flow.json', { method: 'HEAD' });
+                if (response.ok) {
+                    const lastModified = response.headers.get('Last-Modified');
+                    const storedModified = localStorage.getItem('shb_flow_last_modified');
+                    
+                    if (lastModified && lastModified !== storedModified) {
+                        console.log('📄 새로운 Flow 파일 감지됨 - 자동 업데이트 시작');
+                        localStorage.setItem('shb_flow_last_modified', lastModified);
+                        await this.reloadFlowData();
+                    }
+                }
+                localStorage.setItem('shb_flow_last_check', now.toString());
+            }
+        } catch (error) {
+            // 조용히 무시 (오프라인 상황 등)
+        }
     }
     
     async init() {
@@ -22,15 +72,38 @@ class OfflineFlowSystem {
     
     async loadFlowData() {
         try {
-            const response = await fetch('/static/data/offline_flow.json');
+            // 캐시 무시하고 최신 JSON 파일 강제 로드
+            const timestamp = new Date().getTime();
+            const response = await fetch(`/static/data/offline_flow.json?v=${timestamp}`);
             if (response.ok) {
                 this.flowData = await response.json();
-                console.log('Flow 데이터 로드 완료:', Object.keys(this.flowData).length, '개 노드');
+                console.log('✅ Flow 데이터 로드 완료:', Object.keys(this.flowData).length, '개 노드');
+                
+                // localStorage에 최신 Flow 데이터 저장 (오프라인 백업용)
+                localStorage.setItem('shb_flow_data', JSON.stringify(this.flowData));
+                localStorage.setItem('shb_flow_timestamp', timestamp.toString());
             } else {
-                console.warn('Flow 데이터를 로드할 수 없습니다.');
+                console.warn('서버에서 Flow 데이터를 로드할 수 없습니다. 로컬 백업 확인 중...');
+                this.loadFromLocalStorage();
             }
         } catch (error) {
             console.error('Flow 데이터 로드 중 오류:', error);
+            this.loadFromLocalStorage();
+        }
+    }
+
+    loadFromLocalStorage() {
+        try {
+            const cachedData = localStorage.getItem('shb_flow_data');
+            if (cachedData) {
+                this.flowData = JSON.parse(cachedData);
+                const timestamp = localStorage.getItem('shb_flow_timestamp');
+                console.log('📦 로컬 백업 Flow 데이터 사용:', Object.keys(this.flowData).length, '개 노드', `(${timestamp})`);
+            } else {
+                console.warn('Flow 데이터를 찾을 수 없습니다.');
+            }
+        } catch (error) {
+            console.error('로컬 Flow 데이터 로드 오류:', error);
         }
     }
     
