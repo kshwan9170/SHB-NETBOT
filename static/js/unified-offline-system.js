@@ -220,10 +220,12 @@ class UnifiedOfflineSystem {
                     const user = data['사용자명'] || data['사용자'] || '';
                     const dept = data['부서'] || '';
                     const contact = data['연락처'] || '';
+                    const status = data['상태'] || '';
+                    const lastAccess = data['최종 접속일'] || '';
                     
                     if (ip) {
                         result.query = `${ip} IP 주소 사용자 조회`;
-                        result.response = `IP 주소 ${ip}의 사용자 정보:\n- 사용자명: ${user}\n- 부서: ${dept}\n- 연락처: ${contact}`;
+                        result.response = `${ip}는 ${dept} ${user}님이 사용 중입니다. 연락처는 ${contact}이며, 현재 상태는 ${status}입니다. 최종 접속일은 ${lastAccess}입니다.`;
                     }
                     break;
 
@@ -258,37 +260,54 @@ class UnifiedOfflineSystem {
         return result;
     }
 
-    // IndexedDB에 레코드 저장
+    // IndexedDB에 레코드 저장 (강화된 버전)
     async saveRecords(records) {
         if (!this.db) await this.initDB();
         if (records.length === 0) return true;
 
         return new Promise((resolve, reject) => {
-            const transaction = this.db.transaction([this.csvStoreName], 'readwrite');
-            const store = transaction.objectStore(this.csvStoreName);
+            try {
+                const transaction = this.db.transaction([this.csvStoreName], 'readwrite');
+                const store = transaction.objectStore(this.csvStoreName);
 
-            let completed = 0;
-            let failed = 0;
+                let completed = 0;
+                let failed = 0;
 
-            records.forEach(record => {
-                const request = store.put(record);
-                
-                request.onsuccess = () => {
-                    completed++;
-                    if (completed + failed === records.length) {
-                        console.log(`레코드 저장 완료: ${completed}개 성공, ${failed}개 실패`);
-                        resolve(completed > 0);
-                    }
+                // 트랜잭션 완료 시
+                transaction.oncomplete = () => {
+                    console.log(`IndexedDB 트랜잭션 완료: ${completed}개 성공, ${failed}개 실패`);
+                    resolve(completed > 0);
                 };
 
-                request.onerror = () => {
-                    failed++;
-                    console.error('레코드 저장 실패:', request.error);
-                    if (completed + failed === records.length) {
-                        resolve(completed > 0);
-                    }
+                // 트랜잭션 오류 시
+                transaction.onerror = () => {
+                    console.error('IndexedDB 트랜잭션 오류:', transaction.error);
+                    resolve(false);
                 };
-            });
+
+                // 각 레코드 저장
+                records.forEach((record, index) => {
+                    try {
+                        const request = store.put(record);
+                        
+                        request.onsuccess = () => {
+                            completed++;
+                        };
+
+                        request.onerror = () => {
+                            failed++;
+                            console.error(`레코드 ${index} 저장 실패:`, request.error);
+                        };
+                    } catch (error) {
+                        failed++;
+                        console.error(`레코드 ${index} 처리 오류:`, error);
+                    }
+                });
+
+            } catch (error) {
+                console.error('IndexedDB 저장 중 오류:', error);
+                resolve(false);
+            }
         });
     }
 
