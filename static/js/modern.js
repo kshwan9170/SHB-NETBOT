@@ -2050,7 +2050,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 실제 오류만 로깅 (빈 객체나 성공 응답은 제외)
                 if (error && error.message) {
                     console.error('Upload process failed:', error.message);
-                    showNotification('❌ 업로드 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+                    // showNotification이 정의되어 있는지 확인 후 사용
+                    if (typeof showNotification === 'function') {
+                        showNotification('❌ 업로드 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+                    } else {
+                        alert('❌ 업로드 중 오류가 발생했습니다. 다시 시도해주세요.');
+                    }
                 }
             } finally {
                 // 업로드 버튼 다시 활성화
