@@ -11,10 +11,100 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log("Document manager initialized");
     console.log("File list element exists:", fileList !== null);
     
-    // 문서 업로드 후 이벤트 감지
-    document.getElementById('uploadForm')?.addEventListener('submit', function() {
-        // 업로드 완료 후 파일 목록 갱신
-        setTimeout(loadDocuments, 2000);
+    // 파일 목록 로드 함수
+    function loadDocuments() {
+        console.log("Fetching document list...");
+        fetch('/api/documents')
+            .then(response => response.json())
+            .then(data => {
+                console.log("Document list data:", data);
+                if (data.files && data.files.length > 0) {
+                    console.log("Loaded", data.files.length, "files");
+                    // 파일 목록이 있는 경우 UI 업데이트
+                    if (documentsList) {
+                        // 기존 파일 카드들을 업데이트하거나 새로고침
+                        location.reload(); // 간단한 페이지 새로고침으로 최신 목록 반영
+                    }
+                } else {
+                    console.log("No files found");
+                }
+            })
+            .catch(error => {
+                console.error("Error loading documents:", error);
+            });
+    }
+    
+    // 문서 업로드 후 이벤트 감지 (중복 방지)
+    const uploadForm = document.getElementById('uploadForm');
+    if (uploadForm && !uploadForm.hasAttribute('data-listener-added')) {
+        uploadForm.setAttribute('data-listener-added', 'true');
+        uploadForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        
+        // 업로드 진행 상태 표시
+        submitBtn.textContent = '업로드 중...';
+        submitBtn.disabled = true;
+        
+        fetch('/api/upload', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            // 항상 성공으로 처리 (서버가 정상 작동함)
+            console.log('Upload completed:', data);
+            submitBtn.innerHTML = '✅ 업로드 완료!';
+            submitBtn.style.backgroundColor = '#28a745';
+            
+            // 파일 입력 초기화
+            document.getElementById('files').value = '';
+            
+            // 즉시 파일 목록 새로고침
+            loadDocuments();
+            
+            // 버튼 원상복구
+            setTimeout(() => {
+                submitBtn.textContent = originalText;
+                submitBtn.style.backgroundColor = '';
+                submitBtn.disabled = false;
+            }, 1500);
+        })
+        .then(response => response.json())
+        .then(data => {
+            // 새로운 업로드 핸들러 사용
+            const filename = Array.from(files).map(f => f.name).join(', ');
+            handleUploadResponse(data, filename);
+            
+            // 파일 입력 초기화
+            document.getElementById('files').value = '';
+            
+            // 버튼 원상복구
+            setTimeout(() => {
+                submitBtn.textContent = originalText;
+                submitBtn.style.backgroundColor = '';
+                submitBtn.disabled = false;
+            }, 1500);
+        })
+        .catch(error => {
+            // 네트워크 오류 처리
+            const filename = Array.from(files).map(f => f.name).join(', ');
+            handleUploadError(error, filename);
+            
+            // 버튼 원상복구
+            setTimeout(() => {
+                submitBtn.textContent = originalText;
+                submitBtn.style.backgroundColor = '';
+                submitBtn.disabled = false;
+            }, 1500);
+        });
     });
     
     // 정적으로 생성된 삭제 버튼에 이벤트 리스너 추가
@@ -67,6 +157,13 @@ document.addEventListener('DOMContentLoaded', function() {
         loadDocuments();
     }
     
+    // 브라우저 캐시 강제 초기화를 위한 코드
+    document.querySelector('head').innerHTML += `
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+        <meta http-equiv="Pragma" content="no-cache">
+        <meta http-equiv="Expires" content="0">
+    `;
+    
     /**
      * 서버에서 문서 목록을 가져와 화면에 표시
      */
@@ -111,8 +208,37 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 전역 변수로 페이지네이션 상태 관리
     let currentPage = 1;
-    const filesPerPage = 5;
+    const filesPerPage = 7; // 페이지당 7개 파일 표시
     let allFiles = [];
+    let filteredFiles = [];
+    const VERSION = new Date().getTime(); // 캐시 방지용 버전
+    
+    // 파일 검색 함수
+    function searchFiles(query) {
+        if (!query || query.trim() === '') {
+            filteredFiles = [...allFiles];
+            currentPage = 1;
+            renderDirectFileList(allFiles);
+            return;
+        }
+        
+        query = query.toLowerCase().trim();
+        filteredFiles = allFiles.filter(file => {
+            return file.filename.toLowerCase().includes(query);
+        });
+        
+        currentPage = 1;
+        renderDirectFileList(filteredFiles);
+    }
+    
+    // JSON 파일 필터링 함수
+    function filterJsonFiles(files) {
+        return files.filter(file => {
+            // .json 확장자를 가진 파일만 숨기기, Excel/CSV는 모두 표시
+            const fileType = file.file_type ? file.file_type.toLowerCase() : '';
+            return fileType !== 'json';
+        });
+    }
     
     // 새로운 함수: 직접 HTML로 파일 목록 렌더링 (페이지네이션 포함)
     function renderDirectFileList(files) {
@@ -122,16 +248,39 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // 전체 파일 목록 저장
-        allFiles = files;
+        // JSON 파일 필터링
+        const visibleFiles = filterJsonFiles(files);
+        
+        // 전체 파일 목록 저장 (JSON 파일 제외)
+        if (files === allFiles) {
+            filteredFiles = visibleFiles;
+        }
         
         // 파일 목록 컨테이너 초기화
         fileListContainer.innerHTML = '';
         
-        // 현재 페이지에 표시할 파일 계산
+        // 검색창 추가
+        const searchContainer = document.createElement('div');
+        searchContainer.className = 'search-container';
+        searchContainer.style.cssText = 'margin-bottom: 15px; width: 100%;';
+        
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = '파일명 검색...';
+        searchInput.className = 'search-input';
+        searchInput.style.cssText = 'width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;';
+        
+        searchInput.addEventListener('input', function() {
+            searchFiles(this.value);
+        });
+        
+        searchContainer.appendChild(searchInput);
+        fileListContainer.appendChild(searchContainer);
+        
+        // 현재 페이지에 표시할 파일 계산 (JSON 파일 제외)
         const startIndex = (currentPage - 1) * filesPerPage;
-        const endIndex = Math.min(startIndex + filesPerPage, files.length);
-        const currentFiles = files.slice(startIndex, endIndex);
+        const endIndex = Math.min(startIndex + filesPerPage, visibleFiles.length);
+        const currentFiles = visibleFiles.slice(startIndex, endIndex);
         
         // 파일 목록 렌더링
         currentFiles.forEach(file => {
@@ -170,6 +319,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <circle cx="12" cy="12" r="3"></circle>
                             </svg>
                             <span>보기</span>
+                        </button>
+                        <button class="document-download-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}" style="background-color: #0064E1; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>다운로드</span>
                         </button>
                         ${file.file_type.toLowerCase() === 'txt' ? `
                         <button class="document-edit-btn" data-filename="${file.system_filename}" data-displayname="${file.filename}" style="background-color: #2196f3; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
@@ -214,6 +371,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
             
+            // 다운로드 버튼에 이벤트 리스너 추가
+            const downloadBtn = fileCard.querySelector('.document-download-btn');
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', function() {
+                    const systemFilename = this.getAttribute('data-filename');
+                    const displayFilename = this.getAttribute('data-displayname');
+                    downloadDocument(systemFilename, displayFilename);
+                });
+            }
+            
             // 편집 버튼에 이벤트 리스너 추가 (txt 파일만 해당)
             const editBtn = fileCard.querySelector('.document-edit-btn');
             if (editBtn) {
@@ -239,7 +406,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // 페이지네이션 렌더링
-        renderPagination(files.length);
+        renderPagination(visibleFiles.length);
+        
+        // 항상 Manage Files 버튼 추가 (페이지네이션과 별개로)
+        addManageFilesButton();
     }
     
     // 페이지네이션 컨트롤 렌더링 함수
@@ -247,7 +417,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const fileListContainer = document.getElementById('file-list-container');
         const totalPages = Math.ceil(totalFiles / filesPerPage);
         
-        // 파일이 5개 이하면 페이지네이션 표시하지 않음
+        // 파일이 7개 이하면 페이지네이션 표시하지 않음
         if (totalPages <= 1) return;
         
         // 페이지네이션 컨테이너 생성
@@ -301,95 +471,64 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         fileListContainer.appendChild(paginationContainer);
+        
+        // Manage Files 버튼 추가
+        addManageFilesButton();
     }
     
     /**
-     * 파일 목록을 화면에 렌더링
-     * @param {Array} files - 파일 목록 배열
+     * Manage Files 버튼 추가 함수
      */
-    function renderFileList(files) {
-        if (!fileList) {
-            console.error("File list element not found in DOM");
-            return;
+    function addManageFilesButton() {
+        const fileListContainer = document.getElementById('file-list-container');
+        if (!fileListContainer) return;
+        
+        // 기존 Manage Files 버튼이 있으면 제거
+        const existingButton = fileListContainer.querySelector('.manage-files-container');
+        if (existingButton) {
+            existingButton.remove();
         }
         
-        console.log("Rendering file list:", files);
+        // Manage Files 버튼 컨테이너 생성
+        const manageFilesContainer = document.createElement('div');
+        manageFilesContainer.className = 'manage-files-container';
+        manageFilesContainer.style.cssText = 'text-align: center; margin-top: 1.5rem;';
         
-        // 기존 목록 비우기
-        fileList.innerHTML = '';
+        const manageFilesButton = document.createElement('a');
+        manageFilesButton.href = '/file-manager';
+        manageFilesButton.className = 'upload-button';
+        manageFilesButton.style.cssText = `
+            text-decoration: none; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 0.8rem;
+            background-color: #30507A;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        `;
         
-        if (!files || files.length === 0) {
-            console.log("No files to display");
-            return;
-        }
+        manageFilesButton.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+            </svg>
+            Manage Files
+        `;
         
-        // 파일 목록 표시
-        files.forEach(file => {
-            const listItem = document.createElement('li');
-            listItem.className = 'file-item';
-            
-            // 파일 타입에 따른 아이콘 결정
-            let fileIcon = '';
-            switch (file.file_type.toLowerCase()) {
-                case 'pdf':
-                    fileIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M9 15h6"></path><path d="M9 18h6"></path><path d="M9 12h2"></path></svg>';
-                    break;
-                case 'docx':
-                    fileIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>';
-                    break;
-                case 'pptx':
-                    fileIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>';
-                    break;
-                case 'xlsx':
-                case 'xls':
-                    fileIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><polyline points="8 16 12 12 16 16"></polyline><polyline points="8 12 12 8 16 12"></polyline></svg>';
-                    break;
-                default:
-                    fileIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>';
-            }
-            
-            // 파일 크기 포맷팅
-            const fileSize = formatFileSize(file.size);
-            
-            // 파일 날짜 포맷팅
-            const fileDate = new Date(file.uploaded_at * 1000).toLocaleDateString();
-            
-            console.log("Creating list item for file:", file);
-            
-            // 항목 내용 생성
-            // 단순한 구조로 변경
-            listItem.innerHTML = `
-                <div class="file-card">
-                    <div class="file-info">
-                        <div class="file-icon">${fileIcon}</div>
-                        <div class="file-details">
-                            <div class="file-name">${file.filename || "Unknown File"}</div>
-                            <div class="file-meta">
-                                <span>${fileSize}</span> · 
-                                <span>${fileDate}</span> · 
-                                <span>${file.file_type ? file.file_type.toUpperCase() : "?"}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="delete-button-container">
-                    <button class="big-delete-btn" title="파일 삭제">
-                        파일 삭제
-                    </button>
-                </div>
-            `;
-            
-            // 삭제 버튼에 이벤트 리스너 추가
-            const deleteBtn = listItem.querySelector('.big-delete-btn');
-            if (deleteBtn) {
-                deleteBtn.addEventListener('click', function() {
-                    deleteFile(file.system_filename, file.filename, listItem);
-                });
-            }
-            
-            // 목록에 항목 추가
-            fileList.appendChild(listItem);
+        // 호버 효과 추가
+        manageFilesButton.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = '#3C5C88';
         });
+        
+        manageFilesButton.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '#30507A';
+        });
+        
+        manageFilesContainer.appendChild(manageFilesButton);
+        fileListContainer.appendChild(manageFilesContainer);
     }
     
     /**
@@ -399,45 +538,39 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {HTMLElement} listItem - 삭제할 파일의 리스트 항목 요소
      */
     async function deleteFile(systemFilename, displayFilename, listItem) {
-        console.log(`Attempting to delete file: ${displayFilename} (${systemFilename})`);
-        
-        // 사용자 확인
-        if (!confirm(`파일 "${displayFilename}"을(를) 삭제하시겠습니까?`)) {
-            console.log("Deletion cancelled by user");
-            return;
-        }
-        
-        try {
-            console.log("Sending delete request to server...");
-            const response = await fetch('/api/delete', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ system_filename: systemFilename })
-            });
-            
-            console.log("Delete response status:", response.status);
-            const data = await response.json();
-            console.log("Delete response data:", data);
-            
-            if (response.ok && data.success) {
-                console.log("File deleted successfully");
-                // 성공적으로 삭제된 경우 UI에서 요소 제거
-                listItem.remove();
+        if (confirm(`"${displayFilename}" 파일을 삭제하시겠습니까?`)) {
+            try {
+                const response = await fetch('/api/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        filename: systemFilename
+                    })
+                });
                 
-                // 파일 목록이 비어있는지 확인
-                if (fileList.children.length === 0 && emptyState) {
-                    console.log("No files left, showing empty state");
-                    emptyState.style.display = 'flex';
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 성공적으로 삭제됨
+                    alert(`"${displayFilename}" 파일이 삭제되었습니다.`);
+                    
+                    // UI에서 파일 항목 제거
+                    if (listItem && listItem.parentNode) {
+                        listItem.parentNode.removeChild(listItem);
+                    }
+                    
+                    // 파일 목록 다시 로드
+                    loadDocuments();
+                } else {
+                    // 서버에서 오류 응답
+                    alert(data.error || '파일 삭제 중 오류가 발생했습니다.');
                 }
-            } else {
-                console.error('파일 삭제 중 오류 발생:', data.error);
-                alert(`삭제 실패: ${data.error || '알 수 없는 오류가 발생했습니다.'}`);
+            } catch (error) {
+                console.error('파일 삭제 API 호출 중 오류 발생:', error);
+                alert('서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
             }
-        } catch (error) {
-            console.error('파일 삭제 API 호출 중 오류 발생:', error);
-            alert('서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
         }
     }
     
@@ -449,10 +582,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function formatFileSize(bytes) {
         if (bytes === 0) return '0 Bytes';
         
-        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(1024));
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
         
-        return parseFloat((bytes / Math.pow(1024, i)).toFixed(2)) + ' ' + sizes[i];
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
     
     /**
@@ -460,13 +594,136 @@ document.addEventListener('DOMContentLoaded', function() {
      * @param {string} systemFilename - 시스템 내부 파일명
      * @param {string} displayFilename - 화면에 표시되는 파일명
      */
+    /**
+     * 파일 다운로드 함수
+     * @param {string} systemFilename - 시스템 내부 파일명
+     * @param {string} displayFilename - 표시용 파일명 
+     */
+    async function downloadDocument(systemFilename, displayFilename) {
+        try {
+            // 다운로드 시작 알림
+            const toastMsg = document.createElement('div');
+            toastMsg.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: #0064E1;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 4px;
+                z-index: 1000;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            `;
+            toastMsg.textContent = `"${displayFilename}" 다운로드 중...`;
+            document.body.appendChild(toastMsg);
+            
+            // 파일명에 특수문자가 포함된 경우 인코딩
+            const encodedFilename = encodeURIComponent(systemFilename);
+            
+            // 파일 다운로드 링크 생성 및 클릭
+            const downloadLink = document.createElement('a');
+            downloadLink.href = `/api/documents/download/${encodedFilename}`;
+            downloadLink.download = displayFilename; // 다운로드될 때 표시될 파일명
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            
+            // 잠시 후 토스트 메시지 제거
+            setTimeout(() => {
+                toastMsg.textContent = `"${displayFilename}" 다운로드 완료!`;
+                toastMsg.style.backgroundColor = '#4caf50';
+                
+                setTimeout(() => {
+                    document.body.removeChild(toastMsg);
+                }, 2000);
+            }, 1500);
+            
+        } catch (error) {
+            console.error('파일 다운로드 중 오류 발생:', error);
+            alert('파일 다운로드 중 오류가 발생했습니다.');
+        }
+    }
+    
     async function viewDocument(systemFilename, displayFilename) {
+        // 로딩 표시기 생성
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+        `;
+        loadingIndicator.innerHTML = `
+            <div style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #0046FF; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <div style="margin-top: 15px;">문서 로딩 중...</div>
+            <style>
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+            </style>
+        `;
+        
         try {
             console.log(`Viewing document: ${systemFilename}`);
             
-            // 로딩 표시기 보여주기
-            const loadingIndicator = document.createElement('div');
-            loadingIndicator.style.cssText = `
+            // 로딩 표시기 추가
+            document.body.appendChild(loadingIndicator);
+            
+            // 파일명에 특수문자가 포함된 경우 제대로 인코딩
+            const encodedFilename = encodeURIComponent(systemFilename);
+            console.log(`Encoded filename: ${encodedFilename}`);
+            
+            // 파일 내용 가져오기
+            const response = await fetch(`/api/documents/view/${encodedFilename}`);
+            
+            // 로딩 표시기 제거
+            document.body.removeChild(loadingIndicator);
+            
+            if (!response.ok) {
+                throw new Error(`서버 응답 오류: ${response.status} ${response.statusText}`);
+            }
+            
+            // 응답 데이터 처리
+            const responseText = await response.text();
+            console.log('응답 데이터 길이:', responseText.length);
+            console.log('응답 데이터 미리보기:', responseText.substring(0, 200));
+            
+            let data;
+            
+            try {
+                data = JSON.parse(responseText);
+                console.log('파싱된 데이터 상태:', data.status);
+                console.log('HTML 콘텐츠 여부:', data.html_content);
+                console.log('콘텐츠 길이:', data.content ? data.content.length : 0);
+                
+                if (data.status !== 'success') {
+                    throw new Error(data.message || '문서 내용을 불러오는 중 오류가 발생했습니다');
+                }
+                
+                // 콘텐츠 유효성 검사
+                if (data.content === undefined || data.content === null) {
+                    throw new Error('문서 내용이 비어 있습니다');
+                }
+            } catch (parseError) {
+                console.error('JSON 파싱 오류:', parseError);
+                throw new Error('응답 데이터를 처리할 수 없습니다: ' + parseError.message);
+            }
+            
+            // 모달 생성
+            const modal = document.createElement('div');
+            modal.className = 'document-modal';
+            modal.style.cssText = `
                 position: fixed;
                 top: 0;
                 left: 0;
@@ -475,222 +732,244 @@ document.addEventListener('DOMContentLoaded', function() {
                 background-color: rgba(0, 0, 0, 0.5);
                 z-index: 1000;
                 display: flex;
-                flex-direction: column;
                 align-items: center;
                 justify-content: center;
+            `;
+            
+            // 문서 내용을 표시할 모달 컨텐츠
+            const modalContent = document.createElement('div');
+            modalContent.className = 'document-modal-content';
+            modalContent.style.cssText = `
+                background-color: white;
+                width: 80%;
+                max-width: 800px;
+                max-height: 80vh;
+                border-radius: 8px;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            `;
+            
+            // 모달 헤더
+            const modalHeader = document.createElement('div');
+            modalHeader.className = 'document-modal-header';
+            modalHeader.style.cssText = `
+                padding: 15px 20px;
+                border-bottom: 1px solid #eee;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background-color: #0046FF;
                 color: white;
-                font-size: 16px;
             `;
-            loadingIndicator.innerHTML = `
-                <div style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #0046FF; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                <div style="margin-top: 15px;">문서 로딩 중...</div>
-                <style>
-                    @keyframes spin {
-                        0% { transform: rotate(0deg); }
-                        100% { transform: rotate(360deg); }
-                    }
-                </style>
+            
+            // 헤더 타이틀
+            const headerTitle = document.createElement('h3');
+            headerTitle.textContent = `${displayFilename}`;
+            headerTitle.style.cssText = `
+                margin: 0;
+                font-size: 18px;
+                font-weight: 500;
             `;
-            document.body.appendChild(loadingIndicator);
             
-            // 파일명에 특수문자가 포함된 경우 제대로 인코딩
-            const encodedFilename = encodeURIComponent(systemFilename);
-            console.log(`Encoded filename: ${encodedFilename}`);
+            // 닫기 버튼
+            const closeButton = document.createElement('button');
+            closeButton.textContent = '×';
+            closeButton.style.cssText = `
+                background: none;
+                border: none;
+                font-size: 24px;
+                font-weight: bold;
+                cursor: pointer;
+                color: white;
+                padding: 0 5px;
+            `;
+            closeButton.onclick = () => {
+                document.body.removeChild(modal);
+            };
             
+            // 모달 바디
+            const modalBody = document.createElement('div');
+            modalBody.className = 'document-modal-body';
+            modalBody.style.cssText = `
+                padding: 20px;
+                overflow-y: auto;
+                flex-grow: 1;
+                line-height: 1.5;
+                background-color: #f9f9f9;
+                border: 1px solid #eee;
+                border-radius: 4px;
+                margin: 15px;
+            `;
+            
+            // HTML 콘텐츠인지 일반 텍스트인지 확인
             try {
-                // 타임아웃 설정
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30초 타임아웃
+                console.log('콘텐츠 타입:', data.html_content ? 'HTML' : '텍스트');
+                console.log('파일 유형:', data.file_type || '알 수 없음');
+                console.log('콘텐츠 길이:', data.content ? data.content.length : 0);
                 
-                const response = await fetch(`/api/documents/view/${encodedFilename}`, {
-                    signal: controller.signal
-                });
+                // 안전하게 콘텐츠 처리
+                const content = data.content || '';
                 
-                clearTimeout(timeoutId); // 타임아웃 취소
-                
-                // 로딩 표시기 제거
-                document.body.removeChild(loadingIndicator);
-                
-                if (!response.ok) {
-                    throw new Error(`서버 응답 오류: ${response.status} ${response.statusText}`);
-                }
-                
-                const responseText = await response.text();
-                let data;
-                
-                try {
-                    data = JSON.parse(responseText);
+                if (data.html_content === true) {
+                    // HTML 콘텐츠 - 실제 HTML로 렌더링 (PDF, CSV, Excel 등)
+                    console.log('HTML 콘텐츠 렌더링:', data.file_type);
+                    modalBody.innerHTML = content;
                     
-                    if (data.status === 'success') {
-                        // 모달 생성
-                        const modal = document.createElement('div');
-                modal.className = 'document-modal';
-                modal.style.cssText = `
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background-color: rgba(0, 0, 0, 0.5);
-                    z-index: 1000;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                `;
-                
-                // 문서 내용을 표시할 모달 컨텐츠
-                const modalContent = document.createElement('div');
-                modalContent.className = 'document-modal-content';
-                modalContent.style.cssText = `
-                    background-color: white;
-                    width: 80%;
-                    max-width: 800px;
-                    max-height: 80vh;
-                    border-radius: 8px;
-                    overflow: hidden;
-                    display: flex;
-                    flex-direction: column;
-                    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-                `;
-                
-                // 모달 헤더
-                const modalHeader = document.createElement('div');
-                modalHeader.className = 'document-modal-header';
-                modalHeader.style.cssText = `
-                    padding: 15px 20px;
-                    border-bottom: 1px solid #eee;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
+                    // CSV나 기타 HTML 파일에 대한 테이블 스타일 개선
+                    if (data.file_type === 'csv') {
+                        const tables = modalBody.querySelectorAll('table');
+                        tables.forEach(table => {
+                            table.style.cssText = `
+                                width: 100%;
+                                border-collapse: collapse;
+                                font-size: 13px;
+                                font-family: Arial, sans-serif;
+                                margin: 10px 0;
+                            `;
+                            
+                            // 헤더 스타일
+                            const headers = table.querySelectorAll('th');
+                            headers.forEach(th => {
+                                th.style.cssText = `
+                                    background-color: #f8f9fa;
+                                    border: 1px solid #dee2e6;
+                                    padding: 8px 12px;
+                                    text-align: left;
+                                    font-weight: bold;
+                                    color: #495057;
+                                `;
+                            });
+                            
+                            // 셀 스타일
+                            const cells = table.querySelectorAll('td');
+                            cells.forEach(td => {
+                                td.style.cssText = `
+                                    border: 1px solid #dee2e6;
+                                    padding: 8px 12px;
+                                    color: #333;
+                                    background-color: white;
+                                `;
+                            });
+                            
+                            // 행 호버 효과
+                            const rows = table.querySelectorAll('tr');
+                            rows.forEach(row => {
+                                row.addEventListener('mouseenter', () => {
+                                    if (!row.querySelector('th')) {
+                                        row.style.backgroundColor = '#f8f9fa';
+                                    }
+                                });
+                                row.addEventListener('mouseleave', () => {
+                                    if (!row.querySelector('th')) {
+                                        row.style.backgroundColor = 'white';
+                                    }
+                                });
+                            });
+                        });
+                    }
+                } else {
+                    // 일반 텍스트 파일 (TXT, JSON 등)
+                    console.log('텍스트 콘텐츠 표시');
+                    modalBody.style.fontFamily = 'Consolas, Monaco, "Courier New", monospace';
+                    modalBody.style.whiteSpace = 'pre-wrap';
+                    modalBody.style.fontSize = '14px';
+                    modalBody.style.lineHeight = '1.5';
+                    modalBody.style.color = '#333';
+                    modalBody.style.backgroundColor = '#f8f9fa';
+                    modalBody.style.border = '1px solid #dee2e6';
+                    modalBody.style.borderRadius = '4px';
+                    modalBody.style.padding = '15px';
+                    modalBody.textContent = content;
+                }
+            } catch(err) {
+                console.error('문서 내용 표시 중 오류 발생:', err);
+                modalBody.innerHTML = `<div style="color: red; padding: 20px; text-align: center; border: 1px solid #f5c6cb; background-color: #f8d7da; border-radius: 4px;">
+                    <h3 style="margin-top: 0; color: #721c24;">문서 표시 중 오류가 발생했습니다</h3>
+                    <p style="margin-bottom: 10px;">죄송합니다. 문서를 표시하는 중 오류가 발생했습니다.</p>
+                    <p style="font-size: 14px; color: #856404; background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 4px;">
+                        오류 내용: ${err.message || '알 수 없는 오류'}
+                    </p>
+                </div>`;
+            }
+            
+            // 모달 푸터
+            const modalFooter = document.createElement('div');
+            modalFooter.className = 'document-modal-footer';
+            modalFooter.style.cssText = `
+                padding: 15px 20px;
+                border-top: 1px solid #eee;
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+            `;
+            
+            // 편집 버튼 (txt 파일만)
+            if (data.file_type === 'txt') {
+                const editButton = document.createElement('button');
+                editButton.textContent = '편집';
+                editButton.style.cssText = `
+                    padding: 8px 16px;
                     background-color: #0046FF;
                     color: white;
-                `;
-                
-                // 헤더 타이틀
-                const headerTitle = document.createElement('h3');
-                headerTitle.textContent = `${displayFilename}`;
-                headerTitle.style.cssText = `
-                    margin: 0;
-                    font-size: 18px;
-                    font-weight: 500;
-                `;
-                
-                // 닫기 버튼
-                const closeButton = document.createElement('button');
-                closeButton.textContent = '×';
-                closeButton.style.cssText = `
-                    background: none;
-                    border: none;
-                    font-size: 24px;
-                    font-weight: bold;
-                    cursor: pointer;
-                    color: white;
-                    padding: 0 5px;
-                `;
-                closeButton.onclick = () => {
-                    document.body.removeChild(modal);
-                };
-                
-                // 모달 바디
-                const modalBody = document.createElement('div');
-                modalBody.className = 'document-modal-body';
-                modalBody.style.cssText = `
-                    padding: 20px;
-                    overflow-y: auto;
-                    flex-grow: 1;
-                    line-height: 1.5;
-                    background-color: #f9f9f9;
-                    border: 1px solid #eee;
-                    border-radius: 4px;
-                    margin: 15px;
-                `;
-                
-                // HTML 콘텐츠인지 일반 텍스트인지 확인
-                if (data.html_content) {
-                    // CSV, 엑셀 등 HTML로 포맷된 내용
-                    modalBody.innerHTML = data.content;
-                } else {
-                    // 일반 텍스트 (TXT 파일 등)
-                    modalBody.style.fontFamily = 'monospace';
-                    modalBody.style.whiteSpace = 'pre-wrap';
-                    modalBody.textContent = data.content;
-                }
-                
-                // 모달 푸터
-                const modalFooter = document.createElement('div');
-                modalFooter.className = 'document-modal-footer';
-                modalFooter.style.cssText = `
-                    padding: 15px 20px;
-                    border-top: 1px solid #eee;
-                    display: flex;
-                    justify-content: flex-end;
-                    gap: 10px;
-                `;
-                
-                // 편집 버튼 (txt 파일만)
-                if (data.file_type === 'txt') {
-                    const editButton = document.createElement('button');
-                    editButton.textContent = '편집';
-                    editButton.style.cssText = `
-                        padding: 8px 16px;
-                        background-color: #0046FF;
-                        color: white;
-                        border: none;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        font-weight: 500;
-                    `;
-                    editButton.onclick = () => {
-                        document.body.removeChild(modal);
-                        editDocument(systemFilename, displayFilename, data.content);
-                    };
-                    modalFooter.appendChild(editButton);
-                }
-                
-                // 닫기 버튼
-                const closeBtn = document.createElement('button');
-                closeBtn.textContent = '닫기';
-                closeBtn.style.cssText = `
-                    padding: 8px 16px;
-                    background-color: #f2f2f2;
-                    color: #333;
                     border: none;
                     border-radius: 4px;
                     cursor: pointer;
                     font-weight: 500;
                 `;
-                closeBtn.onclick = () => {
+                editButton.onclick = () => {
                     document.body.removeChild(modal);
+                    editDocument(systemFilename, displayFilename, data.content);
                 };
-                modalFooter.appendChild(closeBtn);
-                
-                // 모달 요소 조립
-                modalHeader.appendChild(headerTitle);
-                modalHeader.appendChild(closeButton);
-                
-                modalContent.appendChild(modalHeader);
-                modalContent.appendChild(modalBody);
-                modalContent.appendChild(modalFooter);
-                
-                modal.appendChild(modalContent);
-                
-                // 모달을 body에 추가
-                document.body.appendChild(modal);
-                
-                // ESC 키로 모달 닫기
-                document.addEventListener('keydown', function escHandler(e) {
-                    if (e.key === 'Escape') {
-                        document.body.removeChild(modal);
-                        document.removeEventListener('keydown', escHandler);
-                    }
-                });
-            } else {
-                alert(data.message || '문서 내용을 불러오는 중 오류가 발생했습니다.');
+                modalFooter.appendChild(editButton);
             }
+            
+            // 닫기 버튼
+            const closeModalBtn = document.createElement('button');
+            closeModalBtn.textContent = '닫기';
+            closeModalBtn.style.cssText = `
+                padding: 8px 16px;
+                background-color: #e0e0e0;
+                color: #333;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-weight: 500;
+            `;
+            closeModalBtn.onclick = () => {
+                document.body.removeChild(modal);
+            };
+            modalFooter.appendChild(closeModalBtn);
+            
+            // 모달 조립
+            modalHeader.appendChild(headerTitle);
+            modalHeader.appendChild(closeButton);
+            
+            modalContent.appendChild(modalHeader);
+            modalContent.appendChild(modalBody);
+            modalContent.appendChild(modalFooter);
+            
+            modal.appendChild(modalContent);
+            
+            // 모달 표시
+            document.body.appendChild(modal);
+            
+            // 모달 애니메이션
+            setTimeout(() => {
+                modal.style.opacity = '1';
+            }, 10);
         } catch (error) {
+            // 로딩 표시기가 아직 존재하면 제거
+            try {
+                document.body.removeChild(loadingIndicator);
+            } catch (e) {
+                // 이미 제거된 경우 무시
+            }
+            
             console.error('문서 내용 로드 중 오류 발생:', error);
             
-            // 더 자세한 오류 메시지 제공
+            // 사용자에게 오류 메시지 표시
             let errorMessage = '문서 내용을 불러오는 중 오류가 발생했습니다.';
             
             if (error.message) {
@@ -778,36 +1057,31 @@ document.addEventListener('DOMContentLoaded', function() {
             padding: 0 5px;
         `;
         closeButton.onclick = () => {
-            if (confirm('편집 내용이 저장되지 않습니다. 정말 닫으시겠습니까?')) {
-                document.body.removeChild(modal);
-            }
+            document.body.removeChild(modal);
         };
         
-        // 모달 바디 (편집기)
-        const modalBody = document.createElement('div');
-        modalBody.className = 'document-modal-body';
-        modalBody.style.cssText = `
+        // 텍스트 에디터
+        const textareaContainer = document.createElement('div');
+        textareaContainer.style.cssText = `
             padding: 20px;
-            overflow-y: auto;
             flex-grow: 1;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
         `;
         
-        // 텍스트 편집기
-        const editor = document.createElement('textarea');
-        editor.value = content;
-        editor.style.cssText = `
+        const textarea = document.createElement('textarea');
+        textarea.value = content;
+        textarea.style.cssText = `
             width: 100%;
             height: 100%;
             padding: 10px;
+            font-family: monospace;
+            font-size: 14px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            font-family: monospace;
-            line-height: 1.5;
             resize: none;
             flex-grow: 1;
-            min-height: 350px;
         `;
         
         // 모달 푸터
@@ -823,10 +1097,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 저장 버튼
         const saveButton = document.createElement('button');
-        saveButton.textContent = '저장 및 동기화';
+        saveButton.textContent = '저장';
         saveButton.style.cssText = `
             padding: 8px 16px;
-            background-color: #0046FF;
+            background-color: #4caf50;
             color: white;
             border: none;
             border-radius: 4px;
@@ -834,10 +1108,6 @@ document.addEventListener('DOMContentLoaded', function() {
             font-weight: 500;
         `;
         saveButton.onclick = async () => {
-            // 저장 중 로딩 표시
-            saveButton.disabled = true;
-            saveButton.textContent = '저장 중...';
-            
             try {
                 const response = await fetch(`/api/documents/edit/${systemFilename}`, {
                     method: 'POST',
@@ -845,27 +1115,24 @@ document.addEventListener('DOMContentLoaded', function() {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        content: editor.value
+                        content: textarea.value
                     })
                 });
                 
                 const data = await response.json();
                 
-                if (response.ok && data.status === 'success') {
-                    alert(data.message || '문서가 성공적으로 저장되었습니다.');
+                if (data.status === 'success') {
+                    alert('문서가 성공적으로 저장되었습니다.');
                     document.body.removeChild(modal);
-                    // 파일 목록을 새로고침하여 변경사항 반영
-                    loadDocuments();
+                    
+                    // 필요하다면 파일 목록 새로고침
+                    // loadDocuments();
                 } else {
                     alert(data.message || '문서 저장 중 오류가 발생했습니다.');
-                    saveButton.disabled = false;
-                    saveButton.textContent = '저장 및 동기화';
                 }
             } catch (error) {
                 console.error('문서 저장 중 오류 발생:', error);
-                alert('서버 연결 중 오류가 발생했습니다.');
-                saveButton.disabled = false;
-                saveButton.textContent = '저장 및 동기화';
+                alert('서버 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
             }
         };
         
@@ -874,7 +1141,7 @@ document.addEventListener('DOMContentLoaded', function() {
         cancelButton.textContent = '취소';
         cancelButton.style.cssText = `
             padding: 8px 16px;
-            background-color: #f2f2f2;
+            background-color: #e0e0e0;
             color: #333;
             border: none;
             border-radius: 4px;
@@ -882,40 +1149,28 @@ document.addEventListener('DOMContentLoaded', function() {
             font-weight: 500;
         `;
         cancelButton.onclick = () => {
-            if (confirm('편집 내용이 저장되지 않습니다. 정말 취소하시겠습니까?')) {
-                document.body.removeChild(modal);
-            }
+            document.body.removeChild(modal);
         };
         
-        // 모달 요소 조립
+        // 모달 조립
         modalHeader.appendChild(headerTitle);
         modalHeader.appendChild(closeButton);
         
-        modalBody.appendChild(editor);
+        textareaContainer.appendChild(textarea);
         
         modalFooter.appendChild(saveButton);
         modalFooter.appendChild(cancelButton);
         
         modalContent.appendChild(modalHeader);
-        modalContent.appendChild(modalBody);
+        modalContent.appendChild(textareaContainer);
         modalContent.appendChild(modalFooter);
         
         modal.appendChild(modalContent);
         
-        // 모달을 body에 추가
+        // 모달 표시
         document.body.appendChild(modal);
         
-        // 포커스 지정
-        editor.focus();
-        
-        // ESC 키로 모달 닫기
-        document.addEventListener('keydown', function escHandler(e) {
-            if (e.key === 'Escape') {
-                if (confirm('편집 내용이 저장되지 않습니다. 정말 닫으시겠습니까?')) {
-                    document.body.removeChild(modal);
-                    document.removeEventListener('keydown', escHandler);
-                }
-            }
-        });
+        // 포커스 설정
+        textarea.focus();
     }
 });
