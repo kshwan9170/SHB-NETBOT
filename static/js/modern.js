@@ -2003,8 +2003,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         const data = await response.json();
                         console.log('Upload response:', response.status, data);
                         
-                        if (!response.ok || !data.success) {
-                            console.error('Upload error:', data);
+                        // 성공 응답 확인 (results 배열이 있고 모든 status가 success인 경우)
+                        let isSuccess = false;
+                        if (data.results && Array.isArray(data.results)) {
+                            isSuccess = data.results.every(result => result.status === 'success');
+                        } else if (data.status === 'success' || data.success) {
+                            isSuccess = true;
+                        }
+                        
+                        if (!response.ok || !isSuccess) {
+                            console.error('Upload failed:', data);
                             alert(`업로드 실패: ${data.error || data.message || '알 수 없는 오류'}`);
                             allUploadsSuccessful = false;
                         } else {
