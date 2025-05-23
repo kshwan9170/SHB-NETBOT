@@ -661,8 +661,8 @@ body.offline-mode .logo img {
 }
 
 .chat-card {
-    width: 95%;
-    max-width: 140rem;
+    width: 98%;
+    max-width: none;
     margin: 0 auto;
     background: var(--card-bg);
     border-radius: var(--border-radius-lg);
@@ -671,31 +671,31 @@ body.offline-mode .logo img {
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--border-color);
-    height: 65rem;
+    height: 70rem;
     display: flex;
     flex-direction: column;
     transition: all var(--transition-medium);
 }
 
-/* 반응형 채팅창 크기 조정 */
+/* 반응형 채팅창 크기 조정 - 훨씬 더 크게 */
 @media (min-width: 768px) {
     .chat-card {
-        width: 85%;
-        max-width: 120rem;
+        width: 95%;
+        max-width: none;
     }
 }
 
 @media (min-width: 1024px) {
     .chat-card {
-        width: 75%;
-        max-width: 140rem;
+        width: 90%;
+        max-width: none;
     }
 }
 
 @media (min-width: 1440px) {
     .chat-card {
-        width: 70%;
-        max-width: 160rem;
+        width: 85%;
+        max-width: none;
     }
 }
 
