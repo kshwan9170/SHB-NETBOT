@@ -51,7 +51,8 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
+            console.log("Upload response:", response.status, data);
+            if (data.success || (data.results && data.results.length > 0)) {
                 // 성공 피드백 표시
                 submitBtn.innerHTML = '✅ 업로드 완료!';
                 submitBtn.style.backgroundColor = '#28a745';
@@ -71,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 오류 피드백 표시
                 submitBtn.innerHTML = '❌ 업로드 실패';
                 submitBtn.style.backgroundColor = '#dc3545';
-                alert('업로드 실패: ' + data.message);
+                alert('업로드 실패: ' + (data.message || '알 수 없는 오류'));
                 
                 setTimeout(() => {
                     submitBtn.textContent = originalText;
