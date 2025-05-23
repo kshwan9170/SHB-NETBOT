@@ -776,14 +776,14 @@
     }
     
     // 스피너 애니메이션 CSS 추가
-    const style = document.createElement('style');
-    style.textContent = `
+    const spinnerStyle = document.createElement('style');
+    spinnerStyle.textContent = `
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
     `;
-    document.head.appendChild(style);
+    document.head.appendChild(spinnerStyle);
     </script>
 </body>
 </html>

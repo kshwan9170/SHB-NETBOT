@@ -307,8 +307,8 @@ class UploadFeedbackSystem {
 }
 
 // CSS 애니메이션 추가
-const style = document.createElement('style');
-style.textContent = `
+const uploadFeedbackStyle = document.createElement('style');
+uploadFeedbackStyle.textContent = `
     @keyframes slideInRight {
         from {
             transform: translateX(100%);
