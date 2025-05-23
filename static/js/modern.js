@@ -1799,23 +1799,41 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!uploadForm || !fileInput || !uploadDropzone || !documentsList) return;
         
-        // 드래그 앤 드롭 기능
+        // 업로드 완료 상태 추적
+        let isUploadCompleted = false;
+        
+        // 드래그 앤 드롭 기능 개선
         uploadDropzone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            uploadDropzone.style.borderColor = '#4CD6B9';
-            uploadDropzone.style.backgroundColor = 'var(--primary-light)';
+            if (!isUploadCompleted) {
+                uploadDropzone.classList.add('dragover');
+                // 아이콘 회전 효과
+                const icon = uploadDropzone.querySelector('svg');
+                if (icon) {
+                    icon.style.transform = 'scale(1.1) rotate(10deg)';
+                }
+            }
         });
         
         uploadDropzone.addEventListener('dragleave', (e) => {
             e.preventDefault();
-            uploadDropzone.style.borderColor = 'var(--border-color)';
-            uploadDropzone.style.backgroundColor = '';
+            // 드롭존을 완전히 벗어났을 때만 스타일 제거
+            if (!uploadDropzone.contains(e.relatedTarget)) {
+                uploadDropzone.classList.remove('dragover');
+                const icon = uploadDropzone.querySelector('svg');
+                if (icon) {
+                    icon.style.transform = '';
+                }
+            }
         });
         
         uploadDropzone.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadDropzone.style.borderColor = 'var(--border-color)';
-            uploadDropzone.style.backgroundColor = '';
+            uploadDropzone.classList.remove('dragover');
+            const icon = uploadDropzone.querySelector('svg');
+            if (icon) {
+                icon.style.transform = '';
+            }
             
             if (e.dataTransfer.files.length > 0) {
                 fileInput.files = e.dataTransfer.files;
@@ -1947,10 +1965,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             try {
+                // 업로드 시작 상태 표시
+                showUploadStarted();
+                
                 // 업로드 버튼 비활성화
                 const uploadButton = document.getElementById('uploadButton');
                 uploadButton.disabled = true;
-                uploadButton.textContent = 'Uploading...';
+                uploadButton.textContent = '업로드 중...';
                 
                 let allUploadsSuccessful = true;
                 const files = Array.from(fileInput.files);
@@ -1988,15 +2009,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 if (allUploadsSuccessful) {
-                    // 업로드 성공
-                    uploadDropzone.querySelector('p').textContent = 'Drag and drop files here or browse';
+                    // 업로드 완료 상태 표시
+                    showUploadComplete(files.length);
+                    
+                    // 파일 입력 초기화
                     fileInput.value = '';
                     
                     // 문서 목록 업데이트
                     loadDocuments();
                     
-                    // 성공 메시지
-                    alert('Files uploaded successfully');
+                    // 성공 메시지 (약간의 지연 후)
+                    setTimeout(() => {
+                        console.log(`${files.length}개 파일이 성공적으로 업로드되었습니다!`);
+                    }, 500);
                 }
             } catch (error) {
                 console.error('Upload error:', error);
@@ -2008,6 +2033,78 @@ document.addEventListener('DOMContentLoaded', function() {
                 uploadButton.textContent = 'Upload Files';
             }
         });
+        
+        // 업로드 완료 상태 표시 함수
+        function showUploadComplete(fileCount) {
+            isUploadCompleted = true;
+            uploadDropzone.classList.add('upload-completed');
+            
+            // 텍스트 변경
+            const mainText = uploadDropzone.querySelector('.upload-main-text');
+            const statusText = uploadDropzone.querySelector('.upload-status-text');
+            
+            if (mainText) {
+                mainText.innerHTML = `<span style="color: #16a34a;">✓ 업로드 완료!</span>`;
+            }
+            
+            if (statusText) {
+                statusText.textContent = `${fileCount}개 파일이 성공적으로 업로드되었습니다`;
+            }
+            
+            // 아이콘 변경
+            const icon = uploadDropzone.querySelector('svg');
+            if (icon) {
+                icon.innerHTML = `
+                    <circle cx="12" cy="12" r="10" fill="#22c55e"></circle>
+                    <polyline points="9,12 12,15 16,10" stroke="white" stroke-width="2" fill="none"></polyline>
+                `;
+                icon.style.color = '#22c55e';
+            }
+            
+            // 3초 후 일반 상태로 복원
+            setTimeout(() => {
+                resetUploadState();
+            }, 3000);
+        }
+        
+        // 업로드 상태 복원 함수
+        function resetUploadState() {
+            isUploadCompleted = false;
+            uploadDropzone.classList.remove('upload-completed');
+            
+            // 텍스트 복원
+            const mainText = uploadDropzone.querySelector('.upload-main-text');
+            const statusText = uploadDropzone.querySelector('.upload-status-text');
+            
+            if (mainText) {
+                mainText.innerHTML = '파일을 드래그하거나 <span class="upload-browse" style="color: #30507A; cursor: pointer; text-decoration: underline;">클릭하여 업로드</span>';
+            }
+            
+            if (statusText) {
+                statusText.textContent = '네트워크 문서를 업로드하여 AI 검색 기능을 향상시키세요';
+            }
+            
+            // 아이콘 복원
+            const icon = uploadDropzone.querySelector('svg');
+            if (icon) {
+                icon.innerHTML = `
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                `;
+                icon.style.color = '#30507A';
+            }
+        }
+        
+        // 업로드 시작 상태 표시 함수
+        function showUploadStarted() {
+            uploadDropzone.classList.add('uploading');
+            
+            const statusText = uploadDropzone.querySelector('.upload-status-text');
+            if (statusText) {
+                statusText.textContent = '파일을 업로드하는 중입니다...';
+            }
+        }
         
         // 초기 문서 목록 로드
         loadDocuments();
