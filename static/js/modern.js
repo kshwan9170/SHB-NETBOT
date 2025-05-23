@@ -1976,6 +1976,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 uploadButton.textContent = 'Uploading...';
                 
                 let allUploadsSuccessful = true;
+                const uploadResults = []; // 업로드 결과 저장
                 const files = Array.from(fileInput.files);
                 
                 for (const file of files) {
@@ -2017,6 +2018,12 @@ document.addEventListener('DOMContentLoaded', function() {
                             allUploadsSuccessful = false;
                         } else {
                             console.log(`${file.name} 업로드 성공!`);
+                            // 성공 응답에 대해서는 uploadResults에 저장
+                            uploadResults.push({
+                                filename: file.name,
+                                status: 'success',
+                                data: data
+                            });
                         }
                     }
                 }
@@ -2040,7 +2047,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     setTimeout(() => refreshDocumentList(), 1000);
                 }
             } catch (error) {
-                console.error('Upload error:', error);
+                console.error('Upload process failed:', error);
                 showNotification('❌ 업로드 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
             } finally {
                 // 업로드 버튼 다시 활성화
