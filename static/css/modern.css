@@ -144,15 +144,13 @@ img {
     width: 100%;
     z-index: 1000;
     transition: all var(--transition-medium);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    background-color: rgba(255, 255, 255, 0.85);
-    border-bottom: 1px solid var(--border-color);
+    background-color: #1A2B4C;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     padding: 1rem 0;
 }
 
 [data-theme="dark"] .navbar {
-    background-color: rgba(26, 32, 44, 0.85);
+    background-color: #1A2B4C;
 }
 
 .navbar-container {
@@ -174,11 +172,18 @@ img {
     display: flex;
     align-items: center;
     position: relative;
+    gap: 1rem;
 }
 
 .logo img {
     height: 3.2rem;
-    margin-right: 1.2rem;
+}
+
+.bot-name {
+    font-size: 1.8rem !important;
+    font-weight: 600 !important;
+    color: #BFD7FF !important;
+    margin-left: 0.5rem;
 }
 
 /* 신한은행 로고 특별 스타일 */
@@ -202,9 +207,9 @@ img {
 }
 
 .logo span {
-    font-size: 1.7rem; /* 폰트 크기 감소 */
+    font-size: 2.0rem;
     font-weight: 700;
-    color: var(--primary);
+    color: #FFFFFF;
     letter-spacing: -0.5px;
 }
 
@@ -255,7 +260,7 @@ body.offline-mode .logo img {
 }
 
 .nav-link {
-    color: var(--text-primary);
+    color: #FFFFFF;
     font-weight: 500;
     font-size: 1.5rem;
     position: relative;
@@ -265,7 +270,7 @@ body.offline-mode .logo img {
 
 .nav-link:hover,
 .nav-link.active {
-    color: var(--primary);
+    color: #BFD7FF;
 }
 
 .nav-link::after {
@@ -289,7 +294,7 @@ body.offline-mode .logo img {
 .theme-toggle {
     background: none;
     border: none;
-    color: var(--text-primary);
+    color: #FFFFFF;
     font-size: 1.6rem;
     cursor: pointer;
     display: flex;
