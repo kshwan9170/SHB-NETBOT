@@ -619,104 +619,91 @@
             }
         });
         
-        // 파일명을 클릭 가능하게 만들기
-        makeFilenamesClickable();
+        // 파일명을 클릭 가능하게 만들기 (지연 후 실행)
+        setTimeout(() => {
+            makeFilenamesClickable();
+        }, 1000);
     }
 
     function makeFilenamesClickable() {
-        // 여러 방식으로 테이블 찾기 시도
+        console.log('파일명 클릭 가능하게 설정 시작...');
+        
+        // 반복적으로 테이블 체크
         const checkTable = setInterval(() => {
-            // 첫 번째 시도: documents-tbody
-            let tbody = document.getElementById('documents-tbody');
-            
-            // 두 번째 시도: documents-table 내의 tbody
-            if (!tbody || tbody.children.length === 0) {
-                const documentsTable = document.getElementById('documents-table');
-                if (documentsTable) {
-                    tbody = documentsTable.querySelector('tbody');
-                }
-            }
-            
-            // 세 번째 시도: 모든 테이블의 tbody 검색
-            if (!tbody || tbody.children.length === 0) {
-                const allTables = document.querySelectorAll('table');
-                for (let table of allTables) {
-                    const testTbody = table.querySelector('tbody');
-                    if (testTbody && testTbody.children.length > 0) {
-                        tbody = testTbody;
-                        break;
-                    }
-                }
-            }
+            const tbody = document.getElementById('documents-tbody');
             
             if (tbody && tbody.children.length > 0) {
                 clearInterval(checkTable);
-                console.log('테이블 발견! 파일명을 클릭 가능하게 만듭니다.');
+                console.log('테이블 발견! 행 개수:', tbody.children.length);
                 
-                // 모든 파일명 셀에 클릭 이벤트 추가
+                // 기존 클릭 이벤트 제거 (중복 방지)
+                const existingClickable = tbody.querySelectorAll('.clickable-filename');
+                existingClickable.forEach(cell => {
+                    cell.classList.remove('clickable-filename');
+                    cell.style.cssText = '';
+                    cell.onclick = null;
+                });
+                
+                // 모든 행 처리
                 const rows = tbody.querySelectorAll('tr');
-                let clickableCount = 0;
+                let successCount = 0;
                 
                 rows.forEach((row, index) => {
                     const filenameCell = row.querySelector('td:first-child');
-                    if (filenameCell && filenameCell.textContent.trim()) {
+                    const deleteButton = row.querySelector('button[data-system-filename]');
+                    
+                    if (filenameCell && deleteButton) {
                         const filename = filenameCell.textContent.trim();
+                        const systemFilename = deleteButton.getAttribute('data-system-filename');
                         
-                        // 파일명을 클릭 가능하게 스타일링
-                        filenameCell.classList.add('clickable-filename');
-                        filenameCell.style.cursor = 'pointer';
-                        filenameCell.style.color = '#30507A';
-                        filenameCell.style.textDecoration = 'underline';
-                        filenameCell.style.fontWeight = '600';
-                        filenameCell.style.transition = 'all 0.2s ease';
-                        filenameCell.title = '📁 클릭하여 파일 미리보기';
-                        
-                        // 호버 효과 추가
-                        filenameCell.addEventListener('mouseenter', () => {
-                            filenameCell.style.color = '#1e3a5f';
-                            filenameCell.style.backgroundColor = '#f0f8ff';
-                            filenameCell.style.padding = '8px';
-                            filenameCell.style.borderRadius = '4px';
-                        });
-                        
-                        filenameCell.addEventListener('mouseleave', () => {
-                            filenameCell.style.color = '#30507A';
-                            filenameCell.style.backgroundColor = 'transparent';
-                            filenameCell.style.padding = '10px 12px';
-                            filenameCell.style.borderRadius = '0';
-                        });
-                        
-                        // 클릭 이벤트 추가
-                        filenameCell.addEventListener('click', () => {
-                            console.log('파일명 클릭됨:', filename);
+                        if (filename && systemFilename) {
+                            // 스타일링 적용
+                            filenameCell.classList.add('clickable-filename');
+                            filenameCell.style.cssText = `
+                                cursor: pointer !important;
+                                color: #30507A !important;
+                                text-decoration: underline !important;
+                                font-weight: 600 !important;
+                                transition: all 0.2s ease !important;
+                            `;
+                            filenameCell.title = '📁 클릭하여 파일 미리보기';
                             
-                            // 시스템 파일명 찾기 (삭제 버튼의 데이터에서)
-                            const deleteButton = row.querySelector('.document-delete-btn');
-                            if (deleteButton) {
-                                const systemFilename = deleteButton.getAttribute('data-system-filename');
-                                if (systemFilename) {
-                                    console.log('시스템 파일명:', systemFilename);
-                                    openMainPageFilePreview(systemFilename, filename);
-                                } else {
-                                    console.error('시스템 파일명을 찾을 수 없습니다');
-                                }
-                            } else {
-                                console.error('삭제 버튼을 찾을 수 없습니다');
-                            }
-                        });
-                        
-                        clickableCount++;
+                            // 클릭 이벤트 추가
+                            filenameCell.onclick = function(e) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('파일 클릭:', filename, 'System:', systemFilename);
+                                openMainPageFilePreview(systemFilename, filename);
+                            };
+                            
+                            // 호버 효과
+                            filenameCell.onmouseenter = function() {
+                                this.style.backgroundColor = '#f0f8ff';
+                                this.style.color = '#1e3a5f';
+                                this.style.padding = '8px';
+                                this.style.borderRadius = '4px';
+                            };
+                            
+                            filenameCell.onmouseleave = function() {
+                                this.style.backgroundColor = 'transparent';
+                                this.style.color = '#30507A';
+                                this.style.padding = '12px';
+                                this.style.borderRadius = '0';
+                            };
+                            
+                            successCount++;
+                            console.log(`파일 ${index + 1} 설정 완료: ${filename}`);
+                        }
                     }
                 });
                 
-                console.log(`${clickableCount}개 파일명이 클릭 가능하게 설정되었습니다.`);
+                console.log(`총 ${successCount}개 파일명이 클릭 가능하게 설정되었습니다.`);
             }
-        }, 100); // 더 자주 체크 (100ms마다)
+        }, 200);
         
-        // 30초 후 타이머 정리
+        // 30초 후 정리
         setTimeout(() => {
             clearInterval(checkTable);
-            console.log('파일명 클릭 가능 설정 타이머 종료');
         }, 30000);
     }
 
