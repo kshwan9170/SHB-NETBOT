@@ -2285,6 +2285,56 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         // CSV 편집 기능 활성화
                         initializeCSVEditingInModal(modal, systemFilename, data.encoding || 'utf-8');
+                    } else if (data.html_content && data.file_type === 'pdf') {
+                        // PDF 파일의 경우 HTML 콘텐츠를 그대로 표시 (iframe 포함)
+                        content.innerHTML = data.content || '';
+                    } else if (data.file_type === 'pdf' && data.content && data.content.startsWith('data:application/pdf;base64,')) {
+                        // PDF 파일을 Blob URL로 변환하여 표시
+                        try {
+                            const base64Data = data.content.split(',')[1];
+                            const binaryData = atob(base64Data);
+                            const bytes = new Uint8Array(binaryData.length);
+                            for (let i = 0; i < binaryData.length; i++) {
+                                bytes[i] = binaryData.charCodeAt(i);
+                            }
+                            const blob = new Blob([bytes], { type: 'application/pdf' });
+                            const blobUrl = URL.createObjectURL(blob);
+                            
+                            content.innerHTML = `
+                                <div style="width: 100%; height: 100%; display: flex; flex-direction: column;">
+                                    <div style="background-color: #f0f0f0; padding: 15px; border-bottom: 1px solid #ddd;">
+                                        <h3 style="margin: 0; color: #333; font-size: 16px;">📄 PDF 문서 미리보기</h3>
+                                        <p style="margin: 5px 0 0; color: #666; font-size: 14px;">파일명: ${originalFilename}</p>
+                                    </div>
+                                    <iframe 
+                                        src="${blobUrl}" 
+                                        style="flex: 1; border: none; width: 100%;" 
+                                        title="PDF 미리보기">
+                                        <p style="padding: 20px; text-align: center;">
+                                            PDF를 표시할 수 없습니다. 
+                                            <a href="${blobUrl}" target="_blank" style="color: #30507A; text-decoration: underline;">
+                                                새 창에서 열기
+                                            </a>
+                                        </p>
+                                    </iframe>
+                                </div>
+                            `;
+                            
+                            // 모달이 닫힐 때 Blob URL 해제
+                            const originalCloseModal = closeModal;
+                            closeModal = function() {
+                                URL.revokeObjectURL(blobUrl);
+                                originalCloseModal();
+                            };
+                        } catch (error) {
+                            console.error('PDF 처리 오류:', error);
+                            content.innerHTML = `
+                                <div style="padding: 20px; text-align: center; color: #666;">
+                                    <p>PDF 파일을 표시할 수 없습니다.</p>
+                                    <p>파일을 다운로드하여 확인해주세요.</p>
+                                </div>
+                            `;
+                        }
                     } else {
                         // 일반 텍스트 파일
                         const fileContent = data.content || data || '';
