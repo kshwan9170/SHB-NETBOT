@@ -68,17 +68,22 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (response.ok) {
                 if (data.files && Array.isArray(data.files)) {
+                    // 메타데이터 파일 필터링
+                    const filteredFiles = data.files.filter(file => 
+                        !file.filename.endsWith('_metadata.json')
+                    );
+                    
                     // 파일이 있으면 빈 상태 메시지 숨기기
-                    if (data.files.length > 0) {
+                    if (filteredFiles.length > 0) {
                         if (emptyState) {
                             emptyState.style.display = 'none';
                         }
                         
                         // 전체 파일 저장
-                        allFiles = data.files;
+                        allFiles = filteredFiles;
                         
                         // 새로운 방식: 직접 HTML 구성
-                        renderDirectFileList(data.files);
+                        renderDirectFileList(filteredFiles);
                     } else {
                         if (emptyState) {
                             emptyState.style.display = 'flex';
