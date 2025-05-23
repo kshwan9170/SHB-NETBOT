@@ -672,7 +672,31 @@ def view_document(system_filename):
                 pdf_content = f.read()
                 # PDF를 base64로 인코딩
                 pdf_base64 = base64.b64encode(pdf_content).decode('utf-8')
-                content = f"data:application/pdf;base64,{pdf_base64}"
+                
+                # PDF 뷰어를 위한 HTML 콘텐츠 생성
+                content = f"""
+                <div class="pdf-container" style="width: 100%; height: 800px; display: flex; flex-direction: column;">
+                    <div style="background-color: #f0f0f0; padding: 10px; border-radius: 5px; margin-bottom: 10px;">
+                        <h3 style="margin: 0; color: #333;">PDF 파일 미리보기</h3>
+                        <p style="margin: 5px 0 0;">파일명: {original_filename}</p>
+                    </div>
+                    <iframe 
+                        src="data:application/pdf;base64,{pdf_base64}" 
+                        width="100%" 
+                        height="100%" 
+                        style="border: 1px solid #ddd; border-radius: 5px;"
+                        title="PDF 미리보기">
+                        <p>PDF를 표시할 수 없습니다. <a href="data:application/pdf;base64,{pdf_base64}" download="{original_filename}">여기를 클릭하여 다운로드</a>하세요.</p>
+                    </iframe>
+                </div>
+                """
+                
+            return jsonify({
+                'status': 'success',
+                'html_content': True,
+                'content': content,
+                'file_type': 'pdf'
+            })
         
         # CSV 파일 처리 (이 부분은 위에서 이미 처리됨)
         elif file_extension == 'csv':
