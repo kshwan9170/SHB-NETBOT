@@ -2203,56 +2203,89 @@ document.addEventListener('DOMContentLoaded', function() {
         modal.appendChild(modalContent);
         document.body.appendChild(modal);
         
+        // 모달 닫기 함수
+        function closeModal() {
+            // 모든 이벤트 리스너 제거
+            const escHandler = modal._escHandler;
+            if (escHandler) {
+                document.removeEventListener('keydown', escHandler);
+            }
+            
+            // DOM에서 모달 완전 제거
+            if (modal && modal.parentNode) {
+                modal.parentNode.removeChild(modal);
+            }
+            
+            // 메모리 정리
+            modal._escHandler = null;
+        }
+        
         // 닫기 이벤트
-        document.getElementById('closeFilePreview').addEventListener('click', () => {
-            modal.remove();
-        });
+        document.getElementById('closeFilePreview').addEventListener('click', closeModal);
         
         // 모달 외부 클릭시 닫기
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
-                modal.remove();
+                closeModal();
             }
         });
         
         // ESC 키로 닫기
-        document.addEventListener('keydown', function escHandler(e) {
+        function escHandler(e) {
             if (e.key === 'Escape') {
-                modal.remove();
-                document.removeEventListener('keydown', escHandler);
+                closeModal();
             }
-        });
+        }
+        modal._escHandler = escHandler;
+        document.addEventListener('keydown', escHandler);
         
         // 파일 내용 로드 (JSON 응답 처리)
         fetch(`/api/documents/view/${systemFilename}`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                if (data.status === 'success') {
+                // 모달이 이미 닫혔는지 확인
+                if (!document.body.contains(modal)) {
+                    return; // 모달이 닫혔으면 처리 중단
+                }
+                
+                if (data && data.status === 'success') {
                     if (data.html_content && data.file_type === 'csv') {
                         // CSV 파일의 경우 편집 가능한 HTML 콘텐츠 표시
-                        content.innerHTML = data.content;
+                        content.innerHTML = data.content || '';
                         
                         // CSV 편집 기능 활성화
                         initializeCSVEditingInModal(modal, systemFilename, data.encoding || 'utf-8');
                     } else {
                         // 일반 텍스트 파일
+                        const fileContent = data.content || data || '';
                         content.innerHTML = `
                             <div style="background: white; border-radius: 8px; margin: 20px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                                <pre style="white-space: pre-wrap; font-family: 'Courier New', monospace; line-height: 1.5;">${data.content || data}</pre>
+                                <pre style="white-space: pre-wrap; font-family: 'Courier New', monospace; line-height: 1.5;">${fileContent}</pre>
                             </div>
                         `;
                     }
                 } else {
-                    throw new Error(data.message || '파일을 불러올 수 없습니다.');
+                    throw new Error(data?.message || '파일 데이터가 올바르지 않습니다.');
                 }
             })
             .catch(error => {
+                // 모달이 이미 닫혔는지 확인
+                if (!document.body.contains(modal)) {
+                    return; // 모달이 닫혔으면 오류 표시하지 않음
+                }
+                
                 console.error('파일 로드 오류:', error);
+                const errorMessage = error.message || '알 수 없는 오류가 발생했습니다.';
                 content.innerHTML = `
                     <div style="text-align: center; padding: 40px; color: #ff5252;">
                         <div style="font-size: 24px; margin-bottom: 10px;">⚠️</div>
                         <p>파일을 불러올 수 없습니다.</p>
-                        <p style="font-size: 14px; color: #666;">오류: ${error.message}</p>
+                        <p style="font-size: 14px; color: #666;">오류: ${errorMessage}</p>
                     </div>
                 `;
             });
