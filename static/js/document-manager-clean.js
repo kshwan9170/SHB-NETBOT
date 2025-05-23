@@ -92,7 +92,11 @@ document.addEventListener('DOMContentLoaded', function() {
             if (allSuccess) {
                 showMessage('success', `✅ ${filename} 파일이 성공적으로 업로드되었습니다!`);
                 
-                // 1초 후 파일 목록 새로고침
+                // 즉시 파일 목록 새로고침 (여러 번 시도로 확실히 반영)
+                loadDocuments();
+                setTimeout(() => {
+                    loadDocuments();
+                }, 500);
                 setTimeout(() => {
                     loadDocuments();
                 }, 1000);
