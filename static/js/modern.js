@@ -2705,7 +2705,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (data.files && Array.isArray(data.files)) {
                 documentsTableBody.innerHTML = ''; // 기존 목록 초기화
                 
-                if (data.files.length === 0) {
+                // 🚫 메타데이터 파일 완전 차단! 
+                const filteredFiles = data.files.filter(file => 
+                    !file.filename.endsWith('_metadata.json') && 
+                    !file.filename.includes('_metadata') &&
+                    !file.system_filename.endsWith('_metadata.json') &&
+                    !file.system_filename.includes('_metadata')
+                );
+                
+                if (filteredFiles.length === 0) {
                     // 파일이 없는 경우
                     documentsTable.style.display = 'none';
                     // 페이지네이션 컨테이너가 있으면 제거
@@ -2716,8 +2724,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                // 모든 문서 저장
-                allDocuments = data.files;
+                // 필터링된 문서만 저장
+                allDocuments = filteredFiles;
                 
                 // 파일이 있는 경우
                 documentsTable.style.display = 'table';

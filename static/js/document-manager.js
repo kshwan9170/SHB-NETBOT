@@ -141,11 +141,20 @@ document.addEventListener('DOMContentLoaded', function() {
         renderDirectFileList(filteredFiles);
     }
     
-    // JSON 파일 필터링 함수
+    // 메타데이터 파일 완전 필터링 함수
     function filterJsonFiles(files) {
         return files.filter(file => {
-            // .json 확장자를 가진 파일 숨기기
-            return file.file_type.toLowerCase() !== 'json';
+            // 🚫 메타데이터 파일 완전 차단!
+            const filename = file.filename || '';
+            const systemFilename = file.system_filename || '';
+            const fileType = file.file_type ? file.file_type.toLowerCase() : '';
+            
+            // JSON 파일과 메타데이터 파일 모두 차단
+            return fileType !== 'json' && 
+                   !filename.endsWith('_metadata.json') && 
+                   !filename.includes('_metadata') &&
+                   !systemFilename.endsWith('_metadata.json') &&
+                   !systemFilename.includes('_metadata');
         });
     }
     
