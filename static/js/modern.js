@@ -287,14 +287,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (isIpFile) {
                     for (const record of file.records) {
-                        // 각 레코드의 모든 필드 검색
+                        // 각 레코드의 모든 필드 검색 - 정확한 필드명 매칭 추가
                         for (const [key, value] of Object.entries(record)) {
-                            if (typeof value === 'string' && (value === ipAddress || 
-                                (key.toLowerCase().includes('ip') && value.includes(ipAddress)))) {
-                                // IP 주소 일치하는 레코드 발견
+                            if (typeof value === 'string' && value === ipAddress) {
+                                // 정확한 IP 주소 일치
                                 foundRecord = record;
                                 sourceFilename = file.filename;
                                 console.log(`IP 주소 ${ipAddress} 레코드 찾음:`, record);
+                                break;
+                            } else if (typeof value === 'string' && value.includes(ipAddress)) {
+                                // IP 주소가 포함된 경우
+                                foundRecord = record;
+                                sourceFilename = file.filename;
+                                console.log(`IP 주소 ${ipAddress} 포함 레코드 찾음:`, record);
                                 break;
                             }
                         }
@@ -309,8 +314,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 for (const file of csvData) {
                     for (const record of file.records) {
                         for (const [key, value] of Object.entries(record)) {
-                            if (typeof value === 'string' && (value === ipAddress || 
-                                (key.toLowerCase().includes('ip') && value.includes(ipAddress)))) {
+                            if (typeof value === 'string' && (value === ipAddress || value.includes(ipAddress))) {
                                 foundRecord = record;
                                 sourceFilename = file.filename;
                                 console.log(`다른 파일에서 IP 주소 ${ipAddress} 레코드 찾음:`, record);
@@ -381,23 +385,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 if (dept && user) {
                     if (status === '사용 중' || status === '정상') {
-                        response = `IP ${rawIpAddr}는 ${dept}의 ${user} 담당자가 사용 중입니다.`;
+                        response = `IP 주소 정보 조회 결과\n${rawIpAddr}는 ${dept} ${user}님이 사용 중입니다.`;
                     } else {
-                        response = `IP ${rawIpAddr}는 ${dept}의 ${user} 담당자가 ${status} 상태입니다.`;
+                        response = `IP 주소 정보 조회 결과\n${rawIpAddr}는 ${dept} ${user}님이 ${status} 상태입니다.`;
                     }
                 } else if (user) {
                     if (status === '사용 중' || status === '정상') {
-                        response = `IP ${rawIpAddr}는 ${user} 담당자가 사용 중입니다.`;
+                        response = `IP 주소 정보 조회 결과\n${rawIpAddr}는 ${user}님이 사용 중입니다.`;
                     } else {
-                        response = `IP ${rawIpAddr}는 ${user} 담당자가 ${status} 상태입니다.`;
+                        response = `IP 주소 정보 조회 결과\n${rawIpAddr}는 ${user}님이 ${status} 상태입니다.`;
+                    }
+                } else if (dept) {
+                    response = `IP 주소 정보 조회 결과\n${rawIpAddr}는 ${dept}에서 관리하는 IP입니다.`;
+                    if (status !== '사용 중' && status !== '정상') {
+                        response += ` 현재 ${status} 상태입니다.`;
                     }
                 } else {
-                    response = `IP ${rawIpAddr}에 대한 정보를 찾았습니다.`;
-                    
-                    // 부서 정보만 있는 경우
-                    if (dept) {
-                        response += ` 이 IP는 ${dept}에서 관리합니다.`;
-                    }
+                    response = `IP 주소 정보 조회 결과\n${rawIpAddr}에 대한 정보를 찾았습니다.`;
                 }
                 
                 // 추가 정보를 필요에 따라 순서대로 추가
