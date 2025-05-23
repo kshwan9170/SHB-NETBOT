@@ -677,12 +677,12 @@ body.offline-mode .logo img {
 }
 
 .chat-header {
-    padding: 1.8rem 2.4rem;
+    padding: 2rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     border-bottom: 1px solid var(--border-color);
-    background: var(--primary);
+    background: linear-gradient(90deg, #30507A, #3C5C88);
     color: var(--white);
 }
 
