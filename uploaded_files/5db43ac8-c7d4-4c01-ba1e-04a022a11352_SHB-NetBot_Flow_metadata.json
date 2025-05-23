@@ -1,0 +1,39 @@
+{
+  "file_name": "5db43ac8-c7d4-4c01-ba1e-04a022a11352_SHB-NetBot_Flow.csv",
+  "file_path": "uploaded_files/5db43ac8-c7d4-4c01-ba1e-04a022a11352_SHB-NetBot_Flow.csv",
+  "encoding": "utf-8",
+  "row_count": 6,
+  "column_count": 3,
+  "columns": [
+    {
+      "name": "ID",
+      "type": "ID",
+      "sample_values": [
+        "start",
+        "check_phone_light",
+        "check_phone_cable"
+      ]
+    },
+    {
+      "name": "질문/안내",
+      "type": "UNKNOWN",
+      "sample_values": [
+        "IP 전화기를 사용하시나요?",
+        "전화기 뒷면의 LAN 포트에 불이 들어오나요?",
+        "전화기와 벽면 랜포트를 연결한 LAN선을 뺐다 다시 연결해보세요. 여전히 불이 들어오지 않으면 LAN선 장애 신청이 필요합니다."
+      ]
+    },
+    {
+      "name": "선택지",
+      "type": "UNKNOWN",
+      "sample_values": [
+        "예:check_phone_light, 아니요:check_pc_lan_light",
+        "예:check_pc_lan_light, 아니요:check_phone_cable",
+        "(종료)"
+      ]
+    }
+  ],
+  "common_prefix": "",
+  "generated_at": "2025-05-23T17:47:45.684391",
+  "suggestions": []
+}

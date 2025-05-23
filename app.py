@@ -20,6 +20,7 @@ import database
 import document_processor
 import chatbot
 from config import FAQ_KEYWORDS, FINE_TUNED_MODEL, RAG_SYSTEM
+from flow_converter import convert_flow_file, get_offline_flow
 
 # CSV 파일 처리 초기화
 chatbot.initialize_csv_narratives()
