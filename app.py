@@ -356,7 +356,7 @@ def get_documents():
         # 폴더에서 파일 정보 가져오기
         files = []
         for filename in os.listdir(app.config['UPLOAD_FOLDER']):
-            if not filename.startswith('.'):  # 숨김 파일 제외
+            if not filename.startswith('.') and not filename.endswith('_metadata.json'):  # 숨김 파일과 메타데이터 파일 제외
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 if os.path.isfile(file_path):
                     # 원본 파일명 추출 (UUID 제거)
