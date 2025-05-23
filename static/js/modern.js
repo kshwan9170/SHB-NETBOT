@@ -879,14 +879,17 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
         } else {
-            document.body.classList.add('offline-mode');
+            // 오프라인 모드에서도 모든 스타일을 온라인과 동일하게 유지
+            document.body.classList.remove('offline-mode');
             
-            // 오프라인 모드에서 로고 색상 필터만 적용하고 이미지 소스는 유지
+            // 모든 로고 이미지 원래 상태로 유지
             document.querySelectorAll('.logo img').forEach(img => {
-                // 이미지는 그대로 두고 붉은색 필터 적용
-                if (img.getAttribute('src')) {
-                    img.style.filter = 'grayscale(100%) brightness(40%) sepia(100%) hue-rotate(-50deg) saturate(600%) contrast(0.8)';
-                }
+                img.style.filter = '';
+            });
+            
+            // 모든 텍스트 색상도 원래 상태로 유지
+            document.querySelectorAll('.logo span').forEach(span => {
+                span.style.color = '';
             });
         }
     }
