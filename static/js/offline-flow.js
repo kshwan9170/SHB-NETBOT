@@ -72,11 +72,46 @@ class OfflineFlowSystem {
     
     async loadFlowData() {
         try {
-            // 캐시 무시하고 최신 JSON 파일 강제 로드
+            // 🚨 강화된 캐시 무시 및 실시간 동기화
             const timestamp = new Date().getTime();
-            const response = await fetch(`/static/data/offline_flow.json?v=${timestamp}`);
+            const response = await fetch(`/static/data/offline_flow.json?v=${timestamp}&cache_bust=${timestamp}`, {
+                method: 'GET',
+                cache: 'no-cache',
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                }
+            });
+            
             if (response.ok) {
-                this.flowData = await response.json();
+                const newFlowData = await response.json();
+                
+                // 🔄 동기화 메타데이터 확인 - 새로운 업로드 감지
+                if (newFlowData._sync_metadata) {
+                    const syncInfo = newFlowData._sync_metadata;
+                    console.log('🔄 Flow 동기화 메타데이터 감지:', syncInfo);
+                    
+                    const lastVersion = localStorage.getItem('flow_last_version');
+                    if (syncInfo.force_refresh || lastVersion !== syncInfo.version) {
+                        console.log('🚨 새로운 Flow 버전 감지됨! 즉시 적용:', syncInfo.version);
+                        
+                        // 모든 캐시 완전 초기화
+                        localStorage.removeItem('shb_flow_data');
+                        localStorage.removeItem('shb_flow_timestamp');
+                        localStorage.removeItem('flow_last_check');
+                        localStorage.setItem('flow_last_version', syncInfo.version);
+                        
+                        // Flow 상태 완전 리셋
+                        this.currentNode = 'start';
+                        this.flowHistory = [];
+                        this.isFlowMode = false;
+                        
+                        console.log('🔄 Flow 시스템 완전 리셋 완료');
+                    }
+                }
+                
+                this.flowData = newFlowData;
                 console.log('✅ Flow 데이터 로드 완료:', Object.keys(this.flowData).length, '개 노드');
                 
                 // localStorage에 최신 Flow 데이터 저장 (오프라인 백업용)

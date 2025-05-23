@@ -309,15 +309,52 @@ def upload_file():
                 flow_sync_message = ""
                 if "SHB-NetBot_Flow" in filename and filename.endswith('.csv'):
                     try:
-                        print(f"🔄 Flow 파일 감지: {filename} - 자동 JSON 변환 시작")
-                        sync_result = check_and_sync_flow()
+                        print(f"🔄 Flow 파일 감지: {filename} - 즉시 JSON 변환 시작")
                         
-                        if sync_result['success']:
-                            flow_sync_message = f"\n✅ Flow 자동 동기화 완료: {sync_result['message']}"
-                            print(f"✅ Flow 자동 동기화 성공: {sync_result['message']}")
+                        # Flow 변환기 임포트 및 즉시 실행
+                        from flow_converter import FlowConverter
+                        import time
+                        import json
+                        
+                        converter = FlowConverter()
+                        flow_path = os.path.join(app.config['UPLOAD_FOLDER'], safe_filename)
+                        
+                        # 🚨 중요: 업로드된 파일 즉시 변환
+                        conversion_result = converter.csv_to_flow_json(flow_path)
+                        
+                        if conversion_result and conversion_result.get('success', False):
+                            # 타임스탬프 추가하여 클라이언트 캐시 무효화 강제
+                            timestamp = int(time.time() * 1000)
+                            
+                            try:
+                                json_path = converter.output_path
+                                if os.path.exists(json_path):
+                                    with open(json_path, 'r', encoding='utf-8') as f:
+                                        flow_data = json.load(f)
+                                    
+                                    # 🔄 강제 동기화를 위한 메타데이터 추가
+                                    flow_data['_sync_metadata'] = {
+                                        'last_updated': timestamp,
+                                        'source_file': filename,
+                                        'force_refresh': True,
+                                        'version': f"upload_{timestamp}",
+                                        'cache_bust': f"flow_{timestamp}"
+                                    }
+                                    
+                                    with open(json_path, 'w', encoding='utf-8') as f:
+                                        json.dump(flow_data, f, ensure_ascii=False, indent=2)
+                                    
+                                    print(f"🔄 Flow JSON 강제 갱신 완료: {timestamp}")
+                                    flow_sync_message = f"\n✅ Flow 실시간 동기화 완료: {conversion_result.get('nodes_count', 0)}개 노드 (버전: {timestamp})"
+                                    
+                            except Exception as meta_error:
+                                print(f"⚠️ 메타데이터 추가 실패: {meta_error}")
+                                flow_sync_message = f"\n✅ Flow 기본 동기화 완료: {conversion_result.get('nodes_count', 0)}개 노드"
+                            
+                            print(f"✅ Flow 업로드 후 즉시 변환 완료: {conversion_result}")
                         else:
-                            flow_sync_message = f"\n⚠️ Flow 동기화 오류: {sync_result['message']}"
-                            print(f"❌ Flow 자동 동기화 실패: {sync_result['message']}")
+                            flow_sync_message = f"\n❌ Flow 변환 실패: {conversion_result.get('message', '알 수 없는 오류')}"
+                            print(f"❌ Flow 즉시 변환 실패: {conversion_result}")
                             
                     except Exception as flow_error:
                         flow_sync_message = f"\n❌ Flow 변환 중 오류: {str(flow_error)}"
