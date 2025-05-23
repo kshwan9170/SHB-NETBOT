@@ -78,8 +78,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     submitBtn.disabled = false;
                 }, 1000);
             } else {
-                // 실제 오류 처리
-                const errorMessage = data.results && data.results[0] ? data.results[0].message : '알 수 없는 오류';
+                // 실제 오류 처리 - 서버 응답 구조 확인
+                console.log('Upload failed, server response:', data);
+                const errorMessage = data.message || data.error || '서버에서 오류가 발생했습니다.';
                 throw new Error(errorMessage);
             }
         })
