@@ -780,6 +780,27 @@ def view_document(system_filename):
             'message': f'문서 조회 중 오류가 발생했습니다: {str(e)}'
         }), 500
 
+@app.route('/api/documents/download/<system_filename>')
+def download_document(system_filename):
+    """문서 다운로드 API"""
+    try:
+        file_path = os.path.join(UPLOAD_FOLDER, system_filename)
+        if not os.path.exists(file_path):
+            return jsonify({'error': '파일을 찾을 수 없습니다.'}), 404
+        
+        # 원본 파일명 추출 (UUID_ 제거)
+        original_filename = '_'.join(system_filename.split('_')[1:])
+        
+        return send_file(
+            file_path,
+            as_attachment=True,
+            download_name=original_filename,
+            mimetype='application/octet-stream'
+        )
+    except Exception as e:
+        print(f"다운로드 오류: {str(e)}")
+        return jsonify({'error': '다운로드 중 오류가 발생했습니다.'}), 500
+
 # 이전 편집 기능 비활성화 코드 (CSV 편집 기능으로 대체됨)
 # @app.route('/api/documents/edit/<path:system_filename>', methods=['POST'])
 # def edit_document_disabled(system_filename):
