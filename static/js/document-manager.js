@@ -51,8 +51,8 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-            // 성공적인 업로드만 로그에 기록
-            if (data.success || (data.results && data.results.length > 0)) {
+            // 업로드 결과 확인 (서버는 results 배열로 응답)
+            if (data.results && data.results.length > 0 && data.results[0].status === 'success') {
                 console.log("Upload successful:", data);
                 // 성공 피드백 표시
                 submitBtn.innerHTML = '✅ 업로드 완료!';
