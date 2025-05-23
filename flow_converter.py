@@ -93,10 +93,32 @@ class FlowConverter:
             # JSON Flow 구조 생성
             flow_data = {}
             
+            # 컬럼명 정규화 (다양한 컬럼명 지원)
+            columns = df.columns.tolist()
+            question_col = None
+            options_col = None
+            
+            # 질문/안내 컬럼 찾기
+            for col in columns:
+                if '질문' in col or '안내' in col:
+                    question_col = col
+                    break
+            
+            # 선택지 컬럼 찾기  
+            for col in columns:
+                if '선택' in col:
+                    options_col = col
+                    break
+            
+            if not question_col:
+                question_col = columns[1] if len(columns) > 1 else columns[0]
+            if not options_col:
+                options_col = columns[2] if len(columns) > 2 else columns[-1]
+            
             for _, row in df.iterrows():
                 node_id = str(row['ID']).strip()
-                text = str(row['질문/안내']).strip()
-                options_str = str(row['선택지']).strip() if pd.notna(row['선택지']) else ""
+                text = str(row[question_col]).strip()
+                options_str = str(row[options_col]).strip() if pd.notna(row[options_col]) else ""
                 
                 # 옵션 파싱
                 options = self.parse_options(options_str)
@@ -119,16 +141,15 @@ class FlowConverter:
         변환된 Flow 데이터를 JSON 파일로 저장합니다.
         
         Args:
-            flow_data: Flow 데이터 딕셔너리
+            flow_data: 변환된 Flow 데이터
             
         Returns:
             저장 성공 여부
         """
         try:
-            # 디렉토리 생성
+            # 디렉토리 생성 (존재하지 않는 경우)
             os.makedirs(os.path.dirname(self.output_path), exist_ok=True)
             
-            # JSON 파일로 저장
             with open(self.output_path, 'w', encoding='utf-8') as f:
                 json.dump(flow_data, f, ensure_ascii=False, indent=2)
             
@@ -139,67 +160,79 @@ class FlowConverter:
             logger.error(f"Flow JSON 저장 중 오류: {e}")
             return False
     
-    def load_flow_json(self) -> Dict[str, Any]:
+    def auto_sync_flow(self, uploaded_files_dir: str = "uploaded_files") -> Dict[str, Any]:
         """
-        저장된 Flow JSON 파일을 로드합니다.
+        SHB-NetBot_Flow.csv 파일을 자동으로 감지하여 JSON으로 변환 및 저장합니다.
         
+        Args:
+            uploaded_files_dir: 업로드된 파일 디렉토리
+            
         Returns:
-            Flow 데이터 딕셔너리
+            변환 결과 딕셔너리 {'success': bool, 'message': str, 'flow_data': dict}
         """
         try:
-            if os.path.exists(self.output_path):
-                with open(self.output_path, 'r', encoding='utf-8') as f:
-                    flow_data = json.load(f)
-                logger.info(f"Flow JSON 로드 완료: {len(flow_data)}개 노드")
-                return flow_data
-        except Exception as e:
-            logger.error(f"Flow JSON 로드 중 오류: {e}")
-        return {}
-    
-    def auto_convert_if_needed(self) -> bool:
-        """
-        Flow 파일을 자동으로 감지하고 변환합니다.
-        
-        Returns:
-            변환 성공 여부
-        """
-        # Flow 파일 탐색
-        flow_file = self.detect_flow_file()
-        
-        if not flow_file:
-            logger.info("Flow 파일이 발견되지 않았습니다.")
-            return False
-        
-        # 기존 JSON 파일 확인
-        if os.path.exists(self.output_path):
-            # 파일 수정 시간 비교
-            csv_mtime = os.path.getmtime(flow_file)
-            json_mtime = os.path.getmtime(self.output_path)
+            # Flow 파일 탐색
+            flow_file_path = self.detect_flow_file(uploaded_files_dir)
             
-            if csv_mtime <= json_mtime:
-                logger.info("기존 Flow JSON이 최신 상태입니다.")
-                return True
-        
-        # CSV → JSON 변환
-        logger.info("Flow 파일 변환을 시작합니다...")
-        flow_data = self.convert_csv_to_json(flow_file)
-        
-        if not flow_data:
-            logger.error("Flow 변환에 실패했습니다.")
-            return False
-        
-        # JSON 저장
-        return self.save_flow_json(flow_data)
+            if not flow_file_path:
+                return {
+                    'success': False, 
+                    'message': 'SHB-NetBot_Flow.csv 파일을 찾을 수 없습니다.',
+                    'flow_data': {}
+                }
+            
+            # CSV → JSON 변환
+            flow_data = self.convert_csv_to_json(flow_file_path)
+            
+            if not flow_data:
+                return {
+                    'success': False,
+                    'message': 'CSV 파일 변환에 실패했습니다.',
+                    'flow_data': {}
+                }
+            
+            # JSON 파일 저장
+            save_success = self.save_flow_json(flow_data)
+            
+            if save_success:
+                logger.info(f"Flow 자동 동기화 완료: {len(flow_data)}개 노드")
+                return {
+                    'success': True,
+                    'message': f'Flow 동기화 완료: {len(flow_data)}개 노드가 업데이트되었습니다.',
+                    'flow_data': flow_data
+                }
+            else:
+                return {
+                    'success': False,
+                    'message': 'JSON 파일 저장에 실패했습니다.',
+                    'flow_data': flow_data
+                }
+                
+        except Exception as e:
+            logger.error(f"Flow 자동 동기화 중 오류: {e}")
+            return {
+                'success': False,
+                'message': f'동기화 중 오류 발생: {str(e)}',
+                'flow_data': {}
+            }
 
-def convert_flow_file() -> bool:
+
+# 전역 FlowConverter 인스턴스
+flow_converter = FlowConverter()
+
+
+def check_and_sync_flow(uploaded_files_dir: str = "uploaded_files") -> Dict[str, Any]:
     """
-    Flow 파일을 자동으로 변환하는 편의 함수
+    Flow 파일 자동 동기화 실행 함수 (외부에서 호출용)
     
+    Args:
+        uploaded_files_dir: 업로드된 파일 디렉토리
+        
     Returns:
-        변환 성공 여부
+        동기화 결과 딕셔너리
     """
-    converter = FlowConverter()
-    return converter.auto_convert_if_needed()
+    return flow_converter.auto_sync_flow(uploaded_files_dir)
+
 
 def get_offline_flow() -> Dict[str, Any]:
     """
@@ -208,15 +241,11 @@ def get_offline_flow() -> Dict[str, Any]:
     Returns:
         Flow 데이터 딕셔너리
     """
-    converter = FlowConverter()
-    return converter.load_flow_json()
-
-if __name__ == "__main__":
-    # 테스트 실행
-    success = convert_flow_file()
-    if success:
-        print("✅ Flow 변환 성공!")
-        flow_data = get_offline_flow()
-        print(f"📊 로드된 노드 수: {len(flow_data)}")
-    else:
-        print("❌ Flow 변환 실패")
+    try:
+        if os.path.exists(flow_converter.output_path):
+            with open(flow_converter.output_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception as e:
+        logger.error(f"오프라인 Flow 데이터 로드 중 오류: {e}")
+    
+    return {}

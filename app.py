@@ -20,7 +20,7 @@ import database
 import document_processor
 import chatbot
 from config import FAQ_KEYWORDS, FINE_TUNED_MODEL, RAG_SYSTEM
-from flow_converter import convert_flow_file, get_offline_flow
+from flow_converter import check_and_sync_flow, get_offline_flow
 
 # CSV 파일 처리 초기화
 chatbot.initialize_csv_narratives()
@@ -305,11 +305,29 @@ def upload_file():
                     print(f"ERROR: RAG pipeline failed during vector DB storage: {str(db_error)}")
                     raise db_error
                 
+                # ⭐ SHB-NetBot_Flow.csv 파일 자동 감지 및 JSON 변환
+                flow_sync_message = ""
+                if "SHB-NetBot_Flow" in filename and filename.endswith('.csv'):
+                    try:
+                        print(f"🔄 Flow 파일 감지: {filename} - 자동 JSON 변환 시작")
+                        sync_result = check_and_sync_flow()
+                        
+                        if sync_result['success']:
+                            flow_sync_message = f"\n✅ Flow 자동 동기화 완료: {sync_result['message']}"
+                            print(f"✅ Flow 자동 동기화 성공: {sync_result['message']}")
+                        else:
+                            flow_sync_message = f"\n⚠️ Flow 동기화 오류: {sync_result['message']}"
+                            print(f"❌ Flow 자동 동기화 실패: {sync_result['message']}")
+                            
+                    except Exception as flow_error:
+                        flow_sync_message = f"\n❌ Flow 변환 중 오류: {str(flow_error)}"
+                        print(f"❌ Flow 자동 변환 오류: {str(flow_error)}")
+                
                 # 성공 결과 추가
                 results.append({
                     'filename': filename,
                     'status': 'success',
-                    'message': '문서가 성공적으로 처리되었습니다.',
+                    'message': '문서가 성공적으로 처리되었습니다.' + flow_sync_message,
                     'doc_id': chunks[0]['doc_id'] if chunks else None,
                     'chunk_count': len(chunks)
                 })

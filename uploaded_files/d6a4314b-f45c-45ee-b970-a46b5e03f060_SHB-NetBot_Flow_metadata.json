@@ -1,0 +1,39 @@
+{
+  "file_name": "d6a4314b-f45c-45ee-b970-a46b5e03f060_SHB-NetBot_Flow.csv",
+  "file_path": "uploaded_files/d6a4314b-f45c-45ee-b970-a46b5e03f060_SHB-NetBot_Flow.csv",
+  "encoding": "utf-8",
+  "row_count": 11,
+  "column_count": 3,
+  "columns": [
+    {
+      "name": "ID",
+      "type": "ID",
+      "sample_values": [
+        "start",
+        "check_phone_power",
+        "check_phone_lan_cable"
+      ]
+    },
+    {
+      "name": "질문 또는 안내 문구",
+      "type": "UNKNOWN",
+      "sample_values": [
+        "현재 사용 중인 전화기가 IP 전화기인가요? (※ 무선전화기 및 DGW는 오프라인과 무관)",
+        "전화기 디스플레이가 정상적으로 켜져 있고 수화기에서 '삐-' 신호음이 들리나요?",
+        "전화기와 벽면 포트를 연결한 LAN 케이블을 분리 후 다시 연결해 보세요.\n불빛이 들어오지 않거나 전화기가 켜지지 않는다면 전화기 LAN 케이블 또는 회선 단절 가능성이 있습니다.\n▶ LAN선 장애 접수 필요\n☎ HelpDesk에 전화부탁드립니다.  \n📞 5-1234"
+      ]
+    },
+    {
+      "name": "선택지",
+      "type": "UNKNOWN",
+      "sample_values": [
+        "예:check_phone_power, 아니요:check_pc_lan_light",
+        "예:check_pc_ip_phone_connection, 아니요:check_phone_lan_cable",
+        "(종료)"
+      ]
+    }
+  ],
+  "common_prefix": "",
+  "generated_at": "2025-05-23T18:18:23.781844",
+  "suggestions": []
+}
