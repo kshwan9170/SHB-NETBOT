@@ -1799,29 +1799,52 @@ document.addEventListener('DOMContentLoaded', function() {
         
         if (!uploadForm || !fileInput || !uploadDropzone || !documentsList) return;
         
-        // 드래그 앤 드롭 기능
+        // 드래그 앤 드롭 기능 - 개선된 호버 효과
         uploadDropzone.addEventListener('dragover', (e) => {
             e.preventDefault();
-            uploadDropzone.style.borderColor = '#4CD6B9';
-            uploadDropzone.style.backgroundColor = 'var(--primary-light)';
+            uploadDropzone.style.cssText = `
+                border: 2px dashed #4CD6B9 !important;
+                background-color: rgba(76, 214, 185, 0.1) !important;
+                transform: scale(1.02);
+                box-shadow: 0 8px 25px rgba(76, 214, 185, 0.3);
+                transition: all 0.3s ease;
+            `;
+            uploadDropzone.querySelector('p').style.color = '#4CD6B9';
+            uploadDropzone.querySelector('p').style.fontWeight = 'bold';
         });
         
         uploadDropzone.addEventListener('dragleave', (e) => {
             e.preventDefault();
-            uploadDropzone.style.borderColor = 'var(--border-color)';
-            uploadDropzone.style.backgroundColor = '';
+            // 완전히 영역을 벗어났을 때만 스타일 제거
+            if (!uploadDropzone.contains(e.relatedTarget)) {
+                uploadDropzone.style.cssText = '';
+                uploadDropzone.querySelector('p').style.color = '';
+                uploadDropzone.querySelector('p').style.fontWeight = '';
+            }
         });
         
         uploadDropzone.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadDropzone.style.borderColor = 'var(--border-color)';
-            uploadDropzone.style.backgroundColor = '';
+            // 드롭 시 스타일 초기화
+            uploadDropzone.style.cssText = '';
+            uploadDropzone.querySelector('p').style.color = '';
+            uploadDropzone.querySelector('p').style.fontWeight = '';
             
             if (e.dataTransfer.files.length > 0) {
                 fileInput.files = e.dataTransfer.files;
                 // 파일 이름 표시
                 const fileNames = Array.from(fileInput.files).map(file => file.name).join(', ');
                 uploadDropzone.querySelector('p').textContent = fileNames;
+                
+                // 드롭 성공 효과
+                uploadDropzone.style.cssText = `
+                    border: 2px solid #28a745 !important;
+                    background-color: rgba(40, 167, 69, 0.1) !important;
+                    transition: all 0.3s ease;
+                `;
+                setTimeout(() => {
+                    uploadDropzone.style.cssText = '';
+                }, 1000);
             }
         });
         
@@ -1978,29 +2001,37 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                         
                         const data = await response.json();
+                        console.log('Upload response:', response.status, data);
                         
-                        if (!response.ok) {
+                        if (!response.ok || !data.success) {
                             console.error('Upload error:', data);
-                            alert(`Upload failed: ${data.error || 'Unknown error'}`);
+                            alert(`업로드 실패: ${data.error || data.message || '알 수 없는 오류'}`);
                             allUploadsSuccessful = false;
+                        } else {
+                            console.log(`${file.name} 업로드 성공!`);
                         }
                     }
                 }
                 
                 if (allUploadsSuccessful) {
-                    // 업로드 성공
+                    // 업로드 성공 메시지
+                    const successMessage = files.length === 1 ? 
+                        `✅ ${files[0].name} 파일이 성공적으로 업로드되었습니다!` : 
+                        `✅ ${files.length}개 파일이 모두 성공적으로 업로드되었습니다!`;
+                    
+                    // 성공 팝업 표시
+                    showNotification(successMessage, 'success');
+                    
+                    // UI 초기화
                     uploadDropzone.querySelector('p').textContent = 'Drag and drop files here or browse';
                     fileInput.value = '';
                     
                     // 문서 목록 업데이트
                     loadDocuments();
-                    
-                    // 성공 메시지
-                    alert('Files uploaded successfully');
                 }
             } catch (error) {
                 console.error('Upload error:', error);
-                alert('An error occurred during the upload');
+                showNotification('❌ 업로드 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
             } finally {
                 // 업로드 버튼 다시 활성화
                 const uploadButton = document.getElementById('uploadButton');
