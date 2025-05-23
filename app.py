@@ -68,12 +68,7 @@ def get_clean_filename(filename):
 def index():
     return render_template('index.html')
     
-@app.route('/file-manager')
-def file_manager():
-    """간단한 파일 관리 페이지"""
-    # 캐시 버스팅을 위한 타임스탬프 추가
-    cache_buster = int(time.time())
-    return render_template('file_manager.html', cache_buster=cache_buster)
+
 
 @app.route('/static/<path:path>')
 def serve_static(path):
