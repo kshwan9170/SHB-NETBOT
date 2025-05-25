@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHB-NetBot 대시보드</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modern.css') }}">
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <!-- Bootstrap CSS 추가 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- 고정 내비게이션 바 -->
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='images/shinhan_logo_new.png') }}" alt="신한은행 로고" class="logo-img shinhan-logo-white">
+                <span>신한은행</span>
+                <span class="bot-name">SHB-NetBot</span>
+            </div>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Home</a>
+                <a href="/#about" class="nav-link">About</a>
+                <a href="/#chat" class="nav-link">Chat</a>
+                <a href="/#documents" class="nav-link">Documents</a>
+                <a href="/dashboard" class="nav-link active">Dashboard</a>
+                <a href="/#support" class="nav-link">Support</a>
+                <button id="theme-toggle" class="theme-toggle">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="mobile-menu-btn">
+                <div class="bar"></div>
+                <div class="bar"></div>
+                <div class="bar"></div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <!-- 헤더 영역 -->
+        <div class="text-center mb-5">
+            <h1 class="display-4" style="color: #30507A;">SHB-NetBot 대시보드</h1>
+            <p class="lead" style="color: #5A6373;">실시간 사용자 문의 및 통계 분석</p>
+        </div>
+    
+    <!-- 필터 영역 -->
+    <div class="card mb-4 shadow-sm" style="border-color: #E6EBF4;">
+        <div class="card-body">
+            <h5 class="card-title" style="color: #30507A;">조회 필터</h5>
+            <div class="row align-items-end">
+                <div class="col-md-4 mb-3">
+                    <label for="period-select" class="form-label">기간</label>
+                    <select id="period-select" class="form-select">
+                        <option value="all" selected>전체 기간</option>
+                        <option value="day">오늘</option>
+                        <option value="week">최근 7일</option>
+                        <option value="month">최근 30일</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="category-select" class="form-label">카테고리</label>
+                    <select id="category-select" class="form-select">
+                        <option value="" selected>전체 카테고리</option>
+                        <!-- 카테고리 옵션은 JavaScript로 동적 생성 -->
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button id="refresh-button" class="btn btn-primary w-100" style="background-color: #30507A; border-color: #30507A;">
+                        <i class="fas fa-sync-alt me-2"></i> 새로고침
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 통계 요약 카드 -->
+    <div class="row mb-4">
+        <!-- 전체 질문 수 -->
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
+                <div class="card-body text-center">
+                    <h5 class="card-title" style="color: #30507A;">전체 질문 수</h5>
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="fas fa-comments fa-3x me-3" style="color: #30507A;"></i>
+                        <div class="display-4 fw-bold" id="total-queries">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 최근 변화율 -->
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
+                <div class="card-body text-center">
+                    <h5 class="card-title" style="color: #30507A;">주간 변화율</h5>
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="fas fa-chart-line fa-3x me-3" id="trend-icon" style="color: #28a745;"></i>
+                        <div class="display-4 fw-bold" id="trend-percentage">0%</div>
+                    </div>
+                    <div class="small text-muted" id="trend-description">전월 대비</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 긍정 피드백 -->
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
+                <div class="card-body text-center">
+                    <h5 class="card-title" style="color: #30507A;">긍정 피드백</h5>
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="fas fa-thumbs-up fa-3x me-3" style="color: #28a745;"></i>
+                        <div class="display-4 fw-bold" id="positive-percentage">0%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 주요 문의 TOP 10 차트 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm" style="border-color: #E6EBF4;">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: #30507A;">주요 문의 TOP 10</h5>
+                    <div class="chart-container" style="position: relative; height:400px;">
+                        <canvas id="top-queries-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 상세 데이터 테이블 -->
+    <div class="card shadow-sm" style="border-color: #E6EBF4;">
+        <div class="card-body">
+            <h5 class="card-title" style="color: #30507A;">상세 문의 데이터</h5>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead style="background-color: #F8F9FA;">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">질문 내용</th>
+                            <th scope="col">카테고리</th>
+                            <th scope="col">질문 횟수</th>
+                            <th scope="col">최초 질문일</th>
+                            <th scope="col">최근 질문일</th>
+                        </tr>
+                    </thead>
+                    <tbody id="query-table-body">
+                        <!-- 데이터는 JavaScript로 동적 생성 -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="no-data-message" class="text-center py-4 d-none">
+                <p class="text-muted">조회된 데이터가 없습니다.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 푸터 섹션 -->
+<footer class="footer">
+    <div class="footer-content">
+        <div class="footer-logo">
+            <img src="{{ url_for('static', filename='images/shinhan_logo_new.png') }}" alt="신한은행 로고" class="footer-logo-img shinhan-logo-white">
+            <span>SHB-NetBot</span>
+        </div>
+        <div class="footer-links">
+            <a href="#">서비스 약관</a>
+            <a href="#">개인정보처리방침</a>
+            <a href="#">도움말</a>
+            <a href="#">문의하기</a>
+        </div>
+        <div class="footer-info">
+            <p>&copy; 2025 신한은행 네트워크 서비스. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<!-- jQuery와 Bootstrap JS 포함 -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Chart.js 추가 -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<!-- AOS 애니메이션 라이브러리 -->
+<script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script>
+  AOS.init();
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 차트 객체 (초기화 후 나중에 업데이트)
+    let topQueriesChart;
+    
+    // 페이지 로드시 데이터 조회
+    refreshDashboard();
+    
+    // 새로고침 버튼 클릭 이벤트
+    document.getElementById('refresh-button').addEventListener('click', refreshDashboard);
+    
+    // 필터 변경 이벤트
+    document.getElementById('period-select').addEventListener('change', refreshDashboard);
+    document.getElementById('category-select').addEventListener('change', refreshDashboard);
+    
+    // 대시보드 데이터 조회 및 업데이트 함수
+    function refreshDashboard() {
+        // 로딩 표시 (필요시 구현)
+        
+        // 필터 값 가져오기
+        const period = document.getElementById('period-select').value;
+        const category = document.getElementById('category-select').value;
+        
+        // API 호출
+        fetch(`/api/top_queries?period=${period}&category=${category}&limit=10`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateDashboard(data);
+                } else {
+                    console.error('데이터 조회 오류:', data.error);
+                    // 에러 메시지 표시 (필요시 구현)
+                }
+            })
+            .catch(error => {
+                console.error('API 호출 오류:', error);
+                // 에러 메시지 표시 (필요시 구현)
+            });
+    }
+    
+    // 대시보드 UI 업데이트 함수
+    function updateDashboard(data) {
+        // 카테고리 옵션 업데이트
+        updateCategoryOptions(data.category_stats);
+        
+        // 통계 요약 업데이트
+        updateSummaryStats(data);
+        
+        // 차트 업데이트
+        updateTopQueriesChart(data.top_queries);
+        
+        // 테이블 업데이트
+        updateQueryTable(data.top_queries);
+    }
+    
+    // 카테고리 옵션 업데이트
+    function updateCategoryOptions(categoryStats) {
+        const categorySelect = document.getElementById('category-select');
+        const currentValue = categorySelect.value;
+        
+        // 현재 카테고리 옵션 유지하면서 목록 업데이트
+        // 첫 번째 옵션(전체 카테고리)는 유지
+        while (categorySelect.options.length > 1) {
+            categorySelect.remove(1);
+        }
+        
+        // 카테고리 옵션 추가
+        categoryStats.forEach(stat => {
+            const option = document.createElement('option');
+            option.value = stat.category;
+            option.textContent = `${stat.category} (${stat.total_count})`;
+            categorySelect.appendChild(option);
+        });
+        
+        // 이전 선택 값 복원 (존재하는 경우)
+        if (currentValue) {
+            for (let i = 0; i < categorySelect.options.length; i++) {
+                if (categorySelect.options[i].value === currentValue) {
+                    categorySelect.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+    
+    // 통계 요약 업데이트
+    function updateSummaryStats(data) {
+        // 전체 질문 수
+        document.getElementById('total-queries').textContent = 
+            data.top_queries.reduce((sum, query) => sum + query.count, 0);
+        
+        // 변화율
+        const trendPercentage = data.period_comparison.change_percentage;
+        const trendIcon = document.getElementById('trend-icon');
+        const trendText = document.getElementById('trend-percentage');
+        const trendDescription = document.getElementById('trend-description');
+        
+        trendText.textContent = `${Math.abs(trendPercentage)}%`;
+        
+        if (trendPercentage > 0) {
+            trendIcon.className = 'fas fa-arrow-up fa-3x me-3';
+            trendIcon.style.color = '#28a745'; // 증가는 녹색
+        } else if (trendPercentage < 0) {
+            trendIcon.className = 'fas fa-arrow-down fa-3x me-3';
+            trendIcon.style.color = '#dc3545'; // 감소는 적색
+        } else {
+            trendIcon.className = 'fas fa-equals fa-3x me-3';
+            trendIcon.style.color = '#6c757d'; // 변화 없음은 회색
+        }
+        
+        trendDescription.textContent = `${data.period_comparison.period2} 대비`;
+        
+        // TODO: 긍정 피드백 데이터는 실제 API 응답에 추가 필요
+        // document.getElementById('positive-percentage').textContent = `${data.positive_percentage}%`;
+    }
+    
+    // Top 쿼리 차트 업데이트
+    function updateTopQueriesChart(topQueries) {
+        const ctx = document.getElementById('top-queries-chart').getContext('2d');
+        
+        // 데이터 없음 처리
+        if (topQueries.length === 0) {
+            if (topQueriesChart) {
+                topQueriesChart.destroy();
+                topQueriesChart = null;
+            }
+            // 차트 영역에 '데이터 없음' 메시지 표시 (필요시 구현)
+            return;
+        }
+        
+        // 차트 데이터 준비
+        const labels = topQueries.map(query => {
+            // 질문이 너무 길면 잘라서 표시
+            const maxLength = 30;
+            return query.query_text.length > maxLength 
+                ? query.query_text.substring(0, maxLength) + '...'
+                : query.query_text;
+        });
+        
+        const counts = topQueries.map(query => query.count);
+        
+        // 차트 설정
+        const chartData = {
+            labels: labels,
+            datasets: [{
+                label: '질문 횟수',
+                data: counts,
+                backgroundColor: 'rgba(48, 80, 122, 0.7)',
+                borderColor: 'rgba(48, 80, 122, 1)',
+                borderWidth: 1
+            }]
+        };
+        
+        const chartOptions = {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            const idx = tooltipItems[0].dataIndex;
+                            return topQueries[idx].query_text;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: '질문 횟수'
+                    }
+                }
+            }
+        };
+        
+        // 차트 생성 또는 업데이트
+        if (topQueriesChart) {
+            topQueriesChart.data = chartData;
+            topQueriesChart.options = chartOptions;
+            topQueriesChart.update();
+        } else {
+            topQueriesChart = new Chart(ctx, {
+                type: 'bar',
+                data: chartData,
+                options: chartOptions
+            });
+        }
+    }
+    
+    // 쿼리 테이블 업데이트
+    function updateQueryTable(topQueries) {
+        const tableBody = document.getElementById('query-table-body');
+        const noDataMessage = document.getElementById('no-data-message');
+        
+        // 테이블 내용 초기화
+        tableBody.innerHTML = '';
+        
+        // 데이터 없음 처리
+        if (topQueries.length === 0) {
+            noDataMessage.classList.remove('d-none');
+            return;
+        } else {
+            noDataMessage.classList.add('d-none');
+        }
+        
+        // 테이블 행 생성
+        topQueries.forEach((query, index) => {
+            const row = document.createElement('tr');
+            
+            const formatDate = (dateString) => {
+                const date = new Date(dateString);
+                return date.toLocaleString('ko-KR');
+            };
+            
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${query.query_text}</td>
+                <td>${query.category || '미분류'}</td>
+                <td>${query.count}</td>
+                <td>${formatDate(query.first_asked)}</td>
+                <td>${formatDate(query.last_asked)}</td>
+            `;
+            
+            tableBody.appendChild(row);
+        });
+    }
+});
+</script>
+{% endblock %}
