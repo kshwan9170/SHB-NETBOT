@@ -69,6 +69,11 @@ def get_clean_filename(filename):
 def index():
     return render_template('index.html')
     
+@app.route('/dashboard')
+def dashboard():
+    """실시간 문의 Top 10 대시보드"""
+    return render_template('dashboard.html')
+    
 
 
 @app.route('/static/<path:path>')
@@ -228,6 +233,52 @@ def chat():
                 reply = "[🔴 Server connection lost.]\n\nSorry, the server connection is currently unavailable. Please check your network connection."
                 
             return jsonify({'reply': reply, 'question': user_message, 'mode': 'offline'}), 500
+
+@app.route('/api/top_queries', methods=['GET'])
+def top_queries():
+    """실시간 문의 Top N 조회 API"""
+    try:
+        from models import QueryStatisticsModel
+        
+        period = request.args.get('period')
+        category = request.args.get('category')
+        limit = request.args.get('limit', 10, type=int)
+        
+        # 유효한 기간만 허용
+        if period and period not in ['day', 'week', 'month', 'all']:
+            period = None
+        
+        if period == 'all':
+            period = None
+        
+        # 통계 조회
+        query_stats = QueryStatisticsModel()
+        top_queries = query_stats.get_top_queries(limit=limit, period=period, category=category)
+        
+        # 카테고리별 통계 추가
+        category_stats = query_stats.get_category_stats()
+        
+        # 기간별 비교 통계 추가
+        period_comparison = query_stats.get_period_comparison(period1='week', period2='month')
+        
+        return jsonify({
+            'success': True,
+            'top_queries': top_queries,
+            'category_stats': category_stats,
+            'period_comparison': period_comparison,
+            'total_count': len(top_queries),
+            'filters': {
+                'period': period,
+                'category': category,
+                'limit': limit
+            }
+        })
+    except Exception as e:
+        print(f"Top 쿼리 조회 중 오류: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'통계 조회 중 오류가 발생했습니다: {str(e)}'
+        }), 500
 
 @app.route('/api/chat/feedback', methods=['POST'])
 def chat_feedback():
