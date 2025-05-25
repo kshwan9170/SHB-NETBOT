@@ -193,11 +193,18 @@ def chat():
     
     # 일반(온라인) 모드
     try:
-        # 챗봇 모듈을 활용하여 응답 생성
-        # 이 함수는 키워드 기반 분기 처리, Fine-tuned 모델 사용, RAG 시스템 활용을 모두 포함합니다
-        reply = chatbot.get_chatbot_response(
-            query=user_message,
-            model=RAG_SYSTEM["model"],
+        # IP 주소 신청 관련 키워드 체크
+        print(f"API 체크: IP 주소 신청 키워드 확인 - '{user_message}'")
+        if chatbot.check_ip_request_form_needed(user_message):
+            print("API: IP 주소 신청서 양식 제공 중")
+            reply = chatbot.get_ip_request_form_response()
+            print(f"API: 생성된 응답 - {reply[:50]}...")
+        else:
+            # 일반 챗봇 응답 생성
+            print("API: 일반 챗봇 응답 생성 중")
+            reply = chatbot.get_chatbot_response(
+                query=user_message,
+                model=RAG_SYSTEM["model"],
             use_rag=True
         )
         
