@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP 주소 신청서</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+        h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="tel"],
+        .form-group select,
+        .form-group textarea {
+            width: calc(100% - 20px);
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        .form-group input[type="text"]:focus,
+        .form-group input[type="email"]:focus,
+        .form-group input[type="tel"]:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .form-group small {
+            color: #888;
+            font-size: 13px;
+            margin-top: 5px;
+            display: block;
+        }
+        .button-group {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .button-group button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin: 0 10px;
+        }
+        .button-group button:hover {
+            background-color: #0056b3;
+        }
+        .button-group button[type="reset"] {
+            background-color: #6c757d;
+        }
+        .button-group button[type="reset"]:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>IP 주소 신청서</h2>
+        <form action="#" method="post">
+            <div class="form-group">
+                <label for="name">신청자 이름:</label>
+                <input type="text" id="name" name="name" required placeholder="이름을 입력하세요">
+            </div>
+            <div class="form-group">
+                <label for="employee_id">사번:</label>
+                <input type="text" id="employee_id" name="employee_id" required placeholder="사번을 입력하세요">
+            </div>
+            <div class="form-group">
+                <label for="department">소속 부서:</label>
+                <input type="text" id="department" name="department" required placeholder="소속 부서를 입력하세요">
+            </div>
+            <div class="form-group">
+                <label for="phone">연락처:</label>
+                <input type="tel" id="phone" name="phone" required placeholder="010-XXXX-XXXX">
+                <small>긴급 연락 시 사용됩니다.</small>
+            </div>
+            <div class="form-group">
+                <label for="email">이메일:</label>
+                <input type="email" id="email" name="email" required placeholder="예: user@company.com">
+            </div>
+            <div class="form-group">
+                <label for="usage_purpose">사용 목적:</label>
+                <select id="usage_purpose" name="usage_purpose" required>
+                    <option value="">선택하세요</option>
+                    <option value="신규_장비_연결">신규 장비(PC, 서버 등) 연결</option>
+                    <option value="특정_시스템_접근">특정 시스템 접근 (방화벽 정책 등)</option>
+                    <option value="테스트_환경_구축">테스트 환경 구축</option>
+                    <option value="외부_접근_허용">외부 접근 허용 (VPN 등)</option>
+                    <option value="기타">기타</option>
+                </select>
+            </div>
+            <div class="form-group" id="other_purpose_field" style="display:none;">
+                <label for="other_purpose_text">기타 사용 목적 (상세):</label>
+                <textarea id="other_purpose_text" name="other_purpose_text" placeholder="구체적인 사용 목적을 입력해주세요."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="device_mac">장비 MAC 주소 (필수):</label>
+                <input type="text" id="device_mac" name="device_mac" required placeholder="예: AA:BB:CC:DD:EE:FF 또는 AABBCCDDEEFF">
+                <small>IP를 할당받을 장비의 MAC 주소를 정확히 입력해주세요.</small>
+            </div>
+            <div class="form-group">
+                <label for="device_type">장비 종류:</label>
+                <select id="device_type" name="device_type" required>
+                    <option value="">선택하세요</option>
+                    <option value="PC">PC</option>
+                    <option value="서버">서버</option>
+                    <option value="네트워크_프린터">네트워크 프린터</option>
+                    <option value="IP_Phone">IP Phone</option>
+                    <option value="CCTV">CCTV</option>
+                    <option value="기타_네트워크_장비">기타 네트워크 장비</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="request_ip">희망 IP 주소 (선택):</label>
+                <input type="text" id="request_ip" name="request_ip" placeholder="예: 192.168.X.Y (희망하는 경우)">
+                <small>희망하는 IP 주소가 있다면 입력해주세요. 최종 할당은 관리팀에서 결정합니다.</small>
+            </div>
+            <div class="form-group">
+                <label for="additional_notes">추가 요청/문의 사항:</label>
+                <textarea id="additional_notes" name="additional_notes" placeholder="추가적으로 전달하고 싶은 내용이나 문의 사항을 입력해주세요."></textarea>
+            </div>
+
+            <div class="button-group">
+                <button type="submit">신청하기</button>
+                <button type="reset">초기화</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const usagePurposeSelect = document.getElementById('usage_purpose');
+            const otherPurposeField = document.getElementById('other_purpose_field');
+
+            usagePurposeSelect.addEventListener('change', function() {
+                if (this.value === '기타') {
+                    otherPurposeField.style.display = 'block';
+                } else {
+                    otherPurposeField.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
