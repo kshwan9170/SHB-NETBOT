@@ -151,16 +151,21 @@ def check_ip_request_form_needed(query: str) -> bool:
         'ip 신청', 'ip신청', 'ip 주소 신청', 'ip주소신청', 'ip 발급', 'ip발급',
         'ip 할당', 'ip할당', 'ip 신청서', 'ip신청서', 'ip 주소 신청서', 'ip주소신청서',
         'ip 주소 발급', 'ip주소발급', 'ip 어떻게 신청', '아이피 신청', '아이피 발급',
-        '신규 ip', '새 ip', '새로운 ip'
+        '신규 ip', '새 ip', '새로운 ip', 'ip 주소 신청하고', '아이피 주소 신청', 
+        'ip주소를 신청', 'ip 신청하고', 'ip주소 신청하고', '아이피 신청하고'
     ]
     
     # 사용자 질문을 소문자로 변환하여 검색
     query_lower = query.lower()
     
+    print(f"IP 주소 신청 키워드 검사: {query_lower}")
+    
     for keyword in ip_request_keywords:
         if keyword in query_lower:
+            print(f"IP 주소 신청 키워드 감지됨: '{keyword}'")
             return True
-            
+    
+    print("IP 주소 신청 키워드가 감지되지 않음")        
     return False
 
 def get_ip_request_form_response() -> str:
