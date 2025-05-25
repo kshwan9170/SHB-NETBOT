@@ -152,6 +152,11 @@ def chat():
     if not user_message:
         return jsonify({'error': '메시지가 비어 있습니다.'}), 400
     
+    # 질문 통계 기록 (카테고리는 일단 null로 두고 추후 개선)
+    from models import QueryStatisticsModel
+    query_stats = QueryStatisticsModel()
+    query_stats.record_query(user_message)
+    
     # OpenAI API 키 확인
     openai_key = os.getenv("OPENAI_API_KEY")
     
