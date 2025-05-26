@@ -246,7 +246,7 @@
                     <h5 class="card-title" style="color: #30507A;">최근 방문자</h5>
                     <div class="d-flex align-items-center justify-content-center">
                         <i class="fas fa-users fa-3x me-3" id="visitors-icon" style="color: #17a2b8;"></i>
-                        <div class="display-4 fw-bold" id="recent-visitors">{{ unique_visitors_24h or 0 }}</div>
+                        <div class="display-4 fw-bold" id="recent-visitors">0</div>
                     </div>
                     <div class="small text-muted" id="visitors-description">지난 24시간</div>
                 </div>
@@ -636,10 +636,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     const visitorsDescription = document.getElementById('visitors-description');
                     
                     if (visitorsText) {
-                        // 서버에서 이미 올바른 값이 설정되어 있으므로 덮어쓰지 않음
-                        // 대신 스타일만 업데이트
-                        console.log('방문자 수 현재 값:', visitorsText.textContent);
-                        console.log('API 데이터:', feedbackData);
+                        // API에서 받은 실제 방문자 수 표시
+                        const uniqueVisitors = feedbackData.unique_visitors_24h || 0;
+                        visitorsText.textContent = uniqueVisitors;
+                        console.log('방문자 수 업데이트 완료:', uniqueVisitors);
                         
                         if (visitorsIcon) {
                             visitorsIcon.style.color = '#17a2b8'; // 방문자는 청록색
