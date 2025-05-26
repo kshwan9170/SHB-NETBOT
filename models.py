@@ -403,6 +403,39 @@ class QueryStatisticsModel:
         
         return [dict(q) for q in top_queries]
     
+    def get_total_query_count(self, period=None):
+        """
+        총 질문 횟수 조회 (count 합계)
+        
+        Args:
+            period: 기간 제한 ('day', 'week', 'month', None=전체 기간)
+            
+        Returns:
+            총 질문 횟수
+        """
+        db = get_db()
+        
+        sql_conditions = []
+        
+        if period:
+            if period == 'day':
+                sql_conditions.append('last_asked >= date("now", "-1 day")')
+            elif period == 'week':
+                sql_conditions.append('last_asked >= date("now", "-7 day")')
+            elif period == 'month':
+                sql_conditions.append('last_asked >= date("now", "-30 day")')
+        
+        where_clause = f"WHERE {' AND '.join(sql_conditions)}" if sql_conditions else ""
+        
+        query = f'''
+        SELECT COALESCE(SUM(count), 0) as total_count
+        FROM {self.table_name}
+        {where_clause}
+        '''
+        
+        result = db.execute(query).fetchone()
+        return result['total_count'] if result else 0
+    
     def get_category_stats(self):
         """
         카테고리별 질문 통계 조회
