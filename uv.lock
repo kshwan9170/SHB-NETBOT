@@ -1697,6 +1697,7 @@ dependencies = [
     { name = "pypdf2" },
     { name = "python-docx" },
     { name = "python-pptx" },
+    { name = "pytz" },
     { name = "streamlit" },
     { name = "werkzeug" },
 ]
@@ -1711,6 +1712,7 @@ requires-dist = [
     { name = "pypdf2", specifier = ">=3.0.1" },
     { name = "python-docx", specifier = ">=1.1.2" },
     { name = "python-pptx", specifier = ">=1.0.2" },
+    { name = "pytz", specifier = ">=2025.2" },
     { name = "streamlit", specifier = ">=1.45.1" },
     { name = "werkzeug", specifier = ">=3.1.3" },
 ]

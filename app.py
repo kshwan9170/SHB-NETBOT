@@ -7,7 +7,23 @@ import urllib.parse
 import time
 from pathlib import Path
 from datetime import datetime
+import pytz
 from werkzeug.utils import secure_filename
+
+# KST 시간대 설정
+KST = pytz.timezone('Asia/Seoul')
+
+def get_kst_now():
+    """현재 KST 시간을 반환합니다."""
+    return datetime.now(KST)
+
+def utc_to_kst(utc_dt):
+    """UTC 시간을 KST로 변환합니다."""
+    if isinstance(utc_dt, str):
+        utc_dt = datetime.fromisoformat(utc_dt.replace('Z', '+00:00'))
+    if utc_dt.tzinfo is None:
+        utc_dt = pytz.utc.localize(utc_dt)
+    return utc_dt.astimezone(KST)
 from flask import Flask, render_template, request, jsonify, send_from_directory, redirect, url_for, abort
 import openai
 from openai import OpenAI
@@ -93,11 +109,12 @@ def log_visitor(ip_address, page_visited=None):
             )
         """)
         
-        # 현재 시간으로 방문 기록 삽입
+        # KST 현재 시간으로 방문 기록 삽입
+        kst_time = get_kst_now().strftime('%Y-%m-%d %H:%M:%S')
         conn.execute("""
-            INSERT INTO visitors (ip_address, page_visited) 
-            VALUES (?, ?)
-        """, (ip_address, page_visited or '대시보드'))
+            INSERT INTO visitors (ip_address, visit_time, page_visited) 
+            VALUES (?, ?, ?)
+        """, (ip_address, kst_time, page_visited or '대시보드'))
         
         conn.commit()
         conn.close()
