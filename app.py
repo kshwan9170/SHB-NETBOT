@@ -1906,9 +1906,9 @@ def visitor_details():
         
         # visitors 테이블에서 방문 기록 조회
         visitor_records = conn.execute("""
-            SELECT ip_address, page_visited, timestamp
+            SELECT ip_address, page_visited, visit_time
             FROM visitors 
-            ORDER BY timestamp DESC
+            ORDER BY visit_time DESC
             LIMIT 50
         """).fetchall()
         
@@ -1923,16 +1923,16 @@ def visitor_details():
                     'ip': ip,
                     'visit_count': 0,
                     'pages': set(),
-                    'first_visit': record['timestamp'],
-                    'last_visit': record['timestamp']
+                    'first_visit': record['visit_time'],
+                    'last_visit': record['visit_time']
                 }
             
             ip_stats[ip]['visit_count'] += 1
             ip_stats[ip]['pages'].add(page_name)
-            if record['timestamp'] > ip_stats[ip]['last_visit']:
-                ip_stats[ip]['last_visit'] = record['timestamp']
-            if record['timestamp'] < ip_stats[ip]['first_visit']:
-                ip_stats[ip]['first_visit'] = record['timestamp']
+            if record['visit_time'] > ip_stats[ip]['last_visit']:
+                ip_stats[ip]['last_visit'] = record['visit_time']
+            if record['visit_time'] < ip_stats[ip]['first_visit']:
+                ip_stats[ip]['first_visit'] = record['visit_time']
         
         # 결과 포맷팅
         formatted_records = []
@@ -1940,7 +1940,7 @@ def visitor_details():
             formatted_records.append({
                 'ip': record['ip_address'],
                 'page': record['page_visited'] or '알 수 없음',
-                'timestamp': record['timestamp']
+                'timestamp': record['visit_time']
             })
         
         formatted_ip_stats = []
