@@ -1796,13 +1796,21 @@ def feedback_stats():
             for row in recent_negative_rows
         ]
         
+        # 최근 24시간 고유 방문자 수 (IP 주소 기준)
+        unique_visitors_24h = conn.execute("""
+            SELECT COUNT(DISTINCT user_ip) as count 
+            FROM chat_logs 
+            WHERE timestamp >= datetime('now', '-24 hours')
+        """).fetchone()['count']
+        
         conn.close()
         
         return jsonify({
             'success': True,
             'positive_count': positive_count,
             'negative_count': negative_count,
-            'recent_negative': recent_negative
+            'recent_negative': recent_negative,
+            'unique_visitors_24h': unique_visitors_24h
         })
             
     except Exception as e:

@@ -574,20 +574,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('total-queries').textContent = 
             data.top_queries.reduce((sum, query) => sum + query.count, 0);
         
-        // 최근 방문자 (실제 데이터는 서버에서 받아옴)
-        const recentVisitors = data.top_queries.reduce((sum, query) => sum + query.count, 0) + Math.floor(Math.random() * 20);
-        const visitorsIcon = document.getElementById('visitors-icon');
-        const visitorsText = document.getElementById('recent-visitors');
-        const visitorsDescription = document.getElementById('visitors-description');
-        
-        visitorsText.textContent = recentVisitors;
-        visitorsIcon.style.color = '#17a2b8'; // 방문자는 청록색
-        visitorsDescription.textContent = '지난 24시간';
-        
-        // TODO: 긍정 피드백 데이터는 실제 API 응답에 추가 필요
-        // document.getElementById('positive-percentage').textContent = `${data.positive_percentage}%`;
-        
-        // 부정 피드백 카드 업데이트 (새로운 기능)
+        // 부정 피드백 카드 업데이트 및 방문자 수 업데이트
         updateNegativeFeedbackCard();
     }
     
@@ -626,6 +613,21 @@ document.addEventListener('DOMContentLoaded', function() {
                     const positiveCountDisplayElement = document.getElementById('positive-count-display');
                     if (positiveCountDisplayElement) {
                         positiveCountDisplayElement.textContent = `${feedbackData.positive_count || 0}건`;
+                    }
+                    
+                    // 최근 방문자 수 업데이트 (IP 주소 기준 고유 방문자)
+                    const visitorsText = document.getElementById('recent-visitors');
+                    const visitorsIcon = document.getElementById('visitors-icon');
+                    const visitorsDescription = document.getElementById('visitors-description');
+                    
+                    if (visitorsText && feedbackData.unique_visitors_24h !== undefined) {
+                        visitorsText.textContent = feedbackData.unique_visitors_24h;
+                        if (visitorsIcon) {
+                            visitorsIcon.style.color = '#17a2b8'; // 방문자는 청록색
+                        }
+                        if (visitorsDescription) {
+                            visitorsDescription.textContent = '지난 24시간';
+                        }
                     }
                     
                     // 하단 피드백 분석의 만족도 업데이트
