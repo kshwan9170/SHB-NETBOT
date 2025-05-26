@@ -669,68 +669,88 @@ document.addEventListener('DOMContentLoaded', function() {
     // 부정 피드백 카드 초기화
     updateNegativeFeedbackCard();
     
-    // 방문자 상세 정보 모달 표시 함수
-    window.showVisitorDetails = function() {
-        const modal = new bootstrap.Modal(document.getElementById('visitorDetailsModal'));
-        modal.show();
-        loadVisitorDetails();
+    // 통합된 방문자 모달 함수
+    window.showVisitorModal = function() {
+        try {
+            const modalElement = document.getElementById('visitorModal');
+            if (!modalElement) {
+                console.error('방문자 모달 요소를 찾을 수 없습니다.');
+                alert('방문자 정보 모달을 표시할 수 없습니다.');
+                return;
+            }
+            
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            
+            // 기본값 설정
+            const totalUniqueIps = document.getElementById('total-unique-ips');
+            const totalVisitCount = document.getElementById('total-visit-count');
+            
+            if (totalUniqueIps) totalUniqueIps.textContent = '로딩중...';
+            if (totalVisitCount) totalVisitCount.textContent = '로딩중...';
+            
+            const tbody = document.getElementById('visitor-records-tbody');
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center">데이터를 불러오는 중...</td></tr>';
+            }
+            
+            // 데이터 로드
+            fetch('/api/visitor_details')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('방문자 데이터:', data);
+                    if (data && data.success) {
+                        // 통계 정보 업데이트
+                        if (totalUniqueIps) totalUniqueIps.textContent = data.total_unique_ips || 0;
+                        if (totalVisitCount) totalVisitCount.textContent = (data.ip_statistics && data.ip_statistics.length > 0) ? data.ip_statistics[0].visit_count : 0;
+                        
+                        // 테이블 데이터 업데이트
+                        if (tbody) {
+                            tbody.innerHTML = '';
+                            if (data.visitor_records && data.visitor_records.length > 0) {
+                                data.visitor_records.forEach((visitor, index) => {
+                                    if (index < 50) { // 최근 50개만 표시
+                                        const row = document.createElement('tr');
+                                        const date = new Date(visitor.timestamp);
+                                        const formattedTime = date.toLocaleDateString('ko-KR') + ' ' + 
+                                            date.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
+                                        
+                                        row.innerHTML = `
+                                            <td>${formattedTime}</td>
+                                            <td><code>${visitor.ip}</code></td>
+                                            <td>${visitor.page}</td>
+                                        `;
+                                        tbody.appendChild(row);
+                                    }
+                                });
+                            } else {
+                                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">방문자 기록이 없습니다.</td></tr>';
+                            }
+                        }
+                    } else {
+                        if (totalUniqueIps) totalUniqueIps.textContent = '0';
+                        if (totalVisitCount) totalVisitCount.textContent = '0';
+                        if (tbody) {
+                            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">방문자 데이터를 불러올 수 없습니다.</td></tr>';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('방문자 데이터 로드 오류:', error);
+                    if (totalUniqueIps) totalUniqueIps.textContent = '오류';
+                    if (totalVisitCount) totalVisitCount.textContent = '오류';
+                    if (tbody) {
+                        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">데이터 로드 중 오류가 발생했습니다.</td></tr>';
+                    }
+                });
+                
+        } catch (error) {
+            console.error('모달 표시 오류:', error);
+            alert('방문자 정보 모달을 표시할 수 없습니다.');
+        }
     };
 
-    // 방문자 상세 정보 로드 함수
-    function loadVisitorDetails() {
-        fetch('/api/visitor_details')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    updateVisitorDetailsModal(data);
-                } else {
-                    console.error('방문자 정보 로드 실패:', data.error);
-                }
-            })
-            .catch(error => {
-                console.error('API 호출 오류:', error);
-            });
-    }
 
-    // 방문자 상세 정보 새로고침 함수
-    window.refreshVisitorData = function() {
-        loadVisitorDetails();
-    };
-
-    // 모달 데이터 업데이트 함수
-    function updateVisitorDetailsModal(data) {
-        // 기본 통계 업데이트
-        document.getElementById('total-unique-ips').textContent = data.total_unique_ips;
-        document.getElementById('total-visits').textContent = data.visitor_records.length;
-
-        // IP별 통계 테이블 업데이트
-        const ipStatsBody = document.getElementById('ip-stats-tbody');
-        ipStatsBody.innerHTML = '';
-        
-        data.ip_statistics.forEach(stat => {
-            const row = ipStatsBody.insertRow();
-            row.innerHTML = `
-                <td><code>${stat.ip}</code></td>
-                <td><span class="badge bg-primary">${stat.visit_count}</span></td>
-                <td><small>${stat.pages.join(', ')}</small></td>
-                <td><small>${formatDateTime(stat.first_visit)}</small></td>
-                <td><small>${formatDateTime(stat.last_visit)}</small></td>
-            `;
-        });
-
-        // 최근 방문 기록 테이블 업데이트
-        const recordsBody = document.getElementById('visitor-records-tbody');
-        recordsBody.innerHTML = '';
-        
-        data.visitor_records.forEach(record => {
-            const row = recordsBody.insertRow();
-            row.innerHTML = `
-                <td><small>${formatDateTime(record.timestamp)}</small></td>
-                <td><code>${record.ip}</code></td>
-                <td><span class="badge bg-secondary">${record.page}</span></td>
-            `;
-        });
-    }
 
     // 날짜/시간 포맷팅 함수
     function formatDateTime(timestamp) {
@@ -1027,72 +1047,9 @@ const savedTheme = localStorage.getItem('theme') || 'light';
 document.documentElement.setAttribute('data-theme', savedTheme);
 updateThemeIcon(savedTheme);
 
-// 방문자 상세 정보 모달 함수
+// 통합된 방문자 모달 함수 (showVisitorModal과 동일하게 작동)
 function showVisitorDetails() {
-    // 먼저 모달을 바로 표시하고 데이터를 로딩
-    const modalElement = document.getElementById('visitorDetailsModal');
-    if (!modalElement) {
-        alert('방문자 정보 모달을 찾을 수 없습니다.');
-        return;
-    }
-    
-    try {
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
-        
-        // 기본값 설정
-        document.getElementById('total-unique-ips').textContent = '로딩중...';
-        document.getElementById('total-visit-count').textContent = '로딩중...';
-        document.getElementById('visitor-period').textContent = '지난 24시간';
-        
-        const tbody = document.getElementById('visitor-records-tbody');
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center">데이터를 불러오는 중...</td></tr>';
-        
-        // 데이터 로드
-        fetch('/api/visitor_details')
-            .then(response => response.json())
-            .then(data => {
-                console.log('방문자 데이터:', data);
-                if (data && data.success) {
-                    // 통계 정보 업데이트
-                    document.getElementById('total-unique-ips').textContent = data.total_unique_ips || 0;
-                    document.getElementById('total-visit-count').textContent = (data.ip_statistics && data.ip_statistics.length > 0) ? data.ip_statistics[0].visit_count : 0;
-                    
-                    tbody.innerHTML = '';
-                    if (data.visitor_records && data.visitor_records.length > 0) {
-                        data.visitor_records.forEach((visitor, index) => {
-                            const row = document.createElement('tr');
-                            const date = new Date(visitor.timestamp);
-                            const formattedTime = date.toLocaleDateString('ko-KR') + ' ' + 
-                                date.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
-                            
-                            row.innerHTML = `
-                                <td>${formattedTime}</td>
-                                <td><code>${visitor.ip}</code></td>
-                                <td>${visitor.page}</td>
-                            `;
-                            tbody.appendChild(row);
-                        });
-                    } else {
-                        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">방문자 기록이 없습니다.</td></tr>';
-                    }
-                } else {
-                    document.getElementById('total-unique-ips').textContent = '0';
-                    document.getElementById('total-visit-count').textContent = '0';
-                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">방문자 데이터를 불러올 수 없습니다.</td></tr>';
-                }
-            })
-            .catch(error => {
-                console.error('방문자 데이터 로드 오류:', error);
-                document.getElementById('total-unique-ips').textContent = '오류';
-                document.getElementById('total-visit-count').textContent = '오류';
-                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">데이터 로드 중 오류가 발생했습니다.</td></tr>';
-            });
-            
-    } catch (error) {
-        console.error('모달 표시 오류:', error);
-        alert('방문자 정보 모달을 표시할 수 없습니다.');
-    }
+    showVisitorModal();
 }
 
 // 사용자 만족도 상세 정보 모달 함수
