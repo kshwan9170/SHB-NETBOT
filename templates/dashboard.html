@@ -765,30 +765,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     }
     
-    // 방문자 카드 업데이트 함수
-    function updateVisitorCard() {
-        console.log('방문자 카드 업데이트 시작');
-        
-        fetch('/api/visitor_details')
-            .then(response => response.json())
-            .then(data => {
-                console.log('방문자 데이터 수신:', data);
-                
-                if (data.success) {
-                    // 24시간 내 고유 방문자 수 업데이트
-                    const uniqueVisitorsElement = document.getElementById('unique-visitors-24h');
-                    if (uniqueVisitorsElement && data.total_unique_ips !== undefined) {
-                        uniqueVisitorsElement.textContent = data.total_unique_ips;
-                        console.log('방문자 카드 업데이트 완료:', data.total_unique_ips);
-                    }
-                } else {
-                    console.log('방문자 데이터 로딩 실패:', data.error);
-                }
-            })
-            .catch(error => {
-                console.log('방문자 데이터 로딩 중 오류:', error);
-            });
-    }
+
     
     // 개선필요 피드백 카드 업데이트 함수
     function updateNegativeFeedbackCard() {
