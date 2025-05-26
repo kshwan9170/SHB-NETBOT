@@ -1025,8 +1025,10 @@ function openVisitorModal() {
             console.log('방문자 데이터 수신:', data);
             
             if (data && data.success) {
-                // 통계 업데이트
-                document.getElementById('total-unique-ips').textContent = data.total_unique_ips || 0;
+                // 통계 업데이트 (방문자 모달 전용 - 다른 모달에 영향 없음)
+                // IP 통계에서 실제 고유 IP 수 계산
+                const actualUniqueIPs = data.ip_statistics ? data.ip_statistics.length : 0;
+                document.getElementById('total-unique-ips').textContent = actualUniqueIPs;
                 document.getElementById('total-visit-count').textContent = (data.visitor_records && data.visitor_records.length) || 0;
                 
                 // IP 통계 테이블 업데이트
