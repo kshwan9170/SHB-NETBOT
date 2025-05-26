@@ -330,12 +330,11 @@ class BusinessGuideProcessor:
         if '기관 주소' in row_data and pd.notna(row_data['기관 주소']):
             response += f"### 📍 기관 주소\n{row_data['기관 주소']}\n\n"
         
-        # 원본 파일명에서 UUID 제거
-        clean_source_file = source_file
-        if '_' in source_file and len(source_file.split('_')[0]) == 36:
-            clean_source_file = '_'.join(source_file.split('_')[1:])
-        
-        # 참고 문서 출처 제거 - 사용자 요청
+        # 관련 정보 섹션 추가
+        response += "\nℹ️ **관련 정보**\n"
+        response += "🏢 **담당 부서**: 통신지원팀\n"
+        response += "🔗 **관련 문서**: [관련 가이드 바로가기]\n\n"
+        response += "[🟢 온라인 모드] 내부 업무 가이드 기반 응답"
         
         return response
     
@@ -401,7 +400,7 @@ class BusinessGuideProcessor:
             # 각 항목을 개별 줄로 표시
             info_text = "ℹ️ **관련 정보**\n" + "\n".join(info_parts)
             # [🟢 온라인 모드] 표시 추가
-            info_text += "\n[🟢 온라인 모드] 내부 업무 가이드 기반 응답"
+            info_text += "\n\n[🟢 온라인 모드] 내부 업무 가이드 기반 응답"
             response_parts.append(info_text)
         
         # 각 항목 사이에 공백 라인 추가하여 시각적 분리 강화
@@ -471,7 +470,11 @@ class BusinessGuideProcessor:
         # 참고 문서 출처 제거 - 사용자 요청
         
         if info_parts:
-            response_parts.append("ℹ️ **관련 정보**\n" + "\n".join(info_parts))
+            # 각 항목을 개별 줄로 표시
+            info_text = "ℹ️ **관련 정보**\n" + "\n".join(info_parts)
+            # [🟢 온라인 모드] 표시 추가
+            info_text += "\n\n[🟢 온라인 모드] 내부 업무 가이드 기반 응답"
+            response_parts.append(info_text)
         
         # 각 항목 사이에 공백 라인 추가하여 시각적 분리 강화
         response = "\n\n".join(response_parts)
