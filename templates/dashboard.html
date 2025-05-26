@@ -54,127 +54,101 @@
         </div>
     </nav>
 
-    <div class="container my-5">
-        <!-- 헤더 영역 -->
-        <div class="text-center mb-5">
-            <h1 class="display-4" style="color: #30507A;">SHB-NetBot 대시보드</h1>
-            <p class="lead" style="color: #5A6373;">실시간 사용자 문의 및 통계 분석</p>
-        </div>
-    
-    <!-- 필터 영역 -->
-    <div class="card mb-4 shadow-sm" style="border-color: #E6EBF4;">
-        <div class="card-body">
-            <h5 class="card-title" style="color: #30507A;">조회 필터</h5>
-            <div class="row align-items-end">
-                <div class="col-md-4 mb-3">
-                    <label for="period-select" class="form-label">기간</label>
-                    <select id="period-select" class="form-select">
-                        <option value="all" selected>전체 기간</option>
-                        <option value="day">오늘</option>
-                        <option value="week">최근 7일</option>
-                        <option value="month">최근 30일</option>
-                    </select>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label for="category-select" class="form-label">카테고리</label>
-                    <select id="category-select" class="form-select">
-                        <option value="" selected>전체 카테고리</option>
-                        <!-- 카테고리 옵션은 JavaScript로 동적 생성 -->
-                    </select>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <button id="refresh-button" class="btn btn-primary w-100" style="background-color: #30507A; border-color: #30507A;">
-                        <i class="fas fa-sync-alt me-2"></i> 새로고침
-                    </button>
+    <!-- 대시보드 섹션 -->
+    <section id="dashboard" class="dashboard-section">
+        <div class="container">
+            <!-- 헤더 영역 -->
+            <div class="dashboard-header" data-aos="fade-up">
+                <h1 class="section-title">SHB-NetBot 대시보드</h1>
+                <p class="dashboard-description">실시간 사용자 문의 및 통계 분석</p>
+            </div>
+            <!-- 필터 영역 -->
+            <div class="dashboard-filters" data-aos="fade-up" data-aos-delay="100">
+                <div class="filter-grid">
+                    <div class="filter-item">
+                        <label for="period-select" class="filter-label">기간</label>
+                        <select id="period-select" class="filter-select">
+                            <option value="all" selected>전체 기간</option>
+                            <option value="day">오늘</option>
+                            <option value="week">최근 7일</option>
+                            <option value="month">최근 30일</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label for="category-select" class="filter-label">카테고리</label>
+                        <select id="category-select" class="filter-select">
+                            <option value="" selected>전체 카테고리</option>
+                            <!-- 카테고리 옵션은 JavaScript로 동적 생성 -->
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <button id="refresh-button" class="refresh-button">
+                            <i class="fas fa-sync-alt"></i> 새로고침
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-    
-    <!-- 통계 요약 카드 -->
-    <div class="row mb-4">
-        <!-- 전체 질문 수 -->
-        <div class="col-md-4 mb-3">
-            <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
-                <div class="card-body text-center">
-                    <h5 class="card-title" style="color: #30507A;">전체 질문 수</h5>
-                    <div class="d-flex align-items-center justify-content-center">
-                        <i class="fas fa-comments fa-3x me-3" style="color: #30507A;"></i>
-                        <div class="display-4 fw-bold" id="total-queries">0</div>
+            <!-- 통계 요약 카드 -->
+            <div class="stats-grid" data-aos="fade-up" data-aos-delay="200">
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <h3>전체 질문 수</h3>
+                    <div class="stat-number" id="total-queries">195</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>최근 방문자</h3>
+                    <div class="stat-number" id="recent-visitors">198</div>
+                    <div class="stat-description" id="visitors-description">지난 24시간</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-thumbs-up"></i>
+                    </div>
+                    <h3>긍정 피드백</h3>
+                    <div class="stat-number" id="positive-percentage">0%</div>
+                </div>
+            </div>
+            <!-- 주요 문의 TOP 10 차트 -->
+            <div class="chart-section" data-aos="fade-up" data-aos-delay="300">
+                <h3>주요 문의 TOP 10</h3>
+                <div class="chart-container">
+                    <canvas id="top-queries-chart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 상세 데이터 테이블 -->
+            <div class="table-section" data-aos="fade-up" data-aos-delay="400">
+                <h3>상세 문의 데이터</h3>
+                <div class="table-wrapper">
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>질문 내용</th>
+                                <th>카테고리</th>
+                                <th>질문 횟수</th>
+                                <th>최초 질문일</th>
+                                <th>최근 질문일</th>
+                            </tr>
+                        </thead>
+                        <tbody id="query-table-body">
+                            <!-- 데이터는 JavaScript로 동적 생성 -->
+                        </tbody>
+                    </table>
+                    <div id="no-data-message" class="no-data-message" style="display: none;">
+                        <p>조회된 데이터가 없습니다.</p>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- 최근 방문자 -->
-        <div class="col-md-4 mb-3">
-            <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
-                <div class="card-body text-center">
-                    <h5 class="card-title" style="color: #30507A;">최근 방문자</h5>
-                    <div class="d-flex align-items-center justify-content-center">
-                        <i class="fas fa-users fa-3x me-3" id="visitors-icon" style="color: #17a2b8;"></i>
-                        <div class="display-4 fw-bold" id="recent-visitors">0</div>
-                    </div>
-                    <div class="small text-muted" id="visitors-description">지난 24시간</div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- 긍정 피드백 -->
-        <div class="col-md-4 mb-3">
-            <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
-                <div class="card-body text-center">
-                    <h5 class="card-title" style="color: #30507A;">긍정 피드백</h5>
-                    <div class="d-flex align-items-center justify-content-center">
-                        <i class="fas fa-thumbs-up fa-3x me-3" style="color: #28a745;"></i>
-                        <div class="display-4 fw-bold" id="positive-percentage">0%</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 주요 문의 TOP 10 차트 -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm" style="border-color: #E6EBF4;">
-                <div class="card-body">
-                    <h5 class="card-title" style="color: #30507A;">주요 문의 TOP 10</h5>
-                    <div class="chart-container" style="position: relative; height:400px;">
-                        <canvas id="top-queries-chart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- 상세 데이터 테이블 -->
-    <div class="card shadow-sm" style="border-color: #E6EBF4;">
-        <div class="card-body">
-            <h5 class="card-title" style="color: #30507A;">상세 문의 데이터</h5>
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead style="background-color: #F8F9FA;">
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">질문 내용</th>
-                            <th scope="col">카테고리</th>
-                            <th scope="col">질문 횟수</th>
-                            <th scope="col">최초 질문일</th>
-                            <th scope="col">최근 질문일</th>
-                        </tr>
-                    </thead>
-                    <tbody id="query-table-body">
-                        <!-- 데이터는 JavaScript로 동적 생성 -->
-                    </tbody>
-                </table>
-            </div>
-            <div id="no-data-message" class="text-center py-4 d-none">
-                <p class="text-muted">조회된 데이터가 없습니다.</p>
-            </div>
-        </div>
-    </div>
-</div>
+    </section>
 
 <!-- 푸터 섹션 -->
 <footer class="footer">
@@ -194,6 +168,9 @@
         </div>
     </div>
 </footer>
+
+<!-- 대시보드 스크립트 -->
+<script src="{{ url_for('static', filename='js/modern.js') }}"></script>
 
 <!-- jQuery와 Bootstrap JS 포함 -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
