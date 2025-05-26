@@ -339,27 +339,67 @@ class BusinessGuideProcessor:
         """장애 문의 가이드 응답 생성"""
         response_parts = []
         
-        if '질문 카테고리' in row_data and pd.notna(row_data['질문 카테고리']):
-            response_parts.append(f"📂 **카테고리**: {row_data['질문 카테고리']}")
-        
+        # 1. 요약 (첫 번째)
         if '요약 응답' in row_data and pd.notna(row_data['요약 응답']):
-            response_parts.append(f"💡 **요약**: {row_data['요약 응답']}")
+            response_parts.append(f"💡 **요약**\n{row_data['요약 응답']}")
         
+        # 2. 상세 안내 (두 번째)
         if '상세 안내' in row_data and pd.notna(row_data['상세 안내']):
-            # 상세 안내 텍스트를 정리하여 가독성 향상
             detailed_info = str(row_data['상세 안내'])
+            
+            # 기기별 설정법 시각적 구분 (iPhone, Galaxy 등)
+            formatted_info = detailed_info.replace('iPhone', '\n\n📱 **iPhone 설정법**:')
+            formatted_info = formatted_info.replace('Galaxy', '\n\n📱 **Galaxy 설정법**:')
+            formatted_info = formatted_info.replace('Android', '\n\n🤖 **Android 설정법**:')
+            
             # 숫자로 시작하는 단계들을 구분
-            formatted_info = detailed_info.replace('1. ', '\n\n**1.** ').replace('2. ', '\n\n**2.** ').replace('3. ', '\n\n**3.** ')
+            formatted_info = formatted_info.replace('1. ', '\n\n**1.** ').replace('2. ', '\n\n**2.** ').replace('3. ', '\n\n**3.** ')
             formatted_info = formatted_info.replace('4. ', '\n\n**4.** ').replace('5. ', '\n\n**5.** ')
+            formatted_info = formatted_info.replace('6. ', '\n\n**6.** ').replace('7. ', '\n\n**7.** ')
+            
+            # URL을 하이퍼링크 문구로 대체
+            import re
+            url_pattern = r'https?://[^\s]+'
+            urls = re.findall(url_pattern, formatted_info)
+            for url in urls:
+                if 'wifi' in url.lower() or 'wi-fi' in url.lower():
+                    formatted_info = formatted_info.replace(url, '[Wi-Fi 연결 가이드 바로가기]')
+                else:
+                    formatted_info = formatted_info.replace(url, '[관련 가이드 바로가기]')
+            
             # ?? 기호를 이모지로 변경
             formatted_info = formatted_info.replace('??', '📱')
-            response_parts.append(f"📋 **상세 안내**:{formatted_info}")
+            
+            response_parts.append(f"📋 **안내**{formatted_info}")
+        
+        # 3. 설정법 (기기별로 이미 위에서 처리됨)
+        
+        # 4. 관련 정보 (마지막)
+        info_parts = []
         
         if '담당 부서' in row_data and pd.notna(row_data['담당 부서']):
-            response_parts.append(f"🏢 **담당 부서**: {row_data['담당 부서']}")
+            info_parts.append(f"🏢 **담당 부서**: {row_data['담당 부서']}")
         
         if '관련 문서/링크' in row_data and pd.notna(row_data['관련 문서/링크']):
-            response_parts.append(f"🔗 **관련 문서**: {row_data['관련 문서/링크']}")
+            link_text = str(row_data['관련 문서/링크'])
+            # URL을 하이퍼링크 문구로 대체
+            import re
+            url_pattern = r'https?://[^\s]+'
+            urls = re.findall(url_pattern, link_text)
+            for url in urls:
+                if 'wifi' in url.lower() or 'wi-fi' in url.lower():
+                    link_text = link_text.replace(url, '[Wi-Fi 연결 가이드 바로가기]')
+                else:
+                    link_text = link_text.replace(url, '[관련 가이드 바로가기]')
+            info_parts.append(f"🔗 **관련 문서**: {link_text}")
+        
+        # 출처 파일명 추가 (UUID 제외)
+        clean_source_file = source_file.replace('업무 안내 가이드(', '').replace(').csv', '').replace('_', ' ')
+        if any(char.isalpha() for char in clean_source_file):  # 한글이나 영문이 포함된 경우만
+            info_parts.append(f"📄 **출처**: {clean_source_file}")
+        
+        if info_parts:
+            response_parts.append("ℹ️ **관련 정보**\n" + "\n".join(info_parts))
         
         # 각 항목 사이에 공백 라인 추가하여 시각적 분리 강화
         response = "\n\n".join(response_parts)
@@ -370,27 +410,68 @@ class BusinessGuideProcessor:
         """절차 안내 가이드 응답 생성"""
         response_parts = []
         
-        if '절차 구분' in row_data and pd.notna(row_data['절차 구분']):
-            response_parts.append(f"📋 **절차 구분**: {row_data['절차 구분']}")
-        
+        # 1. 요약 (첫 번째)
         if '요약 응답' in row_data and pd.notna(row_data['요약 응답']):
-            response_parts.append(f"💡 **요약**: {row_data['요약 응답']}")
+            response_parts.append(f"💡 **요약**\n{row_data['요약 응답']}")
         
+        # 2. 상세 안내 (두 번째)
         if '상세 안내' in row_data and pd.notna(row_data['상세 안내']):
-            # 상세 안내 텍스트를 정리하여 가독성 향상
             detailed_info = str(row_data['상세 안내'])
+            
+            # 기기별 설정법 시각적 구분
+            formatted_info = detailed_info.replace('iPhone', '\n\n📱 **iPhone 설정법**:')
+            formatted_info = formatted_info.replace('Galaxy', '\n\n📱 **Galaxy 설정법**:')
+            formatted_info = formatted_info.replace('Android', '\n\n🤖 **Android 설정법**:')
+            
             # 숫자로 시작하는 단계들을 구분
-            formatted_info = detailed_info.replace('1. ', '\n\n**1.** ').replace('2. ', '\n\n**2.** ').replace('3. ', '\n\n**3.** ')
+            formatted_info = formatted_info.replace('1. ', '\n\n**1.** ').replace('2. ', '\n\n**2.** ').replace('3. ', '\n\n**3.** ')
             formatted_info = formatted_info.replace('4. ', '\n\n**4.** ').replace('5. ', '\n\n**5.** ')
+            formatted_info = formatted_info.replace('6. ', '\n\n**6.** ').replace('7. ', '\n\n**7.** ')
+            
+            # URL을 하이퍼링크 문구로 대체
+            import re
+            url_pattern = r'https?://[^\s]+'
+            urls = re.findall(url_pattern, formatted_info)
+            for url in urls:
+                if 'wifi' in url.lower() or 'wi-fi' in url.lower():
+                    formatted_info = formatted_info.replace(url, '[Wi-Fi 연결 가이드 바로가기]')
+                else:
+                    formatted_info = formatted_info.replace(url, '[관련 가이드 바로가기]')
+            
             # ?? 기호를 이모지로 변경
             formatted_info = formatted_info.replace('??', '📱')
-            response_parts.append(f"📝 **상세 안내**:{formatted_info}")
+            
+            response_parts.append(f"📝 **절차 안내**{formatted_info}")
+        
+        # 3. 관련 정보 (마지막)
+        info_parts = []
+        
+        if '절차 구분' in row_data and pd.notna(row_data['절차 구분']):
+            info_parts.append(f"📋 **절차 구분**: {row_data['절차 구분']}")
         
         if '담당 부서' in row_data and pd.notna(row_data['담당 부서']):
-            response_parts.append(f"🏢 **담당 부서**: {row_data['담당 부서']}")
+            info_parts.append(f"🏢 **담당 부서**: {row_data['담당 부서']}")
         
         if '관련 문서/링크' in row_data and pd.notna(row_data['관련 문서/링크']):
-            response_parts.append(f"🔗 **관련 문서**: {row_data['관련 문서/링크']}")
+            link_text = str(row_data['관련 문서/링크'])
+            # URL을 하이퍼링크 문구로 대체
+            import re
+            url_pattern = r'https?://[^\s]+'
+            urls = re.findall(url_pattern, link_text)
+            for url in urls:
+                if 'wifi' in url.lower() or 'wi-fi' in url.lower():
+                    link_text = link_text.replace(url, '[Wi-Fi 연결 가이드 바로가기]')
+                else:
+                    link_text = link_text.replace(url, '[관련 가이드 바로가기]')
+            info_parts.append(f"🔗 **관련 문서**: {link_text}")
+        
+        # 출처 파일명 추가 (UUID 제외)
+        clean_source_file = source_file.replace('업무 안내 가이드(', '').replace(').csv', '').replace('_', ' ')
+        if any(char.isalpha() for char in clean_source_file):  # 한글이나 영문이 포함된 경우만
+            info_parts.append(f"📄 **출처**: {clean_source_file}")
+        
+        if info_parts:
+            response_parts.append("ℹ️ **관련 정보**\n" + "\n".join(info_parts))
         
         # 각 항목 사이에 공백 라인 추가하여 시각적 분리 강화
         response = "\n\n".join(response_parts)
