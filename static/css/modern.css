@@ -3400,4 +3400,36 @@ textarea.form-control {
     }
 }
 
+/* 대시보드 카드 호버 효과 개선 */
+.queries-card:hover,
+.visitor-card:hover,
+.satisfaction-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 8px 25px rgba(48, 80, 122, 0.2) !important;
+    border-color: rgba(48, 80, 122, 0.3) !important;
+}
+
+.queries-card,
+.visitor-card,
+.satisfaction-card {
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    border: 1px solid #E6EBF4 !important;
+}
+
+/* 카드 내 아이콘 호버 효과 */
+.queries-card:hover .fas,
+.visitor-card:hover .fas,
+.satisfaction-card:hover .fas {
+    transform: scale(1.1);
+    transition: transform 0.3s ease;
+}
+
+/* 카드 타이틀 호버 효과 */
+.queries-card:hover .card-title,
+.visitor-card:hover .card-title,
+.satisfaction-card:hover .card-title {
+    color: #30507A !important;
+    font-weight: 600 !important;
+}
+
 
