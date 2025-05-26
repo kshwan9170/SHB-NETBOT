@@ -1923,12 +1923,15 @@ def visitor_details():
         if conn is None:
             return jsonify({'success': False, 'error': '데이터베이스 연결 실패'})
         
+        # KST 기준 당일 자정 시간 계산
+        kst_today = get_kst_now().strftime('%Y-%m-%d 00:00:00')
+        
         # 당일 고유 IP 수 계산 (KST 기준 00:00부터)
         unique_ips_today = conn.execute("""
             SELECT COUNT(DISTINCT ip_address) as count
             FROM visitors 
-            WHERE visit_time >= date('now', 'localtime')
-        """).fetchone()['count']
+            WHERE visit_time >= ?
+        """, (kst_today,)).fetchone()['count']
         
         # IP별 통계 계산 (당일, IP별로 요약)
         ip_stats_raw = conn.execute("""
@@ -1939,10 +1942,10 @@ def visitor_details():
                 MAX(visit_time) as last_visit,
                 GROUP_CONCAT(DISTINCT page_visited) as pages
             FROM visitors 
-            WHERE visit_time >= date('now', 'localtime')
+            WHERE visit_time >= ?
             GROUP BY ip_address
             ORDER BY MAX(visit_time) DESC
-        """).fetchall()
+        """, (kst_today,)).fetchall()
         
         # 각 IP별 최근 방문 기록 (최대 5개씩)
         visitor_records = []
@@ -1966,10 +1969,10 @@ def visitor_details():
             recent_visits = conn.execute("""
                 SELECT ip_address, page_visited, visit_time
                 FROM visitors 
-                WHERE ip_address = ? AND visit_time >= date('now', 'localtime')
+                WHERE ip_address = ? AND visit_time >= ?
                 ORDER BY visit_time DESC
                 LIMIT 5
-            """, (ip,)).fetchall()
+            """, (ip, kst_today)).fetchall()
             
             for visit in recent_visits:
                 visitor_records.append({
