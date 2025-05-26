@@ -1931,13 +1931,10 @@ def visitor_details():
         visitor_records = []
         ip_stats = {}
         
-        print(f"디버깅: ip_stats_raw 개수: {len(ip_stats_raw)}")
-        for i, ip_stat in enumerate(ip_stats_raw):
+        for ip_stat in ip_stats_raw:
             ip = ip_stat['ip_address']
             pages_str = ip_stat['pages'] or 'dashboard'
             pages_list = pages_str.split(',') if pages_str else ['dashboard']
-            
-            print(f"디버깅 {i}: IP {ip}, 방문 수 {ip_stat['visit_count']}")
             
             # IP별 통계 저장
             ip_stats[ip] = {
@@ -1963,8 +1960,6 @@ def visitor_details():
                     'page': visit['page_visited'] or '알 수 없음',
                     'timestamp': visit['visit_time']
                 })
-        
-        print(f"디버깅: ip_stats 개수: {len(ip_stats)}, visitor_records 개수: {len(visitor_records)}")
         
         # IP별 통계 포맷팅
         formatted_ip_stats = []
