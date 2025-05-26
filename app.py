@@ -2073,7 +2073,7 @@ def satisfaction_details():
         print(f"만족도 상세 정보 API 오류: {e}")
         return jsonify({'success': False, 'error': '서버 오류가 발생했습니다.'})
 
-@app.route('/api/feedback/delete', methods=['POST'])
+@app.route('/api/delete_feedback', methods=['POST'])
 def delete_feedback():
     """피드백 삭제 API - 대시보드에서 개선필요 피드백 삭제"""
     try:
