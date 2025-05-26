@@ -126,8 +126,11 @@
                 <div class="card-body text-center">
                     <h5 class="card-title" style="color: #30507A;">사용자 만족도</h5>
                     <div class="d-flex align-items-center justify-content-center">
-                        <i class="fas fa-thumbs-up fa-3x me-3" style="color: #28a745;"></i>
-                        <div class="display-4 fw-bold" id="positive-percentage">0%</div>
+                        <i class="fas fa-smile fa-3x me-3" style="color: #ffc107;"></i>
+                        <div>
+                            <div class="display-4 fw-bold" id="positive-percentage">0%</div>
+                            <small class="text-muted" id="positive-count-display">0건</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -363,6 +366,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(feedbackData => {
                 if (feedbackData.success) {
+                    console.log('피드백 데이터 처리 중:', feedbackData);
+                    
                     // 부정 피드백 수 - 요소 존재 확인
                     const negativeCountElement = document.getElementById('negative-feedback-count');
                     if (negativeCountElement) {
@@ -375,9 +380,23 @@ document.addEventListener('DOMContentLoaded', function() {
                         positiveCountElement.textContent = feedbackData.positive_count || 0;
                     }
                     
-                    // 만족도 계산 - 요소 존재 확인
+                    // 상단 카드의 사용자 만족도 업데이트
                     const total = (feedbackData.positive_count || 0) + (feedbackData.negative_count || 0);
                     const satisfactionRate = total > 0 ? Math.round((feedbackData.positive_count || 0) / total * 100) : 0;
+                    
+                    // 사용자 만족도 퍼센트 업데이트
+                    const positivePercentageElement = document.getElementById('positive-percentage');
+                    if (positivePercentageElement) {
+                        positivePercentageElement.textContent = `${satisfactionRate}%`;
+                    }
+                    
+                    // 사용자 만족도 건수 표시 추가
+                    const positiveCountDisplayElement = document.getElementById('positive-count-display');
+                    if (positiveCountDisplayElement) {
+                        positiveCountDisplayElement.textContent = `${feedbackData.positive_count || 0}건`;
+                    }
+                    
+                    // 하단 피드백 분석의 만족도 업데이트
                     const rateElement = document.getElementById('feedback-improvement-rate');
                     if (rateElement) {
                         rateElement.textContent = `${satisfactionRate}%`;
