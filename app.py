@@ -2078,11 +2078,10 @@ def delete_feedback():
     """피드백 삭제 API - 대시보드에서 개선필요 피드백 삭제"""
     try:
         data = request.get_json()
-        if not data or 'question' not in data or 'timestamp' not in data:
+        if not data or 'feedback_id' not in data:
             return jsonify({'success': False, 'error': '필수 데이터가 누락되었습니다.'})
         
-        question = data['question']
-        timestamp = data['timestamp']
+        feedback_id = data['feedback_id']
         
         conn = get_db_connection()
         if conn is None:
@@ -2091,8 +2090,8 @@ def delete_feedback():
         # 해당 피드백 삭제
         result = conn.execute("""
             DELETE FROM chat_feedback 
-            WHERE question = ? AND created_at = ? AND feedback_type = '개선필요'
-        """, (question, timestamp))
+            WHERE id = ? AND feedback_type IN ('개선필요', '👎 부족함')
+        """, (feedback_id,))
         
         if result.rowcount > 0:
             conn.commit()
