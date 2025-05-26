@@ -1877,7 +1877,7 @@ def feedback_stats():
             for row in recent_negative_rows
         ]
         
-        # 최근 24시간 고유 방문자 수 (IP 주소 기준)
+        # 당일 고유 방문자 수 (IP 주소 기준, KST 기준)
         try:
             # visitors 테이블이 존재하지 않으면 생성
             conn.execute("""
@@ -1890,12 +1890,15 @@ def feedback_stats():
             """)
             conn.commit()
             
+            # KST 기준 당일 자정 시간 계산
+            kst_today = get_kst_now().strftime('%Y-%m-%d 00:00:00')
+            
             # 당일 고유 방문자 수 계산 (KST 기준 00:00부터)
             unique_visitors_24h = conn.execute("""
                 SELECT COUNT(DISTINCT ip_address) as count 
                 FROM visitors 
-                WHERE visit_time >= date('now', 'localtime')
-            """).fetchone()['count']
+                WHERE visit_time >= ?
+            """, (kst_today,)).fetchone()['count']
         except Exception as e:
             print(f"visitors 테이블 오류: {e}")
             # 테이블이 없거나 오류가 있으면 0으로 초기화
