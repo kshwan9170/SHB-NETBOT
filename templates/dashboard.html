@@ -797,8 +797,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 통계 요약 업데이트
     function updateSummaryStats(data) {
-        // 총 질문 횟수 (한 달치)
-        document.getElementById('total-queries').textContent = data.total_count || 0;
+        // 총 질문 횟수 (실제 조회된 질문들의 count 합계)
+        const totalCount = data.top_queries.reduce((sum, q) => sum + q.count, 0);
+        document.getElementById('total-queries').textContent = totalCount;
         
         // 피드백 카드 업데이트 및 방문자 수 업데이트
         updateFeedbackCard();
