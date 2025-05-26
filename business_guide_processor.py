@@ -330,8 +330,12 @@ class BusinessGuideProcessor:
         if '기관 주소' in row_data and pd.notna(row_data['기관 주소']):
             response += f"### 📍 기관 주소\n{row_data['기관 주소']}\n\n"
         
-        # 출처 정보 제거 - 사용자가 요청함
-        # response += f"---\n📋 **출처**: {clean_source_file}"
+        # 원본 파일명에서 UUID 제거
+        clean_source_file = source_file
+        if '_' in source_file and len(source_file.split('_')[0]) == 36:
+            clean_source_file = '_'.join(source_file.split('_')[1:])
+        
+        response += f"---\n📄 **참고 문서**: {clean_source_file}"
         
         return response
     
@@ -469,10 +473,12 @@ class BusinessGuideProcessor:
                     link_text = link_text.replace(url, '[관련 가이드 바로가기]')
             info_parts.append(f"🔗 **관련 문서**: {link_text}")
         
-        # 출처 파일명 추가 (UUID 제외)
-        clean_source_file = source_file.replace('업무 안내 가이드(', '').replace(').csv', '').replace('_', ' ')
-        if any(char.isalpha() for char in clean_source_file):  # 한글이나 영문이 포함된 경우만
-            info_parts.append(f"📄 **출처**: {clean_source_file}")
+        # 원본 파일명에서 UUID 제거
+        clean_source_file = source_file
+        if '_' in source_file and len(source_file.split('_')[0]) == 36:
+            clean_source_file = '_'.join(source_file.split('_')[1:])
+        
+        info_parts.append(f"📄 **참고 문서**: {clean_source_file}")
         
         if info_parts:
             response_parts.append("ℹ️ **관련 정보**\n" + "\n".join(info_parts))
@@ -501,8 +507,12 @@ class BusinessGuideProcessor:
         
         response = "\n".join(response_parts)
         
-        # 출처 정보 제거 - 사용자가 요청함
-        # response += f"\n\n📋 **출처**: {clean_source_file}"
+        # 원본 파일명에서 UUID 제거
+        clean_source_file = source_file
+        if '_' in source_file and len(source_file.split('_')[0]) == 36:
+            clean_source_file = '_'.join(source_file.split('_')[1:])
+        
+        response += f"\n\n📄 **참고 문서**: {clean_source_file}"
         
         return response
     
