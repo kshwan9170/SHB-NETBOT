@@ -731,7 +731,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const category = document.getElementById('category-select').value;
         
         // API 호출
-        fetch(`/api/top_queries?period=${period}&category=${category}&limit=10`)
+        fetch(`/api/top_queries?period=${period}&category=${category}&limit=50`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
