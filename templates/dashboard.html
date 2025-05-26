@@ -1341,7 +1341,7 @@ function deleteFeedback(feedbackId) {
 
 // 전체 질문 수 상세 정보 표시
 function showQueriesDetails() {
-    fetch('/api/top_queries?period=all&category=&limit=50')
+    fetch('/api/top_queries?period=all&category=&limit=10')
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
