@@ -1873,11 +1873,11 @@ def feedback_stats():
             """)
             conn.commit()
             
-            # 고유 방문자 수 계산
+            # 당일 고유 방문자 수 계산 (KST 기준 00:00부터)
             unique_visitors_24h = conn.execute("""
                 SELECT COUNT(DISTINCT ip_address) as count 
                 FROM visitors 
-                WHERE visit_time >= datetime('now', '-1 day')
+                WHERE visit_time >= date('now', 'localtime')
             """).fetchone()['count']
         except Exception as e:
             print(f"visitors 테이블 오류: {e}")
@@ -1906,14 +1906,14 @@ def visitor_details():
         if conn is None:
             return jsonify({'success': False, 'error': '데이터베이스 연결 실패'})
         
-        # 24시간 내 고유 IP 수 계산
-        unique_ips_24h = conn.execute("""
+        # 당일 고유 IP 수 계산 (KST 기준 00:00부터)
+        unique_ips_today = conn.execute("""
             SELECT COUNT(DISTINCT ip_address) as count
             FROM visitors 
-            WHERE visit_time >= datetime('now', '-1 day')
+            WHERE visit_time >= date('now', 'localtime')
         """).fetchone()['count']
         
-        # IP별 통계 계산 (24시간 내, IP별로 요약)
+        # IP별 통계 계산 (당일, IP별로 요약)
         ip_stats_raw = conn.execute("""
             SELECT 
                 ip_address,
@@ -1922,7 +1922,7 @@ def visitor_details():
                 MAX(visit_time) as last_visit,
                 GROUP_CONCAT(DISTINCT page_visited) as pages
             FROM visitors 
-            WHERE visit_time >= datetime('now', '-1 day')
+            WHERE visit_time >= date('now', 'localtime')
             GROUP BY ip_address
             ORDER BY MAX(visit_time) DESC
         """).fetchall()
@@ -1945,11 +1945,11 @@ def visitor_details():
                 'last_visit': ip_stat['last_visit']
             }
             
-            # 각 IP별 최근 방문 기록 5개씩 가져오기
+            # 각 IP별 최근 방문 기록 5개씩 가져오기 (당일만)
             recent_visits = conn.execute("""
                 SELECT ip_address, page_visited, visit_time
                 FROM visitors 
-                WHERE ip_address = ? AND visit_time >= datetime('now', '-1 day')
+                WHERE ip_address = ? AND visit_time >= date('now', 'localtime')
                 ORDER BY visit_time DESC
                 LIMIT 5
             """, (ip,)).fetchall()
@@ -1978,7 +1978,7 @@ def visitor_details():
             'success': True,
             'visitor_records': visitor_records,
             'ip_statistics': formatted_ip_stats,
-            'total_unique_ips': unique_ips_24h
+            'total_unique_ips': unique_ips_today
         })
         
     except Exception as e:
