@@ -1261,9 +1261,15 @@ function deleteFeedback(feedbackId) {
 // 전체 질문 수 상세 정보 표시
 function showQueriesDetails() {
     fetch('/api/top_queries?period=all&category=&limit=50')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
-            if (data.success) {
+            console.log('질문 데이터:', data); // 디버깅용
+            if (data.success && data.queries) {
                 const queries = data.queries;
                 let modalContent = `
                     <div class="modal fade" id="queriesModal" tabindex="-1">
