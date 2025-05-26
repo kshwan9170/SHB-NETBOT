@@ -431,8 +431,8 @@ img {
 
 .mobile-menu-btn .bar {
     width: 100%;
-    height: 2px;
-    background-color: var(--text-primary);
+    height: 3px;
+    background-color: #ffffff;
     transition: all var(--transition-medium);
     border-radius: 2px;
 }
