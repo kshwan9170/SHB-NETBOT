@@ -1827,21 +1827,23 @@ def feedback_stats():
         if conn is None:
             raise Exception("데이터베이스 연결 실패")
         
-        # 긍정 피드백 수
-        positive_count = conn.execute(
-            "SELECT COUNT(*) as count FROM chat_feedback WHERE feedback_type = '만족'"
-        ).fetchone()['count']
+        # 긍정 피드백 수 (다양한 긍정 피드백 타입 포함)
+        positive_count = conn.execute("""
+            SELECT COUNT(*) as count FROM chat_feedback 
+            WHERE feedback_type IN ('만족', '👍 도움 됨', 'positive')
+        """).fetchone()['count']
         
-        # 부정 피드백 수
-        negative_count = conn.execute(
-            "SELECT COUNT(*) as count FROM chat_feedback WHERE feedback_type = '개선필요'"
-        ).fetchone()['count']
+        # 부정 피드백 수 (다양한 부정 피드백 타입 포함)
+        negative_count = conn.execute("""
+            SELECT COUNT(*) as count FROM chat_feedback 
+            WHERE feedback_type IN ('개선필요', '👎 부족함', 'negative', '부족함')
+        """).fetchone()['count']
         
         # 최근 부정 피드백 목록 (최신 5개)
         recent_negative_rows = conn.execute("""
             SELECT question, created_at as timestamp
             FROM chat_feedback 
-            WHERE feedback_type = '개선필요' 
+            WHERE feedback_type IN ('개선필요', '👎 부족함', 'negative', '부족함')
             ORDER BY created_at DESC 
             LIMIT 5
         """).fetchall()
