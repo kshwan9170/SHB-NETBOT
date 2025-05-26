@@ -1332,16 +1332,12 @@ function showQueriesDetails() {
                     
                     if (timeField) {
                         try {
-                            const date = new Date(timeField);
-                            if (!isNaN(date.getTime())) {
-                                timestamp = date.toLocaleString('ko-KR', {
-                                    year: 'numeric',
-                                    month: '2-digit',
-                                    day: '2-digit',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    timeZone: 'Asia/Seoul'
-                                });
+                            // KST 시간으로 변환 (서버에서 받은 UTC 시간을 KST로 변환)
+                            const utcDate = new Date(timeField);
+                            const kstDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000)); // UTC + 9시간
+                            if (!isNaN(kstDate.getTime())) {
+                                timestamp = kstDate.toLocaleDateString('ko-KR') + ' ' + 
+                                    kstDate.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
                             }
                         } catch (e) {
                             console.log('전체 질문 모달 날짜 변환 오류:', e);
