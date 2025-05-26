@@ -501,6 +501,44 @@ document.addEventListener('DOMContentLoaded', function() {
             tableBody.appendChild(row);
         });
     }
+    
+    // 피드백 통계 업데이트 함수
+    function updateFeedbackStats(stats) {
+        // 긍정 피드백 비율
+        document.getElementById('positive-percentage').textContent = stats.positive_percentage + '%';
+        
+        // 부정 피드백 비율  
+        document.getElementById('negative-percentage').textContent = stats.negative_percentage + '%';
+        
+        // 전체 피드백 수
+        document.getElementById('total-feedback').textContent = stats.total_feedback || 0;
+        
+        // 긍정 피드백 수
+        document.getElementById('positive-feedback').textContent = stats.positive_feedback || 0;
+        
+        // 부정 피드백 수
+        document.getElementById('negative-feedback').textContent = stats.negative_feedback || 0;
+        
+        // 아이콘 색상 동적 변경 (긍정 비율에 따라)
+        const positiveIcon = document.getElementById('positive-icon');
+        const negativeIcon = document.getElementById('negative-icon');
+        
+        if (stats.positive_percentage >= 80) {
+            positiveIcon.style.color = '#28a745'; // 초록색
+        } else if (stats.positive_percentage >= 60) {
+            positiveIcon.style.color = '#ffc107'; // 노란색
+        } else {
+            positiveIcon.style.color = '#dc3545'; // 빨간색
+        }
+        
+        if (stats.negative_percentage >= 20) {
+            negativeIcon.style.color = '#dc3545'; // 빨간색
+        } else {
+            negativeIcon.style.color = '#6c757d'; // 회색
+        }
+        
+        console.log('피드백 통계 업데이트 완료:', stats);
+    }
 });
 
 // 모바일 메뉴 토글 기능
