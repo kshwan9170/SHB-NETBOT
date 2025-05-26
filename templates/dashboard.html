@@ -363,27 +363,42 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(feedbackData => {
                 if (feedbackData.success) {
-                    // 부정 피드백 수
-                    document.getElementById('negative-feedback-count').textContent = feedbackData.negative_count || 0;
+                    // 부정 피드백 수 - 요소 존재 확인
+                    const negativeCountElement = document.getElementById('negative-feedback-count');
+                    if (negativeCountElement) {
+                        negativeCountElement.textContent = feedbackData.negative_count || 0;
+                    }
                     
-                    // 긍정 피드백 수
-                    document.getElementById('positive-feedback-count').textContent = feedbackData.positive_count || 0;
+                    // 긍정 피드백 수 (사용자 만족도) - 요소 존재 확인
+                    const positiveCountElement = document.getElementById('positive-feedback-count');
+                    if (positiveCountElement) {
+                        positiveCountElement.textContent = feedbackData.positive_count || 0;
+                    }
                     
-                    // 만족도 계산
+                    // 만족도 계산 - 요소 존재 확인
                     const total = (feedbackData.positive_count || 0) + (feedbackData.negative_count || 0);
                     const satisfactionRate = total > 0 ? Math.round((feedbackData.positive_count || 0) / total * 100) : 0;
-                    document.getElementById('feedback-improvement-rate').textContent = `${satisfactionRate}%`;
+                    const rateElement = document.getElementById('feedback-improvement-rate');
+                    if (rateElement) {
+                        rateElement.textContent = `${satisfactionRate}%`;
+                    }
                     
                     // 최근 부정 피드백 목록 업데이트
                     updateRecentNegativeFeedback(feedbackData.recent_negative || []);
+                } else {
+                    console.log('피드백 데이터 로딩 실패:', feedbackData);
                 }
             })
             .catch(error => {
                 console.log('피드백 데이터 로딩 중 오류:', error);
-                // 오류 시 기본값 설정
-                document.getElementById('negative-feedback-count').textContent = '0';
-                document.getElementById('positive-feedback-count').textContent = '0';
-                document.getElementById('feedback-improvement-rate').textContent = '0%';
+                // 오류 시 기본값 설정 - 요소 존재 확인
+                const negativeElement = document.getElementById('negative-feedback-count');
+                const positiveElement = document.getElementById('positive-feedback-count');
+                const rateElement = document.getElementById('feedback-improvement-rate');
+                
+                if (negativeElement) negativeElement.textContent = '0';
+                if (positiveElement) positiveElement.textContent = '0';
+                if (rateElement) rateElement.textContent = '0%';
             });
     }
     
