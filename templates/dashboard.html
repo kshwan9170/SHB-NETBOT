@@ -673,26 +673,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-    // 통합된 날짜/시간 포맷팅 함수
-    function formatDateTime(timestamp) {
-        if (!timestamp) return '시간 정보 없음';
-        
-        try {
-            const date = new Date(timestamp);
-            if (isNaN(date.getTime())) return '유효하지 않은 날짜';
-            
-            return date.toLocaleString('ko-KR', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        } catch (e) {
-            console.log('날짜 변환 오류:', e);
-            return '날짜 형식 오류';
-        }
-    }
+    // 함수는 전역으로 이동됨
 
     // 호환성을 위한 showVisitorModal 함수 (openVisitorModal로 리다이렉트)
     function showVisitorModal() {
@@ -985,7 +966,26 @@ const savedTheme = localStorage.getItem('theme') || 'light';
 document.documentElement.setAttribute('data-theme', savedTheme);
 updateThemeIcon(savedTheme);
 
-// formatDateTime 함수는 위에서 이미 정의됨 (중복 제거)
+// 전역 날짜/시간 포맷팅 함수
+function formatDateTime(timestamp) {
+    if (!timestamp) return '시간 정보 없음';
+    
+    try {
+        const date = new Date(timestamp);
+        if (isNaN(date.getTime())) return '유효하지 않은 날짜';
+        
+        return date.toLocaleString('ko-KR', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    } catch (e) {
+        console.log('날짜 변환 오류:', e);
+        return '날짜 형식 오류';
+    }
+}
 
 // 새로운 방문자 모달 함수
 function openVisitorModal() {
