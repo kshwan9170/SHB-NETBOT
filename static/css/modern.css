@@ -51,31 +51,42 @@
     --card-spacing: 24px;
 }
 
-/* 다크 모드 */
+/* 다크 모드 - WCAG AA 기준 개선 */
 [data-theme="dark"] {
-    --primary: #2D8AE5;
-    --primary-hover: #3B93F0;
-    --primary-light: rgba(45, 138, 229, 0.15);
-    --secondary: #3B82F6;
-    --accent: #60A5FA;
+    --primary: #4A9EFF;
+    --primary-hover: #66B3FF;
+    --primary-light: rgba(74, 158, 255, 0.2);
+    --secondary: #5B9CFF;
+    --accent: #7DB3FF;
     
-    --dark: #ECF0F1;
-    --dark-medium: #BDC3C7;
-    --medium: #95A5A6;
-    --light-medium: #34495E;
-    --light: #2C3E50;
-    --white: #1A202C;
+    --dark: #FFFFFF;
+    --dark-medium: #E2E8F0;
+    --medium: #CBD5E0;
+    --light-medium: #4A5568;
+    --light: #2D3748;
+    --white: #0F1419;
     
-    --bg-gradient: linear-gradient(135deg, #1A202C, #2D3748);
-    --card-bg: rgba(26, 32, 44, 0.85);
-    --overlay-bg: rgba(236, 240, 241, 0.1);
+    --bg-gradient: linear-gradient(135deg, #0F1419, #1A202C);
+    --card-bg: rgba(45, 55, 72, 0.95);
+    --overlay-bg: rgba(255, 255, 255, 0.05);
     
-    --text-primary: #ECF0F1;
-    --text-secondary: #BDC3C7;
-    --text-light: #7F8C8D;
+    --text-primary: #FFFFFF;
+    --text-secondary: #E2E8F0;
+    --text-light: #CBD5E0;
     --text-on-primary: #FFFFFF;
     
-    --border-color: rgba(52, 73, 94, 0.6);
+    --border-color: rgba(226, 232, 240, 0.2);
+    
+    /* 추가 다크모드 색상 변수 */
+    --chat-bg: #1A202C;
+    --chat-user-bg: #2D3748;
+    --chat-bot-bg: #2A4365;
+    --input-bg: #2D3748;
+    --button-bg: #4A9EFF;
+    --button-hover-bg: #66B3FF;
+    --table-bg: #1A202C;
+    --table-header-bg: #2D3748;
+    --table-border: #4A5568;
 }
 
 /* 기본 리셋 및 폰트 설정 */
@@ -659,7 +670,7 @@ img {
 }
 
 [data-theme="dark"] .chat-section {
-    background-color: var(--light);
+    background-color: var(--white);
 }
 
 .chat-card {
@@ -771,7 +782,7 @@ img {
 }
 
 [data-theme="dark"] .chat-messages {
-    background-color: var(--light);
+    background-color: var(--chat-bg);
 }
 
 .message {
@@ -796,6 +807,14 @@ img {
     animation: slideLeft 0.4s ease;
 }
 
+[data-theme="dark"] .user-message {
+    background: linear-gradient(135deg, #4A9EFF, #66B3FF);
+    color: #FFFFFF;
+    box-shadow: 
+        -2px -2px 6px rgba(255, 255, 255, 0.05),
+        3px 3px 8px rgba(0, 0, 0, 0.3);
+}
+
 .bot-message {
     background-color: var(--light);
     color: var(--text-primary);
@@ -808,8 +827,11 @@ img {
 }
 
 [data-theme="dark"] .bot-message {
-    background-color: var(--light-medium);
-    color: var(--white);
+    background-color: var(--chat-bot-bg);
+    color: var(--text-primary);
+    box-shadow: 
+        inset 1px 1px 1px rgba(255, 255, 255, 0.05),
+        3px 3px 8px rgba(0, 0, 0, 0.3);
 }
 
 .message-content {
@@ -1095,8 +1117,16 @@ img {
     border-bottom: 1px solid #f0f0f0;
 }
 
+[data-theme="dark"] #documents-table tbody tr {
+    border-bottom: 1px solid var(--table-border);
+}
+
 #documents-table tbody tr:nth-child(even) {
     background-color: #fafbfc;
+}
+
+[data-theme="dark"] #documents-table tbody tr:nth-child(even) {
+    background-color: var(--table-header-bg);
 }
 
 #documents-table tbody tr:hover {
@@ -1105,11 +1135,21 @@ img {
     box-shadow: 0 2px 8px rgba(48, 80, 122, 0.1);
 }
 
+[data-theme="dark"] #documents-table tbody tr:hover {
+    background-color: rgba(74, 158, 255, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
 #documents-table tbody td {
     padding: 14px 12px;
     vertical-align: middle;
     font-size: 14px;
     line-height: 1.4;
+}
+
+[data-theme="dark"] #documents-table tbody td {
+    color: var(--text-primary);
 }
 
 /* 파일명 셀 스타일 */
@@ -1121,6 +1161,10 @@ img {
     text-overflow: ellipsis;
     white-space: nowrap;
     position: relative;
+}
+
+[data-theme="dark"] #documents-table tbody td:first-child {
+    color: var(--primary);
 }
 
 /* 📱 모바일에서 파일명 줄바꿈 처리 */
@@ -1562,7 +1606,7 @@ img {
 }
 
 [data-theme="dark"] .chat-input {
-    background-color: var(--light);
+    background-color: var(--input-bg);
 }
 
 #userInput {
@@ -1579,8 +1623,14 @@ img {
 }
 
 [data-theme="dark"] #userInput {
-    background-color: var(--light-medium);
-    color: var(--white);
+    background-color: var(--input-bg);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] #userInput::placeholder {
+    color: var(--text-light);
+    opacity: 0.8;
 }
 
 #userInput:focus {
@@ -1611,6 +1661,12 @@ img {
     overflow: hidden;
 }
 
+[data-theme="dark"] #sendButton {
+    background: linear-gradient(135deg, var(--button-bg), var(--button-hover-bg));
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
 #sendButton::before {
     content: '';
     position: absolute;
@@ -1635,6 +1691,12 @@ img {
     box-shadow: var(--shadow-lg);
 }
 
+[data-theme="dark"] #sendButton:hover {
+    background: linear-gradient(135deg, var(--button-hover-bg), #7DB3FF);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
 /* Top 5 추천 질문 스타일 */
 .suggested-questions-container {
     margin: 1rem 0;
@@ -1646,8 +1708,9 @@ img {
 }
 
 [data-theme="dark"] .suggested-questions-container {
-    background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
-    border-color: #4b5563;
+    background: linear-gradient(135deg, var(--chat-user-bg) 0%, var(--chat-bot-bg) 100%);
+    border-color: var(--border-color);
+    color: var(--text-primary);
 }
 
 .suggested-questions-header h4 {
@@ -1661,7 +1724,7 @@ img {
 }
 
 [data-theme="dark"] .suggested-questions-header h4 {
-    color: #e2e8f0;
+    color: var(--text-primary);
 }
 
 .suggested-questions-list {
