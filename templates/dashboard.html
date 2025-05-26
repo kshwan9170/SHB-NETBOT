@@ -1439,6 +1439,34 @@ function showQueriesDetails() {
 document.addEventListener('DOMContentLoaded', function() {
     // 모든 카드 데이터 로딩은 updateSummaryStats()에서 처리됨
     console.log('대시보드 초기화 완료');
+    
+    // 사용자 만족도 모달이 닫힐 때 대시보드 새로고침
+    const satisfactionModal = document.getElementById('satisfactionDetailsModal');
+    if (satisfactionModal) {
+        satisfactionModal.addEventListener('hidden.bs.modal', function () {
+            console.log('만족도 모달이 닫혔습니다. 대시보드를 새로고침합니다.');
+            // 대시보드 데이터 새로고침
+            try {
+                updateSummaryStats();
+            } catch (error) {
+                console.log('대시보드 새로고침 중 오류 (무시됨):', error);
+            }
+        });
+    }
+    
+    // 방문자 상세 모달이 닫힐 때도 대시보드 새로고침
+    const visitorModal = document.getElementById('visitorDetailsModal');
+    if (visitorModal) {
+        visitorModal.addEventListener('hidden.bs.modal', function () {
+            console.log('방문자 모달이 닫혔습니다. 대시보드를 새로고침합니다.');
+            // 대시보드 데이터 새로고침
+            try {
+                updateSummaryStats();
+            } catch (error) {
+                console.log('대시보드 새로고침 중 오류 (무시됨):', error);
+            }
+        });
+    }
 });
 
 // 페이지가 완전히 로드된 후에도 실행
