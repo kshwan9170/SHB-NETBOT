@@ -1351,7 +1351,7 @@ function showQueriesDetails() {
         .then(data => {
             console.log('질문 데이터:', data); // 디버깅용
             if (data.success && data.top_queries) {
-                const queries = data.top_queries;
+                const queries = data.top_queries.slice(0, 10); // TOP 10으로 제한
                 
                 // 카테고리별 통계 계산
                 const categoryStats = {};
