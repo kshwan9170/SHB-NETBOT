@@ -428,22 +428,34 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // API 호출
         fetch(`/api/top_queries?period=${period}&category=${category}&limit=10`)
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('API 응답 데이터:', data);
                 showLoading(false);
-                if (data.success) {
+                if (data.success && data.top_queries && data.top_queries.length > 0) {
                     updateDashboard(data);
                 } else {
-                    console.error('데이터 조회 오류:', data.error);
-                    showErrorMessage('데이터를 불러오는 중 오류가 발생했습니다.');
-                    showFallbackData();
+                    console.log('데이터가 비어있거나 오류:', data);
+                    showErrorMessage('조회된 데이터가 없습니다.');
+                    updateDashboard(data); // 빈 데이터라도 UI 업데이트
                 }
             })
             .catch(error => {
                 showLoading(false);
                 console.error('API 호출 오류:', error);
-                showErrorMessage('서버 연결에 문제가 발생했습니다. 기본 데이터를 표시합니다.');
-                showFallbackData();
+                showErrorMessage('서버 연결에 문제가 발생했습니다.');
+                // 오류 시에도 빈 구조로 UI 업데이트
+                updateDashboard({
+                    success: false,
+                    top_queries: [],
+                    category_stats: [],
+                    total_count: 0
+                });
             });
     }
     

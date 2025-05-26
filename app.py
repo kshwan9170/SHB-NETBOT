@@ -208,6 +208,31 @@ def chat():
             use_rag=True
         )
         
+        # 질문 통계 기록
+        try:
+            from models import QueryStatisticsModel
+            query_stats = QueryStatisticsModel()
+            
+            # 간단한 카테고리 분류 로직
+            category = None
+            if any(keyword in user_message.lower() for keyword in ['ip', '아이피', '주소']):
+                category = 'IP 관리'
+            elif any(keyword in user_message.lower() for keyword in ['장애', '문제', '오류', '안돼', '안되']):
+                category = '장애 문의'
+            elif any(keyword in user_message.lower() for keyword in ['대외', '연동', '기관']):
+                category = '대외계 연동'
+            elif any(keyword in user_message.lower() for keyword in ['절차', '방법', '어떻게']):
+                category = '절차 안내'
+            elif any(keyword in user_message.lower() for keyword in ['자산', '장비', '서버']):
+                category = '자산 관리'
+            else:
+                category = '일반 문의'
+            
+            query_stats.record_query(user_message, category)
+            print(f"질문 통계 기록 완료: {category}")
+        except Exception as stats_error:
+            print(f"질문 통계 기록 중 오류: {str(stats_error)}")
+        
         # 로그 기록 (디버깅용)
         print(f"챗봇 응답 생성 완료: {len(user_message)}자 질문 / {len(reply) if reply else 0}자 응답")
         
