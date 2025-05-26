@@ -265,31 +265,73 @@ class BusinessGuideProcessor:
     
     def _generate_external_system_response(self, row_data: Dict[str, Any], source_file: str) -> str:
         """대외계 연동 가이드 응답 생성"""
-        response_parts = []
+        # 표 헤더 생성
+        response = "## 📋 대외기관 연결 정보\n\n"
+        
+        # 표 형태로 정보 구성
+        table_rows = []
         
         if '대외기관명' in row_data and pd.notna(row_data['대외기관명']):
-            response_parts.append(f"🏛️ **기관명**: {row_data['대외기관명']}")
+            table_rows.append(f"| 🏛️ **기관명** | {row_data['대외기관명']} |")
         
         if '서비스명' in row_data and pd.notna(row_data['서비스명']):
-            response_parts.append(f"⚙️ **서비스**: {row_data['서비스명']}")
+            table_rows.append(f"| ⚙️ **서비스** | {row_data['서비스명']} |")
+        
+        if '회선사' in row_data and pd.notna(row_data['회선사']):
+            table_rows.append(f"| 📡 **회선사** | {row_data['회선사']} |")
+        
+        if '회선번호' in row_data and pd.notna(row_data['회선번호']):
+            table_rows.append(f"| 📞 **회선번호** | {row_data['회선번호']} |")
         
         if 'IP(운영)' in row_data and pd.notna(row_data['IP(운영)']):
-            response_parts.append(f"🌐 **운영 IP**: {row_data['IP(운영)']}")
+            table_rows.append(f"| 🌐 **운영 IP** | `{row_data['IP(운영)']}` |")
         
         if 'IP(개발)' in row_data and pd.notna(row_data['IP(개발)']):
-            response_parts.append(f"🔧 **개발 IP**: {row_data['IP(개발)']}")
+            table_rows.append(f"| 🔧 **개발 IP** | `{row_data['IP(개발)']}` |")
         
+        # 담당자 정보 섹션
+        contact_info = []
         if '당행 담당자' in row_data and pd.notna(row_data['당행 담당자']):
-            response_parts.append(f"👤 **담당자**: {row_data['당행 담당자']}")
+            contact_info.append(f"| 👤 **담당자** | {row_data['당행 담당자']} |")
         
         if '당행 연락처' in row_data and pd.notna(row_data['당행 연락처']):
-            response_parts.append(f"📞 **연락처**: {row_data['당행 연락처']}")
+            contact_info.append(f"| 📞 **연락처** | {row_data['당행 연락처']} |")
         
+        if '당행 부서' in row_data and pd.notna(row_data['당행 부서']):
+            contact_info.append(f"| 🏢 **부서** | {row_data['당행 부서']} |")
+        
+        # 기관 담당자 정보
+        if '기관 담당자' in row_data and pd.notna(row_data['기관 담당자']):
+            contact_info.append(f"| 👥 **기관 담당자** | {row_data['기관 담당자']} |")
+        
+        if '기관 연락처' in row_data and pd.notna(row_data['기관 연락처']):
+            contact_info.append(f"| 📱 **기관 연락처** | {row_data['기관 연락처']} |")
+        
+        # 표 구성
+        if table_rows:
+            response += "| 구분 | 내용 |\n"
+            response += "|------|------|\n"
+            response += "\n".join(table_rows)
+            response += "\n\n"
+        
+        # 담당자 정보가 있으면 별도 섹션으로 추가
+        if contact_info:
+            response += "### 👥 담당자 정보\n\n"
+            response += "| 구분 | 내용 |\n"
+            response += "|------|------|\n"
+            response += "\n".join(contact_info)
+            response += "\n\n"
+        
+        # 비고 정보
         if '비고' in row_data and pd.notna(row_data['비고']):
-            response_parts.append(f"📝 **비고**: {row_data['비고']}")
+            response += f"### 📝 비고\n{row_data['비고']}\n\n"
         
-        response = "\n".join(response_parts)
-        response += f"\n\n📋 **출처**: {source_file}"
+        # 기관 주소 정보
+        if '기관 주소' in row_data and pd.notna(row_data['기관 주소']):
+            response += f"### 📍 기관 주소\n{row_data['기관 주소']}\n\n"
+        
+        # 출처 정보
+        response += f"---\n📋 **출처**: {source_file}"
         
         return response
     
