@@ -3400,28 +3400,92 @@ textarea.form-control {
     }
 }
 
-/* 대시보드 카드 호버 효과 개선 */
-.queries-card:hover,
-.visitor-card:hover,
-.satisfaction-card:hover {
-    transform: translateY(-4px) !important;
-    box-shadow: 0 8px 25px rgba(48, 80, 122, 0.2) !important;
-    border-color: rgba(48, 80, 122, 0.3) !important;
-}
-
+/* 대시보드 카드 세련된 디자인 */
 .queries-card,
 .visitor-card,
 .satisfaction-card {
     transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
     border: 1px solid #E6EBF4 !important;
+    border-radius: 16px !important;
+    background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%) !important;
+    overflow: hidden !important;
+    position: relative !important;
 }
 
-/* 카드 내 아이콘 호버 효과 */
+/* 카드 상단 액센트 라인 */
+.queries-card::before,
+.visitor-card::before,
+.satisfaction-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #30507A 0%, #4a6fa5 100%);
+    border-radius: 16px 16px 0 0;
+}
+
+/* 호버 효과 */
+.queries-card:hover,
+.visitor-card:hover,
+.satisfaction-card:hover {
+    transform: translateY(-8px) scale(1.02) !important;
+    box-shadow: 0 20px 40px rgba(48, 80, 122, 0.15) !important;
+    border-color: rgba(48, 80, 122, 0.4) !important;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%) !important;
+}
+
+/* 카드 바디 패딩 개선 */
+.queries-card .card-body,
+.visitor-card .card-body,
+.satisfaction-card .card-body {
+    padding: 2rem 1.5rem !important;
+    position: relative;
+}
+
+/* 아이콘 스타일링 */
+.queries-card .fas,
+.visitor-card .fas,
+.satisfaction-card .fas {
+    background: linear-gradient(135deg, #30507A 0%, #4a6fa5 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 2px 4px rgba(48, 80, 122, 0.1);
+    transition: all 0.3s ease;
+}
+
+/* 아이콘 호버 효과 */
 .queries-card:hover .fas,
 .visitor-card:hover .fas,
 .satisfaction-card:hover .fas {
-    transform: scale(1.1);
-    transition: transform 0.3s ease;
+    transform: scale(1.15) rotate(5deg);
+    filter: drop-shadow(0 4px 8px rgba(48, 80, 122, 0.2));
+}
+
+/* 숫자 디스플레이 스타일링 */
+.queries-card .display-4,
+.visitor-card .display-4,
+.satisfaction-card .display-4 {
+    font-weight: 700 !important;
+    background: linear-gradient(135deg, #30507A 0%, #4a6fa5 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 2px 4px rgba(48, 80, 122, 0.1);
+    letter-spacing: -0.02em;
+}
+
+/* 카드 타이틀 스타일링 */
+.queries-card .card-title,
+.visitor-card .card-title,
+.satisfaction-card .card-title {
+    font-weight: 600 !important;
+    color: #2c3e50 !important;
+    font-size: 1.1rem !important;
+    margin-bottom: 1rem !important;
+    transition: all 0.3s ease;
 }
 
 /* 카드 타이틀 호버 효과 */
@@ -3429,7 +3493,40 @@ textarea.form-control {
 .visitor-card:hover .card-title,
 .satisfaction-card:hover .card-title {
     color: #30507A !important;
-    font-weight: 600 !important;
+    transform: translateX(4px);
+}
+
+/* 설명 텍스트 스타일링 */
+.queries-card .small,
+.visitor-card .small,
+.satisfaction-card .small {
+    color: #6c757d !important;
+    font-weight: 500 !important;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+/* 설명 텍스트 호버 효과 */
+.queries-card:hover .small,
+.visitor-card:hover .small,
+.satisfaction-card:hover .small {
+    opacity: 1;
+    color: #495057 !important;
+}
+
+/* 반응형 최적화 */
+@media (max-width: 768px) {
+    .queries-card .card-body,
+    .visitor-card .card-body,
+    .satisfaction-card .card-body {
+        padding: 1.5rem 1rem !important;
+    }
+    
+    .queries-card:hover,
+    .visitor-card:hover,
+    .satisfaction-card:hover {
+        transform: translateY(-4px) scale(1.01) !important;
+    }
 }
 
 
