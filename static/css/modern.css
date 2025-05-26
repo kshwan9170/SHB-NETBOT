@@ -2286,8 +2286,45 @@ img {
         box-shadow: var(--shadow-lg);
     }
     
+    /* 모바일 메뉴 링크 텍스트 시인성 개선 */
+    .nav-links a {
+        color: var(--text-primary) !important;
+        font-weight: 500;
+        padding: 1.2rem 2rem;
+        border-radius: var(--border-radius-sm);
+        transition: all var(--transition-fast);
+    }
+    
+    .nav-links a:hover {
+        background: var(--primary-light);
+        color: var(--primary) !important;
+        font-weight: 600;
+        transform: translateX(8px);
+    }
+    
+    .nav-links a.active {
+        background: var(--primary);
+        color: var(--text-on-primary) !important;
+        font-weight: 600;
+        border-left: 4px solid var(--accent);
+    }
+    
     [data-theme="dark"] .nav-links {
         background: var(--light);
+    }
+    
+    [data-theme="dark"] .nav-links a {
+        color: var(--text-primary) !important;
+    }
+    
+    [data-theme="dark"] .nav-links a:hover {
+        background: var(--primary-light);
+        color: var(--primary) !important;
+    }
+    
+    [data-theme="dark"] .nav-links a.active {
+        background: var(--primary);
+        color: var(--text-on-primary) !important;
     }
     
     .nav-links.active {
