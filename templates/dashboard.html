@@ -690,78 +690,55 @@ document.addEventListener('DOMContentLoaded', function() {
         const totalCount = data.top_queries.reduce((sum, q) => sum + q.count, 0);
         document.getElementById('total-queries').textContent = totalCount;
         
-        // 피드백 카드 업데이트 및 방문자 수 업데이트
-        updateFeedbackCard();
+        // 피드백 카드 업데이트 및 방문자 수 업데이트 (안전 모드)
+        try {
+            updateFeedbackCard();
+        } catch (error) {
+            console.log('피드백 카드 업데이트 중 오류 (무시됨):', error);
+        }
         
         // 방문자 카드는 updateFeedbackCard()에서 함께 처리됨
     }
     
-    // 방문자 카드 업데이트 함수 (실제 API 데이터 사용)
-    function updateVisitorCard() {
-        fetch('/api/visitor_details')
-            .then(response => response.json())
-            .then(data => {
-                if (data && data.success) {
-                    const visitorsText = document.getElementById('recent-visitors');
-                    const visitorsIcon = document.getElementById('visitors-icon');
-                    const visitorsDescription = document.getElementById('visitors-description');
-                    
-                    if (visitorsText) {
-                        // 실제 고유 IP 수 표시
-                        const actualUniqueIPs = data.ip_statistics ? data.ip_statistics.length : 0;
-                        visitorsText.textContent = actualUniqueIPs;
-                        console.log('방문자 카드 업데이트 완료:', actualUniqueIPs);
-                        
-                        if (visitorsIcon) {
-                            visitorsIcon.style.color = '#17a2b8'; // 방문자는 청록색
-                        }
-                        if (visitorsDescription) {
-                            visitorsDescription.textContent = '지난 24시간 (클릭하여 상세보기)';
-                        }
-                    }
-                } else {
-                    console.log('방문자 데이터 로딩 실패');
-                }
-            })
-            .catch(error => {
-                console.log('방문자 데이터 로딩 중 오류:', error);
-            });
-    }
+    // 방문자 카드 업데이트는 updateSummaryStats()에서 통합 처리됨
     
-    // 피드백 카드 업데이트 함수 (간소화)
+    // 통합 피드백 카드 업데이트 함수 (오류 방지 버전)
     function updateFeedbackCard() {
-        // 피드백 데이터 API 호출
-        fetch('/api/feedback_stats')
-            .then(response => response.json())
-            .then(feedbackData => {
-                if (feedbackData.success) {
-                    console.log('피드백 데이터 처리 중:', feedbackData);
-                    
-                    // 상단 카드의 사용자 만족도 업데이트
-                    const total = (feedbackData.positive_count || 0) + (feedbackData.negative_count || 0);
-                    const satisfactionRate = total > 0 ? Math.round((feedbackData.positive_count || 0) / total * 100) : 0;
-                    
-                    // 사용자 만족도 퍼센트 업데이트
-                    const positivePercentageElement = document.getElementById('positive-percentage');
-                    if (positivePercentageElement) {
-                        positivePercentageElement.textContent = `${satisfactionRate}%`;
+        try {
+            // 피드백 데이터 API 호출
+            fetch('/api/feedback_stats')
+                .then(response => response.json())
+                .then(feedbackData => {
+                    if (feedbackData && feedbackData.success) {
+                        console.log('피드백 데이터 처리 중:', feedbackData);
+                        
+                        // 상단 카드의 사용자 만족도 업데이트
+                        const total = (feedbackData.positive_count || 0) + (feedbackData.negative_count || 0);
+                        const satisfactionRate = total > 0 ? Math.round((feedbackData.positive_count || 0) / total * 100) : 0;
+                        
+                        // 사용자 만족도 퍼센트 업데이트
+                        const positivePercentageElement = document.getElementById('positive-percentage');
+                        if (positivePercentageElement) {
+                            positivePercentageElement.textContent = `${satisfactionRate}%`;
+                        }
+                        
+                        // 전체 피드백 건수 표시 추가
+                        const positiveCountDisplayElement = document.getElementById('positive-count-display');
+                        if (positiveCountDisplayElement) {
+                            positiveCountDisplayElement.textContent = `${total}건 (클릭하여 상세보기)`;
+                        }
+                        
+                        // 방문자 수는 updateSummaryStats()에서 통합 처리됨
+                    } else {
+                        console.log('피드백 데이터 로딩 실패:', feedbackData);
                     }
-                    
-                    // 전체 피드백 건수 표시 추가
-                    const positiveCountDisplayElement = document.getElementById('positive-count-display');
-                    if (positiveCountDisplayElement) {
-                        positiveCountDisplayElement.textContent = `${total}건 (클릭하여 상세보기)`;
-                    }
-                    
-                    // 최근 방문자 수 업데이트 (방문자 API에서 실제 데이터 가져오기)
-                    // updateVisitorCard(); // 중복 제거 - updateSummaryStats에서 이미 호출함
-                } else {
-                    console.log('피드백 데이터 로딩 실패:', feedbackData);
-                }
-            })
-            .catch(error => {
-                console.log('피드백 데이터 로딩 중 오류:', error);
-            });
+                })
+                .catch(error => {
+                    console.log('피드백 데이터 로딩 중 오류:', error);
+                });
+        } catch (error) {
+            console.log('updateFeedbackCard 함수 실행 중 오류:', error);
+        }
     }
     
 
@@ -1195,15 +1172,19 @@ function deleteFeedback(feedbackId) {
                 alert('피드백이 성공적으로 삭제되었습니다.');
                 // 만족도 상세 정보 다시 로드
                 showSatisfactionDetails();
-                // 대시보드 메인 카드도 업데이트
-                updateFeedbackCard();
+                // 대시보드 메인 카드도 안전하게 업데이트
+                try {
+                    updateFeedbackCard();
+                } catch (error) {
+                    console.log('피드백 카드 업데이트 중 오류 (무시됨):', error);
+                }
             } else {
                 alert('피드백 삭제에 실패했습니다: ' + (data.error || '알 수 없는 오류'));
             }
         })
         .catch(error => {
-            console.error('피드백 삭제 오류:', error);
-            alert('피드백 삭제 중 오류가 발생했습니다: ' + error.message);
+            console.log('피드백 삭제 오류:', error);
+            alert('피드백 삭제 중 오류가 발생했습니다.');
         });
     }
 }
