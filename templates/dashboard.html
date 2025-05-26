@@ -236,12 +236,12 @@
         <div class="col-md-4 mb-3">
             <div class="card h-100 shadow-sm queries-card" style="border-color: #E6EBF4; cursor: pointer; transition: all 0.3s ease;" onclick="showQueriesDetails()" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 20px rgba(48, 80, 122, 0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''">
                 <div class="card-body text-center">
-                    <h5 class="card-title" style="color: #30507A;">전체 질문 수</h5>
+                    <h5 class="card-title" style="color: #30507A;">고유 질문 수</h5>
                     <div class="d-flex align-items-center justify-content-center">
                         <i class="fas fa-comments fa-3x me-3" style="color: #30507A;"></i>
                         <div class="display-4 fw-bold" id="total-queries">0</div>
                     </div>
-                    <div class="small text-muted">누적 문의량 (클릭하여 상세보기)</div>
+                    <div class="small text-muted">서로 다른 질문 개수 (클릭하여 상세보기)</div>
                 </div>
             </div>
         </div>
@@ -797,9 +797,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 통계 요약 업데이트
     function updateSummaryStats(data) {
-        // 전체 질문 수
-        document.getElementById('total-queries').textContent = 
-            data.top_queries.reduce((sum, query) => sum + query.count, 0);
+        // 전체 질문 수 (고유 질문 개수로 표시)
+        document.getElementById('total-queries').textContent = data.top_queries.length;
         
         // 피드백 카드 업데이트 및 방문자 수 업데이트
         updateFeedbackCard();
@@ -1334,11 +1333,11 @@ function showQueriesDetails() {
                         category = 'IP사용자조회';
                     } else if (queryText.includes('포티게이트') || queryText.includes('os 버전') || queryText.includes('장비') || queryText.includes('자산') || queryText.includes('모델명') || queryText.includes('벤더')) {
                         category = '자산관리';
-                    } else if (queryText.includes('대외기관') || queryText.includes('대외계') || queryText.includes('연동') || queryText.includes('회선')) {
+                    } else if (queryText.includes('대외기관') || queryText.includes('대외계') || queryText.includes('연동') || queryText.includes('회선') || queryText.includes('기관')) {
                         category = '대외계연동';
-                    } else if (queryText.includes('장애') || queryText.includes('오류') || queryText.includes('문제') || queryText.includes('안됨') || queryText.includes('실패')) {
+                    } else if (queryText.includes('장애') || queryText.includes('오류') || queryText.includes('문제') || queryText.includes('안됨') || queryText.includes('안돼') || queryText.includes('실패') || queryText.includes('dgw') || queryText.includes('무선')) {
                         category = '장애문의';
-                    } else if (queryText.includes('절차') || queryText.includes('방법') || queryText.includes('어떻게') || queryText.includes('프로세스')) {
+                    } else if (queryText.includes('절차') || queryText.includes('방법') || queryText.includes('어떻게') || queryText.includes('프로세스') || queryText.includes('등록')) {
                         category = '절차안내';
                     } else {
                         category = '일반문의';
