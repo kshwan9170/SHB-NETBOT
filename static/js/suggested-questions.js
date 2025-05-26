@@ -329,9 +329,6 @@ function addSuggestedQuestionsStyles() {
 
 // DOM 로드 완료 후 초기화
 document.addEventListener('DOMContentLoaded', function() {
-    // 스타일 추가
-    addSuggestedQuestionsStyles();
-    
     // 추천 질문 시스템 초기화 (약간의 딜레이 후)
     setTimeout(() => {
         window.suggestedQuestions = new SuggestedQuestions();
