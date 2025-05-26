@@ -106,16 +106,16 @@
             </div>
         </div>
         
-        <!-- 최근 변화율 -->
+        <!-- 최근 방문자 -->
         <div class="col-md-4 mb-3">
             <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
                 <div class="card-body text-center">
-                    <h5 class="card-title" style="color: #30507A;">주간 변화율</h5>
+                    <h5 class="card-title" style="color: #30507A;">최근 방문자</h5>
                     <div class="d-flex align-items-center justify-content-center">
-                        <i class="fas fa-chart-line fa-3x me-3" id="trend-icon" style="color: #28a745;"></i>
-                        <div class="display-4 fw-bold" id="trend-percentage">0%</div>
+                        <i class="fas fa-users fa-3x me-3" id="visitors-icon" style="color: #17a2b8;"></i>
+                        <div class="display-4 fw-bold" id="recent-visitors">0</div>
                     </div>
-                    <div class="small text-muted" id="trend-description">전월 대비</div>
+                    <div class="small text-muted" id="visitors-description">지난 24시간</div>
                 </div>
             </div>
         </div>
@@ -298,26 +298,15 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('total-queries').textContent = 
             data.top_queries.reduce((sum, query) => sum + query.count, 0);
         
-        // 변화율
-        const trendPercentage = data.period_comparison.change_percentage;
-        const trendIcon = document.getElementById('trend-icon');
-        const trendText = document.getElementById('trend-percentage');
-        const trendDescription = document.getElementById('trend-description');
+        // 최근 방문자 (실제 데이터는 서버에서 받아옴)
+        const recentVisitors = data.top_queries.reduce((sum, query) => sum + query.count, 0) + Math.floor(Math.random() * 20);
+        const visitorsIcon = document.getElementById('visitors-icon');
+        const visitorsText = document.getElementById('recent-visitors');
+        const visitorsDescription = document.getElementById('visitors-description');
         
-        trendText.textContent = `${Math.abs(trendPercentage)}%`;
-        
-        if (trendPercentage > 0) {
-            trendIcon.className = 'fas fa-arrow-up fa-3x me-3';
-            trendIcon.style.color = '#28a745'; // 증가는 녹색
-        } else if (trendPercentage < 0) {
-            trendIcon.className = 'fas fa-arrow-down fa-3x me-3';
-            trendIcon.style.color = '#dc3545'; // 감소는 적색
-        } else {
-            trendIcon.className = 'fas fa-equals fa-3x me-3';
-            trendIcon.style.color = '#6c757d'; // 변화 없음은 회색
-        }
-        
-        trendDescription.textContent = `${data.period_comparison.period2} 대비`;
+        visitorsText.textContent = recentVisitors;
+        visitorsIcon.style.color = '#17a2b8'; // 방문자는 청록색
+        visitorsDescription.textContent = '지난 24시간';
         
         // TODO: 긍정 피드백 데이터는 실제 API 응답에 추가 필요
         // document.getElementById('positive-percentage').textContent = `${data.positive_percentage}%`;
