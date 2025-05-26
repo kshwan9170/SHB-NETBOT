@@ -116,7 +116,18 @@ def dashboard():
         user_ip = user_ip.split(',')[0].strip()
         log_visitor(user_ip, 'dashboard')
     
-    return render_template('dashboard.html')
+    # 24시간 내 고유 방문자 수 계산
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT COUNT(DISTINCT ip_address) 
+        FROM visitors 
+        WHERE visit_time >= datetime('now', '-24 hours')
+    """)
+    unique_visitors_24h = cursor.fetchone()[0]
+    conn.close()
+    
+    return render_template('dashboard.html', unique_visitors_24h=unique_visitors_24h)
     
 
 
