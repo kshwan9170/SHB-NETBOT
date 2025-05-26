@@ -83,21 +83,21 @@ def log_visitor(ip_address, page_visited=None):
         if conn is None:
             return False
         
-        # chat_logs 테이블이 존재하지 않으면 생성
+        # visitors 테이블이 존재하지 않으면 생성
         conn.execute("""
-            CREATE TABLE IF NOT EXISTS chat_logs (
+            CREATE TABLE IF NOT EXISTS visitors (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_ip TEXT NOT NULL,
-                query_text TEXT,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                ip_address TEXT NOT NULL,
+                visit_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+                page_visited TEXT DEFAULT '대시보드'
             )
         """)
         
-        # 방문 기록 삽입
+        # 현재 시간으로 방문 기록 삽입
         conn.execute("""
-            INSERT INTO chat_logs (user_ip, query_text) 
+            INSERT INTO visitors (ip_address, page_visited) 
             VALUES (?, ?)
-        """, (ip_address, f"PAGE_VISIT:{page_visited or 'dashboard'}"))
+        """, (ip_address, page_visited or '대시보드'))
         
         conn.commit()
         conn.close()
@@ -1859,26 +1859,25 @@ def feedback_stats():
         
         # 최근 24시간 고유 방문자 수 (IP 주소 기준)
         try:
-            # chat_logs 테이블이 존재하지 않으면 생성
+            # visitors 테이블이 존재하지 않으면 생성
             conn.execute("""
-                CREATE TABLE IF NOT EXISTS chat_logs (
+                CREATE TABLE IF NOT EXISTS visitors (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_ip TEXT NOT NULL,
-                    query_text TEXT,
-                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                    ip_address TEXT NOT NULL,
+                    visit_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    page_visited TEXT DEFAULT '대시보드'
                 )
             """)
             conn.commit()
             
             # 고유 방문자 수 계산
             unique_visitors_24h = conn.execute("""
-                SELECT COUNT(DISTINCT user_ip) as count 
-                FROM chat_logs 
-                WHERE timestamp >= datetime('now', '-1 day')
-                AND (query_text LIKE 'PAGE_VISIT:%' OR query_text IS NOT NULL)
+                SELECT COUNT(DISTINCT ip_address) as count 
+                FROM visitors 
+                WHERE visit_time >= datetime('now', '-1 day')
             """).fetchone()['count']
         except Exception as e:
-            print(f"chat_logs 테이블 오류: {e}")
+            print(f"visitors 테이블 오류: {e}")
             # 테이블이 없거나 오류가 있으면 0으로 초기화
             unique_visitors_24h = 0
         
