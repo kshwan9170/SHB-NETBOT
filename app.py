@@ -1902,7 +1902,7 @@ def visitor_details():
         if conn is None:
             return jsonify({'success': False, 'error': '데이터베이스 연결 실패'})
         
-        # 지난 24시간 방문 기록 조회
+        # 지난 25시간 방문 기록 조회 (여유있게)
         visitor_records = conn.execute("""
             SELECT user_ip, query_text, timestamp,
                    CASE 
@@ -1912,7 +1912,7 @@ def visitor_details():
                        ELSE '채팅'
                    END as page_name
             FROM chat_logs 
-            WHERE timestamp >= datetime('now', '-1 day')
+            WHERE timestamp >= datetime('now', '-25 hours')
             AND (query_text LIKE 'PAGE_VISIT:%' OR query_text IS NOT NULL)
             ORDER BY timestamp DESC
             LIMIT 50
