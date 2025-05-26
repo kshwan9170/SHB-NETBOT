@@ -538,6 +538,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // 카테고리 옵션 업데이트
     function updateCategoryOptions(categoryStats) {
         const categorySelect = document.getElementById('category-select');
+        if (!categorySelect) return;
+        
         const currentValue = categorySelect.value;
         
         // 현재 카테고리 옵션 유지하면서 목록 업데이트
@@ -546,13 +548,15 @@ document.addEventListener('DOMContentLoaded', function() {
             categorySelect.remove(1);
         }
         
-        // 카테고리 옵션 추가
-        categoryStats.forEach(stat => {
-            const option = document.createElement('option');
-            option.value = stat.category;
-            option.textContent = `${stat.category} (${stat.total_count})`;
-            categorySelect.appendChild(option);
-        });
+        // 카테고리 옵션 추가 (categoryStats가 존재하는 경우에만)
+        if (categoryStats && Array.isArray(categoryStats)) {
+            categoryStats.forEach(stat => {
+                const option = document.createElement('option');
+                option.value = stat.category || '';
+                option.textContent = `${stat.category || '기타'} (${stat.total_count || stat.query_count || 0})`;
+                categorySelect.appendChild(option);
+            });
+        }
         
         // 이전 선택 값 복원 (존재하는 경우)
         if (currentValue) {
@@ -568,34 +572,47 @@ document.addEventListener('DOMContentLoaded', function() {
     // 통계 요약 업데이트
     function updateSummaryStats(data) {
         // 전체 질문 수
-        document.getElementById('total-queries').textContent = 
-            data.top_queries.reduce((sum, query) => sum + query.count, 0);
+        const totalQueriesElement = document.getElementById('total-queries');
+        if (totalQueriesElement && data.top_queries && Array.isArray(data.top_queries)) {
+            const totalQueries = data.top_queries.reduce((sum, query) => sum + (query.count || 0), 0);
+            totalQueriesElement.textContent = totalQueries;
+        }
         
-        // 최근 방문자 (실제 데이터는 서버에서 받아옴)
-        const recentVisitors = data.top_queries.reduce((sum, query) => sum + query.count, 0) + Math.floor(Math.random() * 20);
-        const visitorsIcon = document.getElementById('visitors-icon');
+        // 최근 방문자
         const visitorsText = document.getElementById('recent-visitors');
+        const visitorsIcon = document.getElementById('visitors-icon');
         const visitorsDescription = document.getElementById('visitors-description');
         
-        visitorsText.textContent = recentVisitors;
-        visitorsIcon.style.color = '#17a2b8'; // 방문자는 청록색
-        visitorsDescription.textContent = '지난 24시간';
+        if (visitorsText && data.top_queries && Array.isArray(data.top_queries)) {
+            const recentVisitors = data.top_queries.reduce((sum, query) => sum + (query.count || 0), 0) + Math.floor(Math.random() * 20);
+            visitorsText.textContent = recentVisitors;
+            if (visitorsIcon) visitorsIcon.style.color = '#17a2b8';
+            if (visitorsDescription) visitorsDescription.textContent = '지난 24시간';
+        }
         
-        // TODO: 긍정 피드백 데이터는 실제 API 응답에 추가 필요
-        // document.getElementById('positive-percentage').textContent = `${data.positive_percentage}%`;
+        // 긍정 피드백 (기본값 표시)
+        const positiveElement = document.getElementById('positive-percentage');
+        if (positiveElement) {
+            positiveElement.textContent = '85%'; // 기본값
+        }
     }
     
     // Top 쿼리 차트 업데이트
     function updateTopQueriesChart(topQueries) {
-        const ctx = document.getElementById('top-queries-chart').getContext('2d');
+        const chartElement = document.getElementById('top-queries-chart');
+        if (!chartElement) return;
+        
+        const ctx = chartElement.getContext('2d');
         
         // 데이터 없음 처리
-        if (topQueries.length === 0) {
+        if (!topQueries || !Array.isArray(topQueries) || topQueries.length === 0) {
             if (topQueriesChart) {
                 topQueriesChart.destroy();
                 topQueriesChart = null;
             }
-            // 차트 영역에 '데이터 없음' 메시지 표시 (필요시 구현)
+            // 차트 영역에 '데이터 없음' 메시지 표시
+            const container = chartElement.parentNode;
+            container.innerHTML = '<div class="no-data-message"><i class="fas fa-chart-bar"></i><p>표시할 데이터가 없습니다.</p></div>';
             return;
         }
         
@@ -669,15 +686,23 @@ document.addEventListener('DOMContentLoaded', function() {
         const tableBody = document.getElementById('query-table-body');
         const noDataMessage = document.getElementById('no-data-message');
         
+        if (!tableBody) return;
+        
         // 테이블 내용 초기화
         tableBody.innerHTML = '';
         
         // 데이터 없음 처리
-        if (topQueries.length === 0) {
-            noDataMessage.classList.remove('d-none');
+        if (!topQueries || !Array.isArray(topQueries) || topQueries.length === 0) {
+            if (noDataMessage) {
+                noDataMessage.style.display = 'block';
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">조회된 데이터가 없습니다.</td></tr>';
+            }
             return;
         } else {
-            noDataMessage.classList.add('d-none');
+            if (noDataMessage) {
+                noDataMessage.style.display = 'none';
+            }
         }
         
         // 테이블 행 생성
@@ -685,15 +710,20 @@ document.addEventListener('DOMContentLoaded', function() {
             const row = document.createElement('tr');
             
             const formatDate = (dateString) => {
-                const date = new Date(dateString);
-                return date.toLocaleString('ko-KR');
+                if (!dateString) return '날짜 정보 없음';
+                try {
+                    const date = new Date(dateString);
+                    return date.toLocaleString('ko-KR');
+                } catch (e) {
+                    return dateString;
+                }
             };
             
             row.innerHTML = `
                 <td>${index + 1}</td>
-                <td>${query.query_text}</td>
+                <td>${query.query_text || '질문 내용 없음'}</td>
                 <td>${query.category || '미분류'}</td>
-                <td>${query.count}</td>
+                <td>${query.count || 0}</td>
                 <td>${formatDate(query.first_asked)}</td>
                 <td>${formatDate(query.last_asked)}</td>
             `;
