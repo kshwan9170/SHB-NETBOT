@@ -246,7 +246,7 @@
                     <h5 class="card-title" style="color: #30507A;">최근 방문자</h5>
                     <div class="d-flex align-items-center justify-content-center">
                         <i class="fas fa-users fa-3x me-3" id="visitors-icon" style="color: #17a2b8;"></i>
-                        <div class="display-4 fw-bold" id="recent-visitors">0</div>
+                        <div class="display-4 fw-bold" id="recent-visitors">-</div>
                     </div>
                     <div class="small text-muted" id="visitors-description">지난 24시간</div>
                 </div>
@@ -488,6 +488,21 @@ document.addEventListener('DOMContentLoaded', function() {
     // 부정 피드백 카드 초기화
     updateNegativeFeedbackCard();
     
+    // 방문자 수 직접 업데이트
+    setTimeout(() => {
+        fetch('/api/feedback_stats')
+            .then(response => response.json())
+            .then(data => {
+                console.log('방문자 수 직접 업데이트:', data);
+                const visitorsElement = document.getElementById('recent-visitors');
+                if (visitorsElement && data.success && data.unique_visitors_24h !== undefined) {
+                    visitorsElement.textContent = data.unique_visitors_24h;
+                    console.log('방문자 수 설정 완료:', data.unique_visitors_24h);
+                }
+            })
+            .catch(error => console.error('방문자 수 업데이트 오류:', error));
+    }, 2000);
+    
     // 새로고침 버튼 클릭 이벤트
     document.getElementById('refresh-button').addEventListener('click', refreshDashboard);
     
@@ -623,7 +638,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (visitorsText) {
                         // API에서 받은 실제 방문자 수 표시
                         const uniqueVisitors = feedbackData.unique_visitors_24h || 0;
+                        console.log('🔔 방문자 수 업데이트 시작!');
+                        console.log('📊 API 데이터:', feedbackData);
+                        console.log('👥 방문자 수:', uniqueVisitors);
+                        console.log('🔍 요소 업데이트 전:', visitorsText.textContent);
                         visitorsText.textContent = uniqueVisitors;
+                        console.log('✅ 요소 업데이트 후:', visitorsText.textContent);
+                        
+                        // 강제로 화면 갱신
+                        visitorsText.style.color = '#007bff';
+                        setTimeout(() => {
+                            visitorsText.style.color = '';
+                        }, 500);
                         
                         if (visitorsIcon) {
                             visitorsIcon.style.color = '#17a2b8'; // 방문자는 청록색
