@@ -393,10 +393,14 @@ class BusinessGuideProcessor:
                     link_text = link_text.replace(url, '[관련 가이드 바로가기]')
             info_parts.append(f"🔗 **관련 문서**: {link_text}")
         
-        # 출처 파일명 추가 (UUID 제외)
-        clean_source_file = source_file.replace('업무 안내 가이드(', '').replace(').csv', '').replace('_', ' ')
-        if any(char.isalpha() for char in clean_source_file):  # 한글이나 영문이 포함된 경우만
-            info_parts.append(f"📄 **출처**: {clean_source_file}")
+        # 출처 파일명 추가 (UUID 완전 제거)
+        import re
+        # UUID 패턴 제거 (예: "685c2b06-eb7d-4ff4-9c7d-51a3490d8b64_")
+        clean_source_file = re.sub(r'^[a-f0-9-]{36}_', '', source_file)
+        # 추가 정리
+        clean_source_file = clean_source_file.replace('.csv', '')
+        if clean_source_file:
+            info_parts.append(f"📄 **참고 문서**: {clean_source_file}")
         
         if info_parts:
             response_parts.append("ℹ️ **관련 정보**\n" + "\n".join(info_parts))
