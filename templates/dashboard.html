@@ -1039,6 +1039,11 @@ function showVisitorDetails() {
         .then(data => {
             console.log('방문자 데이터:', data); // 디버깅용
             if (data.success && data.ip_statistics) {
+                // 통계 정보 업데이트
+                document.getElementById('total-unique-ips').textContent = data.total_unique_ips || 0;
+                document.getElementById('total-visit-count').textContent = data.ip_statistics.length > 0 ? data.ip_statistics[0].visit_count : 0;
+                document.getElementById('visitor-period').textContent = '지난 24시간';
+                
                 const tbody = document.getElementById('visitor-records-tbody');
                 tbody.innerHTML = '';
                 
