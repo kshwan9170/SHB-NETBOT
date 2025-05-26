@@ -12,48 +12,30 @@ class SuggestedQuestions {
     }
 
     async init() {
-        this.createContainer();
+        await this.findContainer();
         await this.loadQuestions();
         this.setupRefreshTimer();
     }
 
-    createContainer() {
-        // 채팅 섹션 찾기
-        const chatSection = document.getElementById('chat');
-        if (!chatSection) return;
-
-        // 기존 추천 질문 컨테이너가 있으면 제거
-        const existingContainer = document.getElementById('suggested-questions-container');
-        if (existingContainer) {
-            existingContainer.remove();
+    async findContainer() {
+        // 기존에 HTML에 추가된 컨테이너 찾기
+        this.container = document.getElementById('suggestedQuestionsContainer');
+        
+        if (!this.container) {
+            console.log('추천 질문 컨테이너를 찾을 수 없습니다.');
+            return;
         }
-
-        // 추천 질문 컨테이너 생성
-        const container = document.createElement('div');
-        container.id = 'suggested-questions-container';
-        container.className = 'suggested-questions-wrapper';
-        container.innerHTML = `
-            <div class="suggested-questions">
-                <div class="suggested-questions-header">
-                    <h3>💡 추천 질문</h3>
-                    <small>많이 묻는 질문들</small>
+        
+        // 로딩 상태 표시
+        const listContainer = document.getElementById('suggestedQuestionsList');
+        if (listContainer) {
+            listContainer.innerHTML = `
+                <div class="loading-placeholder">
+                    <div class="spinner"></div>
+                    <span>추천 질문을 불러오는 중...</span>
                 </div>
-                <div class="suggested-questions-list" id="suggested-questions-list">
-                    <div class="loading-placeholder">
-                        <div class="spinner"></div>
-                        <span>추천 질문을 불러오는 중...</span>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        // 채팅 입력 영역 바로 위에 삽입
-        const chatContainer = chatSection.querySelector('.chat-container');
-        if (chatContainer) {
-            chatContainer.insertBefore(container, chatContainer.firstChild);
+            `;
         }
-
-        this.container = container;
     }
 
     async loadQuestions() {
@@ -74,31 +56,16 @@ class SuggestedQuestions {
     }
 
     renderQuestions() {
-        const listContainer = document.getElementById('suggested-questions-list');
+        const listContainer = document.getElementById('suggestedQuestionsList');
         if (!listContainer) return;
 
         listContainer.innerHTML = '';
 
         this.questions.forEach((item, index) => {
-            const questionElement = document.createElement('div');
-            questionElement.className = `suggested-question-item ${item.type}`;
+            const questionElement = document.createElement('button');
+            questionElement.className = 'suggested-question-btn';
+            questionElement.textContent = item.question;
             
-            const popularBadge = item.type === 'popular' && item.count > 0 
-                ? `<span class="popularity-badge">${item.count}회</span>` 
-                : '';
-
-            questionElement.innerHTML = `
-                <div class="question-content">
-                    <span class="question-text">${item.question}</span>
-                    ${popularBadge}
-                </div>
-                <div class="question-actions">
-                    <button class="ask-button" data-question="${item.question}">
-                        질문하기
-                    </button>
-                </div>
-            `;
-
             // 클릭 이벤트 추가
             questionElement.addEventListener('click', () => {
                 this.askQuestion(item.question);
@@ -107,23 +74,21 @@ class SuggestedQuestions {
             listContainer.appendChild(questionElement);
         });
 
-        // 첫 번째 로드 후 컨테이너를 서서히 나타나게 함
-        setTimeout(() => {
-            if (this.container) {
-                this.container.classList.add('visible');
-            }
-        }, 300);
+        // 컨테이너 표시
+        if (this.container) {
+            this.container.style.display = 'block';
+        }
     }
 
     askQuestion(question) {
         // 채팅 입력창에 질문 입력
-        const chatInput = document.getElementById('chat-input');
+        const chatInput = document.getElementById('userInput');
         if (chatInput) {
             chatInput.value = question;
             chatInput.focus();
             
             // 자동으로 전송
-            const sendButton = document.querySelector('.send-button, #send-button');
+            const sendButton = document.getElementById('sendButton');
             if (sendButton) {
                 sendButton.click();
             }
@@ -149,7 +114,7 @@ class SuggestedQuestions {
     }
 
     showError(message) {
-        const listContainer = document.getElementById('suggested-questions-list');
+        const listContainer = document.getElementById('suggestedQuestionsList');
         if (!listContainer) return;
 
         listContainer.innerHTML = `

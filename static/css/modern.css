@@ -2953,3 +2953,99 @@ textarea.form-control {
     border: none;
     border-radius: 4px;
 }
+
+/* Top 5 추천 질문 스타일 */
+.suggested-questions-container {
+    margin: 1.5rem 2rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8f9fd, #ffffff);
+    border-radius: 12px;
+    border: 1px solid rgba(48, 80, 122, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.suggested-questions-header {
+    margin-bottom: 1rem;
+}
+
+.suggested-questions-header h4 {
+    color: #30507A;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.suggested-questions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.suggested-question-btn {
+    background: linear-gradient(135deg, #ffffff, #f5f8fd);
+    border: 1px solid rgba(48, 80, 122, 0.2);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    color: #30507A;
+    font-size: 1.4rem;
+    font-weight: 500;
+    line-height: 1.4;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.suggested-question-btn:hover {
+    background: linear-gradient(135deg, #30507A, #3C5C88);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(48, 80, 122, 0.3);
+    border-color: #30507A;
+}
+
+.suggested-question-btn:active {
+    transform: translateY(0px);
+    box-shadow: 0 2px 6px rgba(48, 80, 122, 0.2);
+}
+
+/* 다크 테마 지원 */
+[data-theme="dark"] .suggested-questions-container {
+    background: linear-gradient(135deg, #2C3E50, #34495E);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .suggested-questions-header h4 {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .suggested-question-btn {
+    background: linear-gradient(135deg, #34495E, #2C3E50);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .suggested-question-btn:hover {
+    background: linear-gradient(135deg, #ffffff, #f5f8fd);
+    color: #30507A;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+    .suggested-questions-container {
+        margin: 1rem;
+        padding: 1rem;
+    }
+    
+    .suggested-questions-header h4 {
+        font-size: 1.2rem;
+    }
+    
+    .suggested-question-btn {
+        padding: 0.8rem 1rem;
+        font-size: 1.3rem;
+    }
+}
