@@ -215,7 +215,7 @@ class BusinessGuideProcessor:
         
         return result_columns
     
-    def generate_template_response(self, match_result: Dict[str, Any]) -> str:
+    def generate_template_response(self, match_result: Dict[str, Any]) -> Optional[str]:
         """매칭 결과를 기반으로 정형화된 템플릿 응답 생성"""
         if not match_result:
             return None

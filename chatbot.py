@@ -16,6 +16,9 @@ from config import FAQ_KEYWORDS, FINE_TUNED_MODEL, RAG_SYSTEM
 # CSV 변환 모듈 임포트
 from csv_to_narrative import CsvNarrativeConverter, search_csv_data, process_csv_files
 
+# 업무 안내 가이드 처리 모듈 임포트
+from business_guide_processor import business_guide_processor
+
 # 오프라인 모드 관련 상수
 OFFLINE_MODE_ENABLED = True
 OFFLINE_FALLBACK_MESSAGE = "[🔴 오프라인 모드] 현재 인터넷 연결이 제한되어 있어 로컬 데이터만 사용합니다."
@@ -1482,6 +1485,32 @@ def get_chatbot_response(
     except:
         # 만약 app의 함수를 가져올 수 없다면, 안전하게 온라인으로 간주
         is_online = True
+    
+    # ===== 1단계: 업무 안내 가이드 우선 검색 =====
+    logger.info(f"업무 안내 가이드 우선 검색 시작: {query}")
+    
+    try:
+        # 업무 안내 가이드에서 키워드 매칭 검색
+        guide_match = business_guide_processor.search_keywords(query)
+        
+        if guide_match:
+            # 매칭된 결과가 있으면 정형화된 템플릿 응답 생성
+            template_response = business_guide_processor.generate_template_response(guide_match)
+            
+            if template_response:
+                logger.info(f"업무 안내 가이드 매칭 성공 - 파일: {guide_match.get('source_file', 'unknown')}, 점수: {guide_match.get('score', 0)}")
+                
+                # 연결 상태 정보 추가
+                if is_online:
+                    template_response += "\n\n[🟢 온라인 모드] 내부 업무 가이드 기반 응답"
+                else:
+                    template_response += "\n\n[🔴 오프라인 모드] 로컬 업무 가이드 기반 응답"
+                
+                return template_response
+    
+    except Exception as e:
+        logger.error(f"업무 안내 가이드 검색 중 오류 발생: {str(e)}")
+        # 오류가 발생해도 계속 진행하여 다른 검색 방법 시도
     
     # 일반 IP 주소 검색인지 확인 (192.168.0.1 형식)
     ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
