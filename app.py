@@ -1747,54 +1747,17 @@ def sync_documents():
         return jsonify({'error': str(e)}), 500
 
 # 데이터베이스 초기화 후 앱 실행
-# ========== 새로운 피드백 API (기존 기능에 영향 없음) ==========
+# ========== 새로운 피드백 통계 API (기존 기능에 영향 없음) ==========
 
-@app.route('/api/chat_feedback', methods=['POST'])
-def chat_feedback():
-    """채팅 피드백 API - 만족해요/개선필요 선택 시 호출"""
+def get_db_connection():
+    """데이터베이스 연결 함수"""
     try:
-        data = request.get_json()
-        query_text = data.get('query', '')
-        feedback_type = data.get('feedback', '')  # 'positive' 또는 'negative'
-        
-        if not query_text or not feedback_type:
-            return jsonify({'success': False, 'error': '필수 파라미터가 누락되었습니다.'})
-        
-        # 피드백 데이터 저장 (데이터베이스 연결)
-        conn = get_db_connection()
-        if conn:
-            try:
-                cursor = conn.cursor()
-                
-                # 테이블이 없는 경우 생성
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS chat_feedback (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        query_text TEXT NOT NULL,
-                        feedback_type TEXT NOT NULL,
-                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-                    )
-                """)
-                
-                cursor.execute("""
-                    INSERT INTO chat_feedback (query_text, feedback_type, timestamp)
-                    VALUES (?, ?, datetime('now'))
-                """, (query_text, feedback_type))
-                conn.commit()
-                conn.close()
-                
-                return jsonify({'success': True, 'message': '피드백이 저장되었습니다.'})
-            except Exception as e:
-                print(f"피드백 저장 오류: {e}")
-                if conn:
-                    conn.close()
-                return jsonify({'success': False, 'error': '피드백 저장 중 오류가 발생했습니다.'})
-        else:
-            return jsonify({'success': False, 'error': '데이터베이스 연결 오류'})
-            
+        import sqlite3
+        conn = sqlite3.connect('shinhan_netbot.db')
+        return conn
     except Exception as e:
-        print(f"피드백 API 오류: {e}")
-        return jsonify({'success': False, 'error': '서버 오류가 발생했습니다.'})
+        print(f"데이터베이스 연결 오류: {e}")
+        return None
 
 @app.route('/api/feedback_stats', methods=['GET'])
 def feedback_stats():
