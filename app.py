@@ -1797,11 +1797,28 @@ def feedback_stats():
         ]
         
         # 최근 24시간 고유 방문자 수 (IP 주소 기준)
-        unique_visitors_24h = conn.execute("""
-            SELECT COUNT(DISTINCT user_ip) as count 
-            FROM chat_logs 
-            WHERE timestamp >= datetime('now', '-24 hours')
-        """).fetchone()['count']
+        try:
+            # chat_logs 테이블이 존재하지 않으면 생성
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS chat_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_ip TEXT NOT NULL,
+                    query_text TEXT,
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.commit()
+            
+            # 고유 방문자 수 계산
+            unique_visitors_24h = conn.execute("""
+                SELECT COUNT(DISTINCT user_ip) as count 
+                FROM chat_logs 
+                WHERE timestamp >= datetime('now', '-24 hours')
+            """).fetchone()['count']
+        except Exception as e:
+            print(f"chat_logs 테이블 오류: {e}")
+            # 테이블이 없거나 오류가 있으면 0으로 초기화
+            unique_visitors_24h = 0
         
         conn.close()
         
