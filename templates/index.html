@@ -175,10 +175,11 @@
                 
                 <!-- Top 5 추천 질문 섹션 -->
                 <div id="suggestedQuestionsContainer" class="suggested-questions-container" style="display: block;">
-                    <div class="suggested-questions-header">
-                        <h4>💡 자주 묻는 질문 Top 5</h4>
+                    <div class="suggested-questions-header" id="suggestedQuestionsToggle" style="cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(48, 80, 122, 0.05); border-radius: 8px; transition: all 0.3s ease;">
+                        <h4 style="margin: 0; color: #30507A; font-weight: 600;">💡 자주 묻는 질문 Top 5</h4>
+                        <span id="toggleIcon" style="color: #30507A; font-size: 18px; transition: transform 0.3s ease;">▼</span>
                     </div>
-                    <div id="suggestedQuestionsList" class="suggested-questions-list">
+                    <div id="suggestedQuestionsList" class="suggested-questions-list" style="display: none; overflow: hidden; transition: all 0.3s ease;">
                         <!-- 추천 질문들이 여기에 동적으로 추가됩니다 -->
                     </div>
                 </div>
@@ -796,6 +797,124 @@
         }
     `;
     document.head.appendChild(spinnerStyle);
+    </script>
+
+    <!-- 자주 묻는 질문 토글 기능 스크립트 -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggleButton = document.getElementById('suggestedQuestionsToggle');
+        const questionsList = document.getElementById('suggestedQuestionsList');
+        const toggleIcon = document.getElementById('toggleIcon');
+        let questionsLoaded = false;
+        
+        if (toggleButton && questionsList && toggleIcon) {
+            // 토글 버튼 클릭 이벤트
+            toggleButton.addEventListener('click', async function() {
+                const isExpanded = questionsList.style.display !== 'none';
+                
+                if (isExpanded) {
+                    // 접기
+                    questionsList.style.display = 'none';
+                    toggleIcon.textContent = '▼';
+                    toggleIcon.style.transform = 'rotate(0deg)';
+                    toggleButton.style.backgroundColor = 'rgba(48, 80, 122, 0.05)';
+                } else {
+                    // 펼치기 - 질문이 로드되지 않았다면 먼저 로드
+                    if (!questionsLoaded) {
+                        await loadSuggestedQuestions();
+                    }
+                    
+                    questionsList.style.display = 'block';
+                    toggleIcon.textContent = '▲';
+                    toggleIcon.style.transform = 'rotate(180deg)';
+                    toggleButton.style.backgroundColor = 'rgba(48, 80, 122, 0.1)';
+                }
+            });
+            
+            // 호버 효과 추가
+            toggleButton.addEventListener('mouseenter', function() {
+                if (questionsList.style.display === 'none') {
+                    toggleButton.style.backgroundColor = 'rgba(48, 80, 122, 0.08)';
+                } else {
+                    toggleButton.style.backgroundColor = 'rgba(48, 80, 122, 0.15)';
+                }
+            });
+            
+            toggleButton.addEventListener('mouseleave', function() {
+                if (questionsList.style.display === 'none') {
+                    toggleButton.style.backgroundColor = 'rgba(48, 80, 122, 0.05)';
+                } else {
+                    toggleButton.style.backgroundColor = 'rgba(48, 80, 122, 0.1)';
+                }
+            });
+        }
+        
+        // 추천 질문 로드 함수
+        async function loadSuggestedQuestions() {
+            try {
+                const response = await fetch('/api/suggested_questions');
+                const data = await response.json();
+                
+                if (data.success && data.questions && data.questions.length > 0) {
+                    renderQuestions(data.questions);
+                    questionsLoaded = true;
+                } else {
+                    showQuestionError('추천 질문을 불러올 수 없습니다.');
+                }
+            } catch (error) {
+                console.error('추천 질문 로드 실패:', error);
+                showQuestionError('추천 질문을 불러오는 중 오류가 발생했습니다.');
+            }
+        }
+        
+        // 질문 렌더링 함수
+        function renderQuestions(questions) {
+            if (!questionsList) return;
+            
+            questionsList.innerHTML = questions.map(item => 
+                `<button class="question-button" onclick="askSuggestedQuestion('${item.question.replace(/'/g, "\\'")}')">
+                    ${item.question}
+                </button>`
+            ).join('');
+        }
+        
+        // 에러 메시지 표시
+        function showQuestionError(message) {
+            if (!questionsList) return;
+            
+            questionsList.innerHTML = `
+                <div class="error-message" style="padding: 16px; text-align: center; color: #666; font-size: 14px;">
+                    <span style="display: block; margin-bottom: 8px;">⚠️</span>
+                    <span>${message}</span>
+                </div>
+            `;
+        }
+        
+        // 질문 선택 함수 (전역으로 선언)
+        window.askSuggestedQuestion = function(question) {
+            const chatInput = document.getElementById('userInput');
+            if (chatInput) {
+                chatInput.value = question;
+                chatInput.focus();
+                
+                // 자동으로 전송
+                const sendButton = document.getElementById('sendButton');
+                if (sendButton) {
+                    sendButton.click();
+                }
+            }
+            
+            // 질문 패널을 잠시 숨김 (시각적 피드백)
+            if (questionsList) {
+                questionsList.style.opacity = '0.5';
+                setTimeout(() => {
+                    if (questionsList) {
+                        questionsList.style.opacity = '1';
+                    }
+                }, 3000);
+            }
+        };
+    });
     </script>
 </body>
 </html>
