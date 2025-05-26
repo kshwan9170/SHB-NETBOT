@@ -13,7 +13,7 @@ import openai
 from openai import OpenAI
 
 # 게시판 모델 임포트
-from models import init_db, get_db, close_db, InquiryBoard, FeedbackBoard, ReportBoard, ChatFeedbackModel, VisitorStatsModel
+from models import init_db, get_db, close_db, InquiryBoard, FeedbackBoard, ReportBoard, ChatFeedbackModel
 
 # Custom modules
 import database
@@ -29,22 +29,6 @@ app = Flask(__name__)
 
 # 데이터베이스 초기화
 init_db()
-
-# 방문자 통계 모델 인스턴스
-visitor_stats = VisitorStatsModel()
-
-# 방문자 추적 미들웨어
-@app.before_request
-def track_visitor():
-    """모든 요청에서 방문자 추적"""
-    # API 요청이나 정적 파일 요청은 제외
-    if request.endpoint and not request.endpoint.startswith('static'):
-        client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR', 'unknown'))
-        if ',' in client_ip:
-            client_ip = client_ip.split(',')[0].strip()
-        
-        user_agent = request.headers.get('User-Agent', '')
-        visitor_stats.track_visitor(client_ip, user_agent)
 
 # 데이터베이스 연결 종료
 @app.teardown_appcontext
@@ -1857,46 +1841,6 @@ def delete_feedback():
     except Exception as e:
         print(f"피드백 삭제 API 오류: {e}")
         return jsonify({'success': False, 'error': '서버 오류가 발생했습니다.'})
-
-@app.route('/api/visitor_stats')
-def api_visitor_stats():
-    """방문자 통계 API"""
-    try:
-        limit = request.args.get('limit', 10, type=int)
-        stats_type = request.args.get('type', 'recent')  # recent, top, summary
-        
-        if stats_type == 'recent':
-            visitors = visitor_stats.get_recent_visitors(limit)
-            return jsonify({
-                'success': True,
-                'type': 'recent',
-                'visitors': visitors
-            })
-        elif stats_type == 'top':
-            visitors = visitor_stats.get_top_visitors(limit)
-            return jsonify({
-                'success': True,
-                'type': 'top',
-                'visitors': visitors
-            })
-        elif stats_type == 'summary':
-            summary = visitor_stats.get_visitor_stats()
-            return jsonify({
-                'success': True,
-                'type': 'summary',
-                'stats': summary
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': '잘못된 통계 타입입니다.'
-            }), 400
-            
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
 
 # ========== 기존 메인 실행 코드 ==========
 

@@ -79,23 +79,9 @@ def init_db():
         )
         ''')
         
-        # 방문자 통계 테이블
-        db.execute('''
-        CREATE TABLE IF NOT EXISTS visitor_stats (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            ip_address TEXT NOT NULL UNIQUE,
-            visit_count INTEGER DEFAULT 1,
-            first_visit TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            last_visit TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            user_agent TEXT
-        )
-        ''')
-        
         # 인덱스 생성
         db.execute('CREATE INDEX IF NOT EXISTS idx_query_count ON query_statistics(count DESC)')
         db.execute('CREATE INDEX IF NOT EXISTS idx_query_category ON query_statistics(category)')
-        db.execute('CREATE INDEX IF NOT EXISTS idx_visitor_ip ON visitor_stats(ip_address)')
-        db.execute('CREATE INDEX IF NOT EXISTS idx_visitor_last_visit ON visitor_stats(last_visit DESC)')
         
         # 데이터 마이그레이션 버전 확인
         migration_version = db.execute('PRAGMA user_version').fetchone()[0]
@@ -477,103 +463,4 @@ class QueryStatisticsModel:
             'period1_count': stats[0],
             'period2_count': stats[1],
             'change_percentage': round((stats[0] - stats[1]) / max(stats[1], 1) * 100, 2)
-        }
-
-
-class VisitorStatsModel:
-    """방문자 통계 모델"""
-    
-    def __init__(self):
-        self.table_name = 'visitor_stats'
-    
-    def track_visitor(self, ip_address, user_agent=None):
-        """방문자 추적 및 기록"""
-        db = get_db()
-        
-        # 기존 방문자인지 확인
-        existing = db.execute(
-            f'SELECT id, visit_count FROM {self.table_name} WHERE ip_address = ?',
-            (ip_address,)
-        ).fetchone()
-        
-        if existing:
-            # 기존 방문자 - 카운트 증가 및 마지막 방문 시간 업데이트
-            db.execute(f'''
-                UPDATE {self.table_name} 
-                SET visit_count = visit_count + 1, 
-                    last_visit = CURRENT_TIMESTAMP,
-                    user_agent = ?
-                WHERE ip_address = ?
-            ''', (user_agent, ip_address))
-        else:
-            # 새 방문자 - 신규 레코드 생성
-            db.execute(f'''
-                INSERT INTO {self.table_name} (ip_address, user_agent)
-                VALUES (?, ?)
-            ''', (ip_address, user_agent))
-        
-        db.commit()
-    
-    def get_recent_visitors(self, limit=10):
-        """최근 방문자 목록 조회"""
-        db = get_db()
-        
-        visitors = db.execute(f'''
-            SELECT 
-                ip_address,
-                visit_count,
-                first_visit,
-                last_visit
-            FROM {self.table_name}
-            ORDER BY last_visit DESC
-            LIMIT ?
-        ''', (limit,)).fetchall()
-        
-        return [dict(visitor) for visitor in visitors]
-    
-    def get_top_visitors(self, limit=10):
-        """방문 횟수 상위 방문자 목록"""
-        db = get_db()
-        
-        visitors = db.execute(f'''
-            SELECT 
-                ip_address,
-                visit_count,
-                first_visit,
-                last_visit
-            FROM {self.table_name}
-            ORDER BY visit_count DESC, last_visit DESC
-            LIMIT ?
-        ''', (limit,)).fetchall()
-        
-        return [dict(visitor) for visitor in visitors]
-    
-    def get_visitor_stats(self):
-        """방문자 통계 요약"""
-        db = get_db()
-        
-        # 전체 통계
-        total_stats = db.execute(f'''
-            SELECT 
-                COUNT(*) as unique_visitors,
-                SUM(visit_count) as total_visits,
-                MAX(visit_count) as max_visits_per_ip
-            FROM {self.table_name}
-        ''').fetchone()
-        
-        # 오늘 방문자
-        today_stats = db.execute(f'''
-            SELECT 
-                COUNT(*) as today_unique,
-                SUM(visit_count) as today_visits
-            FROM {self.table_name}
-            WHERE date(last_visit) = date('now')
-        ''').fetchone()
-        
-        return {
-            'unique_visitors': total_stats[0],
-            'total_visits': total_stats[1],
-            'max_visits_per_ip': total_stats[2] or 0,
-            'today_unique': today_stats[0],
-            'today_visits': today_stats[1] or 0
         }
