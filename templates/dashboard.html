@@ -1290,94 +1290,55 @@ function showQueriesDetails() {
                 const queries = data.top_queries;
                 let modalContent = `
                     <div class="modal fade" id="queriesModal" tabindex="-1">
-                        <div class="modal-dialog modal-xl">
-                            <div class="modal-content" style="border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-                                <div class="modal-header" style="background: linear-gradient(135deg, #4a90e2, #357abd); color: white; border-radius: 15px 15px 0 0;">
-                                    <h4 class="modal-title" style="font-weight: 600;">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header" style="background-color: #30507A;">
+                                    <h5 class="modal-title text-white">
                                         📊 전체 질문 상세 현황
-                                    </h4>
+                                    </h5>
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                 </div>
-                                <div class="modal-body" style="padding: 30px; background-color: #f8f9fa;">
-                                    <!-- 상단 통계 카드들 -->
-                                    <div class="row mb-4">
-                                        <div class="col-md-4">
-                                            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-radius: 12px;">
-                                                <div class="card-body text-center py-4">
-                                                    <div style="font-size: 2.5rem; margin-bottom: 10px;">📝</div>
-                                                    <h6 class="card-title mb-2" style="opacity: 0.9;">총 질문 수</h6>
-                                                    <h2 style="font-weight: bold; margin: 0;">${queries.length}건</h2>
+                                <div class="modal-body">
+                                    <div class="row mb-3">
+                                        <div class="col-md-6">
+                                            <div class="card text-center border-0" style="background-color: #f8f9fa;">
+                                                <div class="card-body">
+                                                    <h6 class="card-title text-primary">총 질문 수</h6>
+                                                    <h4 class="text-primary">${queries.length}건</h4>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
-                                            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #f093fb, #f5576c); color: white; border-radius: 12px;">
-                                                <div class="card-body text-center py-4">
-                                                    <div style="font-size: 2.5rem; margin-bottom: 10px;">🏆</div>
-                                                    <h6 class="card-title mb-2" style="opacity: 0.9;">최다 질문</h6>
-                                                    <p style="font-size: 14px; margin: 0; line-height: 1.4;">${queries.length > 0 ? queries[0].query_text.substring(0, 20) + '...' : '데이터 없음'}</p>
-                                                    <small style="opacity: 0.8;">${queries.length > 0 ? '(' + queries[0].count + '회)' : ''}</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; border-radius: 12px;">
-                                                <div class="card-body text-center py-4">
-                                                    <div style="font-size: 2.5rem; margin-bottom: 10px;">⏰</div>
-                                                    <h6 class="card-title mb-2" style="opacity: 0.9;">조회 기간</h6>
-                                                    <h6 style="margin: 0;">지난 24시간</h6>
+                                        <div class="col-md-6">
+                                            <div class="card text-center border-0" style="background-color: #f8f9fa;">
+                                                <div class="card-body">
+                                                    <h6 class="card-title text-success">최다 질문</h6>
+                                                    <small class="text-success">${queries.length > 0 ? queries[0].query_text.substring(0, 25) + (queries[0].query_text.length > 25 ? '...' : '') + ' (' + queries[0].count + '회)' : '데이터 없음'}</small>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    <!-- 질문 목록 테이블 -->
-                                    <div class="card border-0 shadow-sm" style="border-radius: 12px;">
-                                        <div class="card-header" style="background-color: white; border-bottom: 2px solid #e9ecef; border-radius: 12px 12px 0 0;">
-                                            <h6 class="mb-0" style="color: #495057; font-weight: 600;">
-                                                📋 최근 질문 목록 (최신 50개)
-                                            </h6>
-                                        </div>
-                                        <div class="card-body p-0">
-                                            <div class="table-responsive" style="max-height: 450px; overflow-y: auto;">
-                                                <table class="table table-hover mb-0" style="font-size: 14px;">
-                                                    <thead style="background-color: #f8f9fa; position: sticky; top: 0; z-index: 10;">
-                                                        <tr>
-                                                            <th style="border-top: none; padding: 15px 20px; font-weight: 600; color: #495057; width: 80px;">순위</th>
-                                                            <th style="border-top: none; padding: 15px 20px; font-weight: 600; color: #495057;">질문 내용</th>
-                                                            <th style="border-top: none; padding: 15px 20px; font-weight: 600; color: #495057; width: 100px;">횟수</th>
-                                                            <th style="border-top: none; padding: 15px 20px; font-weight: 600; color: #495057; width: 150px;">최근 질문 시간</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>`;
+                                    <h6 class="mb-3">📋 최근 질문 목록 (최신 50개)</h6>
+                                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                        <table class="table table-striped table-hover">
+                                            <thead style="background-color: #f8f9fa; position: sticky; top: 0;">
+                                                <tr>
+                                                    <th style="color: #30507A;">순위</th>
+                                                    <th style="color: #30507A;">질문 내용</th>
+                                                    <th style="color: #30507A;">횟수</th>
+                                                    <th style="color: #30507A;">최근 질문 시간</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>`;
                 
                 queries.forEach((query, index) => {
                     const timestamp = new Date(query.latest_timestamp).toLocaleString('ko-KR');
-                    const rankColor = index < 3 ? 'warning' : index < 10 ? 'info' : 'secondary';
-                    const countColor = query.count >= 10 ? 'danger' : query.count >= 5 ? 'warning' : 'success';
-                    
                     modalContent += `
-                        <tr style="border-left: 4px solid ${index < 3 ? '#ffc107' : index < 10 ? '#17a2b8' : '#6c757d'};">
-                            <td style="padding: 15px 20px;">
-                                <span class="badge bg-${rankColor}" style="font-size: 12px; padding: 6px 10px; border-radius: 20px;">
-                                    ${index < 3 ? '🏆' : ''} ${index + 1}
-                                </span>
-                            </td>
-                            <td style="padding: 15px 20px; line-height: 1.4;">
-                                <div style="font-weight: 500; color: #2c3e50; margin-bottom: 4px;">
-                                    ${query.query_text}
-                                </div>
-                            </td>
-                            <td style="padding: 15px 20px; text-align: center;">
-                                <span class="badge bg-${countColor}" style="font-size: 12px; padding: 6px 12px; border-radius: 15px;">
-                                    ${query.count}회
-                                </span>
-                            </td>
-                            <td style="padding: 15px 20px;">
-                                <small style="color: #6c757d; background-color: #f8f9fa; padding: 4px 8px; border-radius: 8px; font-size: 12px;">
-                                    ${timestamp}
-                                </small>
-                            </td>
+                        <tr>
+                            <td><span class="badge bg-primary">${index + 1}</span></td>
+                            <td>${query.query_text}</td>
+                            <td><span class="badge bg-success">${query.count}회</span></td>
+                            <td><small class="text-muted">${timestamp}</small></td>
                         </tr>`;
                 });
                 
@@ -1386,25 +1347,12 @@ function showQueriesDetails() {
                                         </table>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer" style="background-color: #f8f9fa; border-top: 2px solid #e9ecef; border-radius: 0 0 15px 15px; padding: 20px 30px;">
-                        <div class="d-flex justify-content-between align-items-center w-100">
-                            <small class="text-muted">
-                                <i class="fas fa-info-circle"></i> 
-                                데이터는 실시간으로 업데이트됩니다
-                            </small>
-                            <div>
-                                <button type="button" class="btn btn-outline-secondary me-2" onclick="showQueriesDetails()" style="border-radius: 25px;">
-                                    🔄 새로고침
-                                </button>
-                                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" style="border-radius: 25px; background: linear-gradient(135deg, #4a90e2, #357abd); border: none;">
-                                    닫기
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                                    <button type="button" class="btn btn-primary" onclick="showQueriesDetails()" style="background-color: #30507A; border-color: #30507A;">
+                                        🔄 새로고침
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>`;
