@@ -134,6 +134,59 @@
             margin-top: 100px !important;
         }
         
+        /* 모바일 메뉴 오버레이 */
+        .mobile-nav-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            background-color: rgba(26, 43, 76, 0.95) !important;
+            z-index: 1001 !important;
+            display: none !important;
+            flex-direction: column !important;
+            justify-content: center !important;
+            align-items: center !important;
+        }
+        
+        .mobile-nav-overlay.active {
+            display: flex !important;
+        }
+        
+        .mobile-nav-links {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 2rem !important;
+            text-align: center !important;
+        }
+        
+        .mobile-nav-links .nav-link {
+            color: #FFFFFF !important;
+            font-size: 1.5rem !important;
+            font-weight: 500 !important;
+            text-decoration: none !important;
+            padding: 1rem !important;
+            border-radius: 8px !important;
+            transition: all 0.3s !important;
+        }
+        
+        .mobile-nav-links .nav-link:hover,
+        .mobile-nav-links .nav-link.active {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: #BFD7FF !important;
+        }
+        
+        .mobile-close-btn {
+            position: absolute !important;
+            top: 2rem !important;
+            right: 2rem !important;
+            background: none !important;
+            border: none !important;
+            color: #FFFFFF !important;
+            font-size: 2rem !important;
+            cursor: pointer !important;
+        }
+        
         /* 반응형 처리 */
         @media (max-width: 768px) {
             .nav-links {
@@ -179,13 +232,26 @@
                     </svg>
                 </button>
             </div>
-            <div class="mobile-menu-btn">
+            <div class="mobile-menu-btn" id="mobile-menu-btn">
                 <div class="bar"></div>
                 <div class="bar"></div>
                 <div class="bar"></div>
             </div>
         </div>
     </nav>
+
+    <!-- 모바일 메뉴 오버레이 -->
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+        <button class="mobile-close-btn" id="mobile-close-btn">×</button>
+        <div class="mobile-nav-links">
+            <a href="/#home" class="nav-link">Home</a>
+            <a href="/#about" class="nav-link">About</a>
+            <a href="/#chat" class="nav-link">Chat</a>
+            <a href="/#documents" class="nav-link">Documents</a>
+            <a href="/dashboard" class="nav-link active">Dashboard</a>
+            <a href="/#support" class="nav-link">Support</a>
+        </div>
+    </div>
 
     <div class="container my-5">
         <!-- 헤더 영역 -->
@@ -1600,11 +1666,40 @@ window.addEventListener('load', function() {
     setTimeout(updateVisitorCard, 500); // 0.5초 후 실행
 });
 
-// 네비게이션 링크 클릭 시 모바일 메뉴 닫기
-document.querySelectorAll('.nav-link').forEach(link => {
-    link.addEventListener('click', () => {
-        document.querySelector('.nav-links').classList.remove('active');
-        document.querySelector('.mobile-menu-btn').classList.remove('active');
+// 모바일 햄버거 버튼 기능 추가
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
+    const mobileCloseBtn = document.getElementById('mobile-close-btn');
+    
+    // 햄버거 버튼 클릭 시 메뉴 열기
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', function() {
+            mobileNavOverlay.classList.add('active');
+        });
+    }
+    
+    // 닫기 버튼 클릭 시 메뉴 닫기
+    if (mobileCloseBtn) {
+        mobileCloseBtn.addEventListener('click', function() {
+            mobileNavOverlay.classList.remove('active');
+        });
+    }
+    
+    // 오버레이 배경 클릭 시 메뉴 닫기
+    if (mobileNavOverlay) {
+        mobileNavOverlay.addEventListener('click', function(e) {
+            if (e.target === mobileNavOverlay) {
+                mobileNavOverlay.classList.remove('active');
+            }
+        });
+    }
+    
+    // 메뉴 링크 클릭 시 메뉴 닫기
+    document.querySelectorAll('.mobile-nav-links .nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            mobileNavOverlay.classList.remove('active');
+        });
     });
 });
 </script>
