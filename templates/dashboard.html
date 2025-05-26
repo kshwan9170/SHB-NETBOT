@@ -437,13 +437,51 @@ document.addEventListener('DOMContentLoaded', function() {
             feedbackItem.innerHTML = `
                 <div class="d-flex justify-content-between align-items-start">
                     <div class="flex-grow-1">
-                        <p class="mb-1 text-truncate" style="max-width: 400px;">${feedback.question || '질문 내용 없음'}</p>
+                        <p class="mb-1 text-truncate" style="max-width: 350px;">${feedback.question || '질문 내용 없음'}</p>
                         <small class="text-muted">${feedback.timestamp || '시간 정보 없음'}</small>
                     </div>
-                    <span class="badge bg-danger">개선필요</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-danger">개선필요</span>
+                        <button class="btn btn-sm btn-outline-danger" 
+                                onclick="deleteFeedback('${feedback.question}', '${feedback.timestamp}')" 
+                                title="이 피드백 삭제">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
                 </div>
             `;
             container.appendChild(feedbackItem);
+        });
+    }
+    
+    // 피드백 삭제 함수
+    function deleteFeedback(question, timestamp) {
+        if (!confirm('이 피드백을 삭제하시겠습니까?')) {
+            return;
+        }
+        
+        fetch('/api/feedback/delete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                question: question,
+                timestamp: timestamp
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 성공시 피드백 목록 새로고침
+                updateNegativeFeedbackCard();
+            } else {
+                alert('피드백 삭제에 실패했습니다: ' + (data.error || '알 수 없는 오류'));
+            }
+        })
+        .catch(error => {
+            console.error('피드백 삭제 오류:', error);
+            alert('피드백 삭제 중 오류가 발생했습니다.');
         });
     }
     

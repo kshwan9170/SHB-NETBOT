@@ -1809,6 +1809,39 @@ def feedback_stats():
         print(f"피드백 통계 API 오류: {e}")
         return jsonify({'success': False, 'error': '서버 오류가 발생했습니다.'})
 
+@app.route('/api/feedback/delete', methods=['POST'])
+def delete_feedback():
+    """피드백 삭제 API - 대시보드에서 개선필요 피드백 삭제"""
+    try:
+        data = request.get_json()
+        if not data or 'question' not in data or 'timestamp' not in data:
+            return jsonify({'success': False, 'error': '필수 데이터가 누락되었습니다.'})
+        
+        question = data['question']
+        timestamp = data['timestamp']
+        
+        conn = get_db_connection()
+        if conn is None:
+            raise Exception("데이터베이스 연결 실패")
+        
+        # 해당 피드백 삭제
+        result = conn.execute("""
+            DELETE FROM chat_feedback 
+            WHERE question = ? AND created_at = ? AND feedback_type = '개선필요'
+        """, (question, timestamp))
+        
+        if result.rowcount > 0:
+            conn.commit()
+            conn.close()
+            return jsonify({'success': True, 'message': '피드백이 성공적으로 삭제되었습니다.'})
+        else:
+            conn.close()
+            return jsonify({'success': False, 'error': '삭제할 피드백을 찾을 수 없습니다.'})
+            
+    except Exception as e:
+        print(f"피드백 삭제 API 오류: {e}")
+        return jsonify({'success': False, 'error': '서버 오류가 발생했습니다.'})
+
 # ========== 기존 메인 실행 코드 ==========
 
 if __name__ == '__main__':
