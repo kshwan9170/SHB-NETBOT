@@ -241,14 +241,14 @@
         
         <!-- 최근 방문자 -->
         <div class="col-md-4 mb-3">
-            <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
+            <div class="card h-100 shadow-sm visitor-card" style="border-color: #E6EBF4; cursor: pointer; transition: all 0.3s ease;" onclick="showVisitorDetails()" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 20px rgba(48, 80, 122, 0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''">
                 <div class="card-body text-center">
                     <h5 class="card-title" style="color: #30507A;">최근 방문자</h5>
                     <div class="d-flex align-items-center justify-content-center">
                         <i class="fas fa-users fa-3x me-3" id="visitors-icon" style="color: #17a2b8;"></i>
                         <div class="display-4 fw-bold" id="recent-visitors">0</div>
                     </div>
-                    <div class="small text-muted" id="visitors-description">지난 24시간</div>
+                    <div class="small text-muted" id="visitors-description">지난 24시간 (클릭하여 상세보기)</div>
                 </div>
             </div>
         </div>
@@ -466,6 +466,112 @@
     </div>
 </footer>
 
+<!-- 방문자 상세 정보 모달 -->
+<div class="modal fade" id="visitorDetailsModal" tabindex="-1" aria-labelledby="visitorDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #30507A;">
+                <h5 class="modal-title text-white" id="visitorDetailsModalLabel">
+                    <i class="fas fa-users me-2"></i>방문자 상세 정보
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <div class="card text-center" style="border-color: #E6EBF4;">
+                            <div class="card-body">
+                                <h6 class="card-title" style="color: #30507A;">총 고유 IP</h6>
+                                <div class="h4 mb-0" id="total-unique-ips">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center" style="border-color: #E6EBF4;">
+                            <div class="card-body">
+                                <h6 class="card-title" style="color: #30507A;">총 방문 수</h6>
+                                <div class="h4 mb-0" id="total-visits">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center" style="border-color: #E6EBF4;">
+                            <div class="card-body">
+                                <h6 class="card-title" style="color: #30507A;">조회 기간</h6>
+                                <div class="h6 mb-0">지난 24시간</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- IP별 통계 테이블 -->
+                <div class="card mb-3" style="border-color: #E6EBF4;">
+                    <div class="card-header" style="background-color: #F8F9FA;">
+                        <h6 class="mb-0" style="color: #30507A;">
+                            <i class="fas fa-chart-bar me-2"></i>IP별 방문 통계
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="ip-stats-table">
+                                <thead style="background-color: #F8F9FA;">
+                                    <tr>
+                                        <th style="color: #30507A;">IP 주소</th>
+                                        <th style="color: #30507A;">방문 횟수</th>
+                                        <th style="color: #30507A;">방문 페이지</th>
+                                        <th style="color: #30507A;">최초 방문</th>
+                                        <th style="color: #30507A;">최근 방문</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ip-stats-tbody">
+                                    <!-- 데이터 로딩 중 -->
+                                    <tr>
+                                        <td colspan="5" class="text-center">
+                                            <div class="spinner-border spinner-border-sm" role="status"></div>
+                                            데이터 로딩 중...
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 최근 방문 기록 -->
+                <div class="card" style="border-color: #E6EBF4;">
+                    <div class="card-header" style="background-color: #F8F9FA;">
+                        <h6 class="mb-0" style="color: #30507A;">
+                            <i class="fas fa-clock me-2"></i>최근 방문 기록 (최대 50개)
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover" id="visitor-records-table">
+                                <thead style="background-color: #F8F9FA;">
+                                    <tr>
+                                        <th style="color: #30507A;">시간</th>
+                                        <th style="color: #30507A;">IP 주소</th>
+                                        <th style="color: #30507A;">방문 페이지</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="visitor-records-tbody">
+                                    <!-- JavaScript로 채워짐 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                <button type="button" class="btn btn-primary" onclick="refreshVisitorData()" style="background-color: #30507A; border-color: #30507A;">
+                    <i class="fas fa-sync-alt me-2"></i>새로고침
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- 필수 라이브러리 -->
 <script defer src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
@@ -488,6 +594,81 @@ document.addEventListener('DOMContentLoaded', function() {
     // 부정 피드백 카드 초기화
     updateNegativeFeedbackCard();
     
+    // 방문자 상세 정보 모달 표시 함수
+    window.showVisitorDetails = function() {
+        const modal = new bootstrap.Modal(document.getElementById('visitorDetailsModal'));
+        modal.show();
+        loadVisitorDetails();
+    };
+
+    // 방문자 상세 정보 로드 함수
+    function loadVisitorDetails() {
+        fetch('/api/visitor_details')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateVisitorDetailsModal(data);
+                } else {
+                    console.error('방문자 정보 로드 실패:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('API 호출 오류:', error);
+            });
+    }
+
+    // 방문자 상세 정보 새로고침 함수
+    window.refreshVisitorData = function() {
+        loadVisitorDetails();
+    };
+
+    // 모달 데이터 업데이트 함수
+    function updateVisitorDetailsModal(data) {
+        // 기본 통계 업데이트
+        document.getElementById('total-unique-ips').textContent = data.total_unique_ips;
+        document.getElementById('total-visits').textContent = data.visitor_records.length;
+
+        // IP별 통계 테이블 업데이트
+        const ipStatsBody = document.getElementById('ip-stats-tbody');
+        ipStatsBody.innerHTML = '';
+        
+        data.ip_statistics.forEach(stat => {
+            const row = ipStatsBody.insertRow();
+            row.innerHTML = `
+                <td><code>${stat.ip}</code></td>
+                <td><span class="badge bg-primary">${stat.visit_count}</span></td>
+                <td><small>${stat.pages.join(', ')}</small></td>
+                <td><small>${formatDateTime(stat.first_visit)}</small></td>
+                <td><small>${formatDateTime(stat.last_visit)}</small></td>
+            `;
+        });
+
+        // 최근 방문 기록 테이블 업데이트
+        const recordsBody = document.getElementById('visitor-records-tbody');
+        recordsBody.innerHTML = '';
+        
+        data.visitor_records.forEach(record => {
+            const row = recordsBody.insertRow();
+            row.innerHTML = `
+                <td><small>${formatDateTime(record.timestamp)}</small></td>
+                <td><code>${record.ip}</code></td>
+                <td><span class="badge bg-secondary">${record.page}</span></td>
+            `;
+        });
+    }
+
+    // 날짜/시간 포맷팅 함수
+    function formatDateTime(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleString('ko-KR', {
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+    }
+
     // 방문자 수 안전하게 업데이트
     (function() {
         try {

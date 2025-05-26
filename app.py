@@ -1894,6 +1894,82 @@ def feedback_stats():
         print(f"피드백 통계 API 오류: {e}")
         return jsonify({'success': False, 'error': '서버 오류가 발생했습니다.'})
 
+@app.route('/api/visitor_details')
+def visitor_details():
+    """방문자 상세 정보 API - IP별, 시간별 방문 기록"""
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({'success': False, 'error': '데이터베이스 연결 실패'})
+        
+        # 지난 24시간 방문 기록 조회
+        visitor_records = conn.execute("""
+            SELECT user_ip, query_text, timestamp,
+                   CASE 
+                       WHEN query_text LIKE 'PAGE_VISIT:dashboard' THEN '대시보드'
+                       WHEN query_text LIKE 'PAGE_VISIT:main' THEN '메인 페이지'
+                       WHEN query_text LIKE 'PAGE_VISIT:%' THEN REPLACE(query_text, 'PAGE_VISIT:', '')
+                       ELSE '채팅'
+                   END as page_name
+            FROM chat_logs 
+            WHERE timestamp >= datetime('now', '-1 day')
+            AND (query_text LIKE 'PAGE_VISIT:%' OR query_text IS NOT NULL)
+            ORDER BY timestamp DESC
+            LIMIT 50
+        """).fetchall()
+        
+        # IP별 통계 계산
+        ip_stats = {}
+        for record in visitor_records:
+            ip = record['user_ip']
+            if ip not in ip_stats:
+                ip_stats[ip] = {
+                    'ip': ip,
+                    'visit_count': 0,
+                    'pages': set(),
+                    'first_visit': record['timestamp'],
+                    'last_visit': record['timestamp']
+                }
+            
+            ip_stats[ip]['visit_count'] += 1
+            ip_stats[ip]['pages'].add(record['page_name'])
+            if record['timestamp'] > ip_stats[ip]['last_visit']:
+                ip_stats[ip]['last_visit'] = record['timestamp']
+            if record['timestamp'] < ip_stats[ip]['first_visit']:
+                ip_stats[ip]['first_visit'] = record['timestamp']
+        
+        # 결과 포맷팅
+        formatted_records = []
+        for record in visitor_records:
+            formatted_records.append({
+                'ip': record['user_ip'],
+                'page': record['page_name'],
+                'timestamp': record['timestamp']
+            })
+        
+        formatted_ip_stats = []
+        for ip, stats in ip_stats.items():
+            formatted_ip_stats.append({
+                'ip': ip,
+                'visit_count': stats['visit_count'],
+                'pages': list(stats['pages']),
+                'first_visit': stats['first_visit'],
+                'last_visit': stats['last_visit']
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'visitor_records': formatted_records,
+            'ip_statistics': formatted_ip_stats,
+            'total_unique_ips': len(ip_stats)
+        })
+        
+    except Exception as e:
+        print(f"방문자 상세 정보 API 오류: {e}")
+        return jsonify({'success': False, 'error': '서버 오류가 발생했습니다.'})
+
 @app.route('/api/feedback/delete', methods=['POST'])
 def delete_feedback():
     """피드백 삭제 API - 대시보드에서 개선필요 피드백 삭제"""
