@@ -498,8 +498,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const tableBody = document.getElementById('query-table-body');
         
         if (show) {
-            chartContainer.innerHTML = '<div class="loading-message"><i class="fas fa-spinner fa-spin"></i> 데이터를 불러오는 중...</div>';
-            tableBody.innerHTML = '<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</td></tr>';
+            if (chartContainer) {
+                chartContainer.innerHTML = '<div class="loading-message"><i class="fas fa-spinner fa-spin"></i> 데이터를 불러오는 중...</div>';
+            }
+            if (tableBody) {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</td></tr>';
+            }
         }
     }
     
@@ -513,14 +517,16 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         
         const container = document.querySelector('.dashboard-header');
-        container.appendChild(alertDiv);
-        
-        // 5초 후 자동 제거
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
-            }
-        }, 5000);
+        if (container) {
+            container.appendChild(alertDiv);
+            
+            // 5초 후 자동 제거
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
     }
     
     // 기본 데이터 표시 (실제 데이터 기반)
