@@ -109,11 +109,14 @@ def log_visitor(ip_address, page_visited=None):
 @app.route('/dashboard')
 def dashboard():
     """실시간 문의 Top 10 대시보드"""
-    # 방문자 IP 기록 (일시적으로 비활성화)
-    # user_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
-    # if user_ip:
-    #     user_ip = user_ip.split(',')[0].strip()
-    #     log_visitor(user_ip, 'dashboard')
+    try:
+        # 방문자 IP 기록
+        user_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+        if user_ip:
+            user_ip = user_ip.split(',')[0].strip()
+            log_visitor(user_ip, 'dashboard')
+    except Exception as e:
+        print(f"방문자 로그 오류 (무시): {e}")
     
     return render_template('dashboard.html')
     
@@ -1799,14 +1802,14 @@ def get_db_connection():
         conn = sqlite3.connect('shinhan_netbot.db')
         conn.row_factory = sqlite3.Row  # 딕셔너리 형태로 결과 반환
         
-        # 방문자 테이블이 없으면 생성
+        # chat_logs 테이블이 없으면 생성 (방문자 추적용)
         cursor = conn.cursor()
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS visitors (
+            CREATE TABLE IF NOT EXISTS chat_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ip_address TEXT NOT NULL,
-                visit_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-                page_visited TEXT
+                user_ip TEXT NOT NULL,
+                query_text TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         conn.commit()
@@ -1869,7 +1872,8 @@ def feedback_stats():
             unique_visitors_24h = conn.execute("""
                 SELECT COUNT(DISTINCT user_ip) as count 
                 FROM chat_logs 
-                WHERE timestamp >= datetime('now', '-24 hours')
+                WHERE timestamp >= datetime('now', '-1 day')
+                AND (query_text LIKE 'PAGE_VISIT:%' OR query_text IS NOT NULL)
             """).fetchone()['count']
         except Exception as e:
             print(f"chat_logs 테이블 오류: {e}")
