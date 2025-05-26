@@ -382,6 +382,47 @@ def chat_feedback():
     except Exception as e:
         print(f"Error in chat feedback API: {str(e)}")
         return jsonify({'error': f'피드백 저장 중 오류가 발생했습니다: {str(e)}'}), 500
+
+@app.route('/api/feedback/stats', methods=['GET'])
+def feedback_stats():
+    """피드백 통계 API - 대시보드용"""
+    try:
+        feedback_model = ChatFeedbackModel()
+        
+        # 전체 피드백 수 조회
+        db = get_db()
+        total_query = "SELECT COUNT(*) as total FROM chat_feedback"
+        total_result = db.execute(total_query).fetchone()
+        total_feedback = total_result['total'] if total_result else 0
+        
+        # 긍정 피드백 수 조회 (좋아요/만족해요)
+        positive_query = "SELECT COUNT(*) as positive FROM chat_feedback WHERE feedback_type IN ('positive', 'like', '좋아요', '만족해요')"
+        positive_result = db.execute(positive_query).fetchone()
+        positive_feedback = positive_result['positive'] if positive_result else 0
+        
+        # 부정 피드백 수 조회 (싫어요/개선 필요)
+        negative_query = "SELECT COUNT(*) as negative FROM chat_feedback WHERE feedback_type IN ('negative', 'dislike', '싫어요', '개선 필요')"
+        negative_result = db.execute(negative_query).fetchone()
+        negative_feedback = negative_result['negative'] if negative_result else 0
+        
+        # 긍정 피드백 비율 계산
+        positive_percentage = round((positive_feedback / total_feedback * 100), 1) if total_feedback > 0 else 0
+        negative_percentage = round((negative_feedback / total_feedback * 100), 1) if total_feedback > 0 else 0
+        
+        return jsonify({
+            'success': True,
+            'stats': {
+                'total_feedback': total_feedback,
+                'positive_feedback': positive_feedback,
+                'negative_feedback': negative_feedback,
+                'positive_percentage': positive_percentage,
+                'negative_percentage': negative_percentage
+            }
+        })
+        
+    except Exception as e:
+        print(f"피드백 통계 조회 오류: {str(e)}")
+        return jsonify({'error': '피드백 통계 조회 중 오류가 발생했습니다.'}), 500
         
 @app.route('/api/upload', methods=['POST'])
 def upload_file():

@@ -106,16 +106,75 @@
             </div>
         </div>
         
-        <!-- 최근 방문자 -->
+        <!-- 긍정 피드백 비율 -->
         <div class="col-md-4 mb-3">
             <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
                 <div class="card-body text-center">
-                    <h5 class="card-title" style="color: #30507A;">최근 방문자</h5>
+                    <h5 class="card-title" style="color: #30507A;">긍정 피드백</h5>
                     <div class="d-flex align-items-center justify-content-center">
-                        <i class="fas fa-users fa-3x me-3" id="visitors-icon" style="color: #17a2b8;"></i>
-                        <div class="display-4 fw-bold" id="recent-visitors">0</div>
+                        <i class="fas fa-thumbs-up fa-3x me-3" id="positive-icon" style="color: #28a745;"></i>
+                        <div class="display-4 fw-bold" id="positive-percentage">0%</div>
                     </div>
-                    <div class="small text-muted" id="visitors-description">지난 24시간</div>
+                    <div class="small text-muted" id="positive-description">만족해요 응답 비율</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 부정 피드백 비율 -->
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
+                <div class="card-body text-center">
+                    <h5 class="card-title" style="color: #30507A;">부정 피드백</h5>
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="fas fa-thumbs-down fa-3x me-3" id="negative-icon" style="color: #dc3545;"></i>
+                        <div class="display-4 fw-bold" id="negative-percentage">0%</div>
+                    </div>
+                    <div class="small text-muted" id="negative-description">개선 필요 응답 비율</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 피드백 상세 통계 -->
+    <div class="row mb-4">
+        <!-- 전체 피드백 수 -->
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
+                <div class="card-body text-center">
+                    <h5 class="card-title" style="color: #30507A;">전체 피드백</h5>
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="fas fa-chart-bar fa-3x me-3" style="color: #17a2b8;"></i>
+                        <div class="display-4 fw-bold" id="total-feedback">0</div>
+                    </div>
+                    <div class="small text-muted">전체 사용자 피드백 수</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 긍정 피드백 수 -->
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
+                <div class="card-body text-center">
+                    <h5 class="card-title" style="color: #30507A;">만족 응답</h5>
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="fas fa-smile fa-3x me-3" style="color: #28a745;"></i>
+                        <div class="display-4 fw-bold" id="positive-feedback">0</div>
+                    </div>
+                    <div class="small text-muted">✅ 만족해요 클릭 수</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 부정 피드백 수 -->
+        <div class="col-md-4 mb-3">
+            <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
+                <div class="card-body text-center">
+                    <h5 class="card-title" style="color: #30507A;">개선 요청</h5>
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="fas fa-frown fa-3x me-3" style="color: #dc3545;"></i>
+                        <div class="display-4 fw-bold" id="negative-feedback">0</div>
+                    </div>
+                    <div class="small text-muted">⚠️ 개선 필요 클릭 수</div>
                 </div>
             </div>
         </div>
@@ -230,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const period = document.getElementById('period-select').value;
         const category = document.getElementById('category-select').value;
         
-        // API 호출
+        // 질의 데이터 API 호출
         fetch(`/api/top_queries?period=${period}&category=${category}&limit=10`)
             .then(response => response.json())
             .then(data => {
@@ -244,6 +303,20 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(error => {
                 console.error('API 호출 오류:', error);
                 // 에러 메시지 표시 (필요시 구현)
+            });
+            
+        // 피드백 통계 API 호출
+        fetch('/api/feedback/stats')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateFeedbackStats(data.stats);
+                } else {
+                    console.error('피드백 통계 조회 오류:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('피드백 통계 API 호출 오류:', error);
             });
     }
     
