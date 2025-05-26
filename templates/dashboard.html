@@ -620,14 +620,19 @@ document.addEventListener('DOMContentLoaded', function() {
                     const visitorsIcon = document.getElementById('visitors-icon');
                     const visitorsDescription = document.getElementById('visitors-description');
                     
-                    if (visitorsText && feedbackData.unique_visitors_24h !== undefined) {
-                        visitorsText.textContent = feedbackData.unique_visitors_24h;
+                    if (visitorsText) {
+                        // API 응답에 unique_visitors_24h가 있으면 사용, 없으면 0으로 설정
+                        const uniqueVisitors = feedbackData.unique_visitors_24h !== undefined ? feedbackData.unique_visitors_24h : 0;
+                        visitorsText.textContent = uniqueVisitors;
+                        
                         if (visitorsIcon) {
                             visitorsIcon.style.color = '#17a2b8'; // 방문자는 청록색
                         }
                         if (visitorsDescription) {
                             visitorsDescription.textContent = '지난 24시간';
                         }
+                        
+                        console.log('방문자 수 업데이트:', uniqueVisitors, '(API 응답:', feedbackData.unique_visitors_24h, ')');
                     }
                     
                     // 하단 피드백 분석의 만족도 업데이트
