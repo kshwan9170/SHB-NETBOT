@@ -1294,7 +1294,12 @@ function deleteFeedback(feedbackId) {
                 feedback_id: feedbackId
             })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 alert('피드백이 성공적으로 삭제되었습니다.');
@@ -1308,7 +1313,7 @@ function deleteFeedback(feedbackId) {
         })
         .catch(error => {
             console.error('피드백 삭제 오류:', error);
-            alert('서버 연결에 문제가 발생했습니다.');
+            alert('피드백 삭제 중 오류가 발생했습니다: ' + error.message);
         });
     }
 }
