@@ -801,132 +801,158 @@
 
     <!-- 자주 묻는 질문 토글 기능 스크립트 -->
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    // FAQ 토글 변수들
+    let faqQuestionsLoaded = false;
+    
+    // DOM이 로드된 후 실행
+    window.addEventListener('load', function() {
+        console.log('FAQ 시스템 초기화 시작');
+        initializeFAQToggle();
+    });
+    
+    function initializeFAQToggle() {
         const toggleButton = document.getElementById('suggestedQuestionsToggle');
         const questionsList = document.getElementById('suggestedQuestionsList');
         const toggleIcon = document.getElementById('toggleIcon');
-        let questionsLoaded = false;
         
-        if (toggleButton && questionsList) {
-            console.log('FAQ 토글 요소 발견, 이벤트 바인딩 시작');
-            
-            // 토글 버튼 클릭 이벤트
-            toggleButton.addEventListener('click', async function(e) {
-                console.log('FAQ 토글 클릭됨');
-                e.preventDefault();
-                
-                const isExpanded = questionsList.style.display === 'block';
-                
-                if (isExpanded) {
-                    // 접기
-                    console.log('FAQ 목록 접기');
-                    questionsList.style.display = 'none';
-                    if (toggleIcon) {
-                        toggleIcon.textContent = '▼';
-                        toggleIcon.style.transform = 'rotate(0deg)';
-                    }
-                    toggleButton.style.backgroundColor = 'rgba(48, 80, 122, 0.05)';
-                } else {
-                    // 펼치기 - 질문이 로드되지 않았다면 먼저 로드
-                    console.log('FAQ 목록 펼치기');
-                    if (!questionsLoaded) {
-                        console.log('질문 데이터 로딩 중...');
-                        await loadSuggestedQuestions();
-                    }
-                    
-                    questionsList.style.display = 'block';
-                    if (toggleIcon) {
-                        toggleIcon.textContent = '▲';
-                        toggleIcon.style.transform = 'rotate(180deg)';
-                    }
-                    toggleButton.style.backgroundColor = 'rgba(48, 80, 122, 0.1)';
-                }
-            });
-            
-            // 호버 효과 추가
-            toggleButton.addEventListener('mouseenter', function() {
-                if (questionsList.style.display === 'none') {
-                    toggleButton.style.backgroundColor = 'rgba(48, 80, 122, 0.08)';
-                } else {
-                    toggleButton.style.backgroundColor = 'rgba(48, 80, 122, 0.15)';
-                }
-            });
-            
-            toggleButton.addEventListener('mouseleave', function() {
-                if (questionsList.style.display === 'none') {
-                    toggleButton.style.backgroundColor = 'rgba(48, 80, 122, 0.05)';
-                } else {
-                    toggleButton.style.backgroundColor = 'rgba(48, 80, 122, 0.1)';
-                }
-            });
+        console.log('토글 버튼:', !!toggleButton, '질문 리스트:', !!questionsList, '아이콘:', !!toggleIcon);
+        
+        if (!toggleButton || !questionsList) {
+            console.error('FAQ 요소를 찾을 수 없습니다');
+            return;
         }
         
-        // 추천 질문 로드 함수
-        async function loadSuggestedQuestions() {
-            try {
-                const response = await fetch('/api/suggested_questions');
-                const data = await response.json();
-                
-                if (data.success && data.questions && data.questions.length > 0) {
-                    renderQuestions(data.questions);
-                    questionsLoaded = true;
-                } else {
-                    showQuestionError('추천 질문을 불러올 수 없습니다.');
-                }
-            } catch (error) {
-                console.error('추천 질문 로드 실패:', error);
-                showQuestionError('추천 질문을 불러오는 중 오류가 발생했습니다.');
-            }
-        }
-        
-        // 질문 렌더링 함수
-        function renderQuestions(questions) {
-            if (!questionsList) return;
-            
-            questionsList.innerHTML = questions.map(item => 
-                `<button class="question-button" onclick="askSuggestedQuestion('${item.question.replace(/'/g, "\\'")}')">
-                    ${item.question}
-                </button>`
-            ).join('');
-        }
-        
-        // 에러 메시지 표시
-        function showQuestionError(message) {
-            if (!questionsList) return;
-            
-            questionsList.innerHTML = `
-                <div class="error-message" style="padding: 16px; text-align: center; color: #666; font-size: 14px;">
-                    <span style="display: block; margin-bottom: 8px;">⚠️</span>
-                    <span>${message}</span>
-                </div>
-            `;
-        }
-        
-        // 질문 선택 함수 (전역으로 선언)
-        window.askSuggestedQuestion = function(question) {
-            const chatInput = document.getElementById('userInput');
-            if (chatInput) {
-                chatInput.value = question;
-                chatInput.focus();
-                
-                // 자동으로 전송
-                const sendButton = document.getElementById('sendButton');
-                if (sendButton) {
-                    sendButton.click();
-                }
-            }
-            
-            // 질문 패널을 잠시 숨김 (시각적 피드백)
-            if (questionsList) {
-                questionsList.style.opacity = '0.5';
-                setTimeout(() => {
-                    if (questionsList) {
-                        questionsList.style.opacity = '1';
-                    }
-                }, 3000);
-            }
+        // 클릭 이벤트 바인딩
+        toggleButton.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('FAQ 토글 버튼 클릭됨');
+            handleFAQToggle();
         };
-    });
+        
+        console.log('FAQ 토글 시스템 초기화 완료');
+    }
+    
+    async function handleFAQToggle() {
+        const questionsList = document.getElementById('suggestedQuestionsList');
+        const toggleIcon = document.getElementById('toggleIcon');
+        const toggleButton = document.getElementById('suggestedQuestionsToggle');
+        
+        if (!questionsList) return;
+        
+        const isCurrentlyHidden = questionsList.style.display === 'none' || 
+                                  window.getComputedStyle(questionsList).display === 'none';
+        
+        console.log('현재 상태:', isCurrentlyHidden ? '숨김' : '표시');
+        
+        if (isCurrentlyHidden) {
+            // 보이기
+            console.log('FAQ 목록 표시 중...');
+            
+            // 데이터가 로드되지 않았다면 로드
+            if (!faqQuestionsLoaded) {
+                console.log('FAQ 데이터 로딩 중...');
+                questionsList.innerHTML = '<div style="padding: 16px; text-align: center; color: #666;">로딩 중...</div>';
+                questionsList.style.display = 'block';
+                
+                try {
+                    await loadFAQQuestions();
+                } catch (error) {
+                    console.error('FAQ 로딩 실패:', error);
+                    questionsList.innerHTML = '<div style="padding: 16px; text-align: center; color: #666;">질문을 불러올 수 없습니다.</div>';
+                }
+            } else {
+                questionsList.style.display = 'block';
+            }
+            
+            // 아이콘 변경
+            if (toggleIcon) {
+                toggleIcon.textContent = '▲';
+            }
+            if (toggleButton) {
+                toggleButton.style.backgroundColor = 'rgba(48, 80, 122, 0.1)';
+            }
+            
+        } else {
+            // 숨기기
+            console.log('FAQ 목록 숨기는 중...');
+            questionsList.style.display = 'none';
+            
+            // 아이콘 변경
+            if (toggleIcon) {
+                toggleIcon.textContent = '▼';
+            }
+            if (toggleButton) {
+                toggleButton.style.backgroundColor = 'rgba(48, 80, 122, 0.05)';
+            }
+        }
+    }
+    
+    async function loadFAQQuestions() {
+        try {
+            const response = await fetch('/api/suggested_questions');
+            const data = await response.json();
+            
+            console.log('FAQ API 응답:', data);
+            
+            if (data.success && data.questions && data.questions.length > 0) {
+                renderFAQQuestions(data.questions);
+                faqQuestionsLoaded = true;
+                console.log('FAQ 질문 로딩 완료:', data.questions.length, '개');
+            } else {
+                throw new Error('질문 데이터 없음');
+            }
+        } catch (error) {
+            console.error('FAQ 로딩 오류:', error);
+            throw error;
+        }
+    }
+    
+    function renderFAQQuestions(questions) {
+        const questionsList = document.getElementById('suggestedQuestionsList');
+        if (!questionsList) return;
+        
+        const questionsHTML = questions.map(item => 
+            `<button class="question-button" onclick="selectFAQQuestion('${item.question.replace(/'/g, "\\'")}')">
+                ${item.question}
+            </button>`
+        ).join('');
+        
+        questionsList.innerHTML = questionsHTML;
+        console.log('FAQ 질문 렌더링 완료');
+    }
+    
+    // 질문 선택 함수
+    function selectFAQQuestion(question) {
+        console.log('FAQ 질문 선택됨:', question);
+        
+        const chatInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        
+        if (chatInput) {
+            chatInput.value = question;
+            chatInput.focus();
+            
+            // 자동 전송
+            if (sendButton) {
+                sendButton.click();
+            }
+        }
+        
+        // 시각적 피드백
+        const questionsList = document.getElementById('suggestedQuestionsList');
+        if (questionsList) {
+            questionsList.style.opacity = '0.5';
+            setTimeout(() => {
+                if (questionsList) {
+                    questionsList.style.opacity = '1';
+                }
+            }, 2000);
+        }
+    }
+    
+    // 전역 함수로 등록
+    window.selectFAQQuestion = selectFAQQuestion;
     </script>
 </body>
 </html>
