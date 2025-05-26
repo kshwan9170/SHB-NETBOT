@@ -52,6 +52,18 @@
                 <div class="bar"></div>
             </div>
         </div>
+        
+        <!-- 모바일 메뉴 -->
+        <div class="mobile-menu">
+            <div class="mobile-menu-content">
+                <a href="/" class="mobile-nav-link">Home</a>
+                <a href="/#about" class="mobile-nav-link">About</a>
+                <a href="/#chat" class="mobile-nav-link">Chat</a>
+                <a href="/#documents" class="mobile-nav-link">Documents</a>
+                <a href="/dashboard" class="mobile-nav-link active">Dashboard</a>
+                <a href="/#support" class="mobile-nav-link">Support</a>
+            </div>
+        </div>
     </nav>
 
     <div class="container my-5">
@@ -209,6 +221,48 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // 테마 토글 기능
+    const themeToggle = document.getElementById('theme-toggle');
+    const body = document.body;
+    
+    // 저장된 테마 불러오기
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    body.setAttribute('data-theme', savedTheme);
+    
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        body.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+    });
+    
+    // 모바일 메뉴 토글 기능
+    const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+    const mobileMenu = document.querySelector('.mobile-menu');
+    
+    mobileMenuBtn.addEventListener('click', () => {
+        mobileMenuBtn.classList.toggle('active');
+        mobileMenu.classList.toggle('active');
+    });
+    
+    // 모바일 메뉴 링크 클릭 시 메뉴 닫기
+    document.querySelectorAll('.mobile-nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            mobileMenuBtn.classList.remove('active');
+            mobileMenu.classList.remove('active');
+        });
+    });
+    
+    // 메뉴 외부 클릭 시 닫기
+    document.addEventListener('click', (e) => {
+        if (!mobileMenuBtn.contains(e.target) && !mobileMenu.contains(e.target)) {
+            mobileMenuBtn.classList.remove('active');
+            mobileMenu.classList.remove('active');
+        }
+    });
+    
+    // 대시보드 기능
     // 차트 객체 (초기화 후 나중에 업데이트)
     let topQueriesChart;
     
