@@ -485,11 +485,23 @@ def upload_file():
                         flow_sync_message = f"\n❌ Flow 변환 중 오류: {str(flow_error)}"
                         print(f"❌ Flow 자동 변환 오류: {str(flow_error)}")
                 
+                # 업무 안내 가이드 파일인지 확인하고 재로드
+                guide_reload_message = ""
+                if "업무" in filename and "안내" in filename and "가이드" in filename and filename.endswith('.csv'):
+                    try:
+                        from business_guide_processor import business_guide_processor
+                        business_guide_processor.reload_guide_files()
+                        guide_reload_message = "\n🔄 업무 안내 가이드 시스템 자동 재로드 완료"
+                        print(f"✅ 업무 안내 가이드 자동 재로드: {filename}")
+                    except Exception as guide_error:
+                        guide_reload_message = f"\n⚠️ 업무 안내 가이드 재로드 실패: {str(guide_error)}"
+                        print(f"❌ 업무 안내 가이드 재로드 오류: {str(guide_error)}")
+
                 # 성공 결과 추가
                 results.append({
                     'filename': filename,
                     'status': 'success',
-                    'message': '문서가 성공적으로 처리되었습니다.' + flow_sync_message,
+                    'message': '문서가 성공적으로 처리되었습니다.' + flow_sync_message + guide_reload_message,
                     'doc_id': chunks[0]['doc_id'] if chunks else None,
                     'chunk_count': len(chunks)
                 })
@@ -618,10 +630,22 @@ def edit_document(system_filename):
         # HTML 테이블 생성 (편집된 내용 표시)
         table_html = df.to_html(classes='table table-striped table-bordered table-hover editable-csv-table', index=False, na_rep='')
         
+        # 업무 안내 가이드 파일 편집 시 자동 재로드
+        guide_reload_message = ""
+        if "업무" in original_filename and "안내" in original_filename and "가이드" in original_filename:
+            try:
+                from business_guide_processor import business_guide_processor
+                business_guide_processor.reload_guide_files()
+                guide_reload_message = " 업무 안내 가이드 시스템이 자동으로 재로드되었습니다."
+                print(f"✅ 업무 안내 가이드 편집 후 자동 재로드: {original_filename}")
+            except Exception as guide_error:
+                guide_reload_message = f" (업무 안내 가이드 재로드 실패: {str(guide_error)})"
+                print(f"❌ 업무 안내 가이드 편집 후 재로드 오류: {str(guide_error)}")
+        
         # 성공 응답
         return jsonify({
             'status': 'success',
-            'message': 'CSV 파일이 성공적으로 업데이트되었습니다.',
+            'message': 'CSV 파일이 성공적으로 업데이트되었습니다.' + guide_reload_message,
             'content': table_html,
             'file_type': 'csv'
         })
