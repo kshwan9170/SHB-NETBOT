@@ -226,6 +226,7 @@ img {
     position: relative;
     gap: 0.75rem;
     height: 3.2rem;
+    margin-right: 3rem; /* 로고와 네비게이션 간 여백 추가 */
 }
 
 .logo img {
