@@ -1358,6 +1358,7 @@ function showQueriesDetails() {
                                                 <tr>
                                                     <th style="color: #30507A;">순위</th>
                                                     <th style="color: #30507A;">질문 내용</th>
+                                                    <th style="color: #30507A;">카테고리</th>
                                                     <th style="color: #30507A;">횟수</th>
                                                     <th style="color: #30507A;">최근 질문 시간</th>
                                                 </tr>
@@ -1386,10 +1387,43 @@ function showQueriesDetails() {
                         }
                     }
                     
+                    // 카테고리 추출 (업무 안내 가이드 파일명의 괄호 내용 기반)
+                    let category = query.category || '일반';
+                    let categoryBadgeClass = 'bg-secondary';
+                    let categoryDisplay = category;
+                    
+                    // 카테고리별 표시 스타일 및 한글명 매핑
+                    switch(category) {
+                        case 'IP_사용자_조회':
+                            categoryBadgeClass = 'bg-info';
+                            categoryDisplay = 'IP사용자조회';
+                            break;
+                        case '절차_안내':
+                            categoryBadgeClass = 'bg-warning';
+                            categoryDisplay = '절차안내';
+                            break;
+                        case '대외계_연동':
+                            categoryBadgeClass = 'bg-primary';
+                            categoryDisplay = '대외계연동';
+                            break;
+                        case '장애_문의':
+                            categoryBadgeClass = 'bg-danger';
+                            categoryDisplay = '장애문의';
+                            break;
+                        case '자산':
+                            categoryBadgeClass = 'bg-success';
+                            categoryDisplay = '자산관리';
+                            break;
+                        default:
+                            categoryBadgeClass = 'bg-secondary';
+                            categoryDisplay = '일반';
+                    }
+                    
                     modalContent += `
                         <tr>
                             <td><span class="badge bg-primary">${index + 1}</span></td>
                             <td>${query.query_text}</td>
+                            <td><span class="badge ${categoryBadgeClass}">${categoryDisplay}</span></td>
                             <td><span class="badge bg-success">${query.count}회</span></td>
                             <td><small class="text-muted">${timestamp}</small></td>
                         </tr>`;
