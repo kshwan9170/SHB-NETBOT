@@ -17,6 +17,20 @@
         .container.my-5 {
             margin-top: 100px !important;
         }
+        
+        /* PC에서 대시보드 네비게이션 링크 색상 강제 적용 */
+        @media (min-width: 769px) {
+            .nav-links .nav-link {
+                color: #FFFFFF !important;
+                font-weight: 500 !important;
+                font-size: 1.5rem !important;
+            }
+            
+            .nav-links .nav-link:hover,
+            .nav-links .nav-link.active {
+                color: #BFD7FF !important;
+            }
+        }
     </style>
 </head>
 <body>
