@@ -335,7 +335,7 @@ class BusinessGuideProcessor:
         if '_' in source_file and len(source_file.split('_')[0]) == 36:
             clean_source_file = '_'.join(source_file.split('_')[1:])
         
-        response += f"---\n📄 **참고 문서**: {clean_source_file}"
+        # 참고 문서 출처 제거 - 사용자 요청
         
         return response
     
@@ -397,17 +397,12 @@ class BusinessGuideProcessor:
                     link_text = link_text.replace(url, '[관련 가이드 바로가기]')
             info_parts.append(f"🔗 **관련 문서**: {link_text}")
         
-        # 출처 파일명 추가 (UUID 완전 제거)
-        import re
-        # UUID 패턴 제거 (예: "685c2b06-eb7d-4ff4-9c7d-51a3490d8b64_")
-        clean_source_file = re.sub(r'^[a-f0-9-]{36}_', '', source_file)
-        # 추가 정리
-        clean_source_file = clean_source_file.replace('.csv', '')
-        if clean_source_file:
-            info_parts.append(f"📄 **참고 문서**: {clean_source_file}")
-        
         if info_parts:
-            response_parts.append("ℹ️ **관련 정보**\n" + "\n".join(info_parts))
+            # 각 항목을 개별 줄로 표시
+            info_text = "ℹ️ **관련 정보**\n" + "\n".join(info_parts)
+            # [🟢 온라인 모드] 표시 추가
+            info_text += "\n[🟢 온라인 모드] 내부 업무 가이드 기반 응답"
+            response_parts.append(info_text)
         
         # 각 항목 사이에 공백 라인 추가하여 시각적 분리 강화
         response = "\n\n".join(response_parts)
@@ -473,12 +468,7 @@ class BusinessGuideProcessor:
                     link_text = link_text.replace(url, '[관련 가이드 바로가기]')
             info_parts.append(f"🔗 **관련 문서**: {link_text}")
         
-        # 원본 파일명에서 UUID 제거
-        clean_source_file = source_file
-        if '_' in source_file and len(source_file.split('_')[0]) == 36:
-            clean_source_file = '_'.join(source_file.split('_')[1:])
-        
-        info_parts.append(f"📄 **참고 문서**: {clean_source_file}")
+        # 참고 문서 출처 제거 - 사용자 요청
         
         if info_parts:
             response_parts.append("ℹ️ **관련 정보**\n" + "\n".join(info_parts))
@@ -507,12 +497,7 @@ class BusinessGuideProcessor:
         
         response = "\n".join(response_parts)
         
-        # 원본 파일명에서 UUID 제거
-        clean_source_file = source_file
-        if '_' in source_file and len(source_file.split('_')[0]) == 36:
-            clean_source_file = '_'.join(source_file.split('_')[1:])
-        
-        response += f"\n\n📄 **참고 문서**: {clean_source_file}"
+        # 참고 문서 출처 제거 - 사용자 요청
         
         return response
     
