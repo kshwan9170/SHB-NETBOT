@@ -1754,6 +1754,7 @@ def get_db_connection():
     try:
         import sqlite3
         conn = sqlite3.connect('shinhan_netbot.db')
+        conn.row_factory = sqlite3.Row  # 딕셔너리 형태로 결과 반환
         return conn
     except Exception as e:
         print(f"데이터베이스 연결 오류: {e}")
@@ -1769,17 +1770,17 @@ def feedback_stats():
         
         # 긍정 피드백 수
         positive_count = conn.execute(
-            "SELECT COUNT(*) FROM chat_feedback WHERE feedback_type = '만족'"
-        ).fetchone()[0]
+            "SELECT COUNT(*) as count FROM chat_feedback WHERE feedback_type = '만족'"
+        ).fetchone()['count']
         
         # 부정 피드백 수
         negative_count = conn.execute(
-            "SELECT COUNT(*) FROM chat_feedback WHERE feedback_type = '개선필요'"
-        ).fetchone()[0]
+            "SELECT COUNT(*) as count FROM chat_feedback WHERE feedback_type = '개선필요'"
+        ).fetchone()['count']
         
         # 최근 부정 피드백 목록 (최신 5개)
         recent_negative_rows = conn.execute("""
-            SELECT question, created_at 
+            SELECT question, created_at as timestamp
             FROM chat_feedback 
             WHERE feedback_type = '개선필요' 
             ORDER BY created_at DESC 
@@ -1789,8 +1790,8 @@ def feedback_stats():
         # 부정 피드백 목록 포맷팅
         recent_negative = [
             {
-                'question': row[0],
-                'timestamp': row[1]
+                'question': row['question'],
+                'timestamp': row['timestamp']
             }
             for row in recent_negative_rows
         ]
