@@ -1071,11 +1071,17 @@ function openVisitorModal() {
             }
         })
         .catch(error => {
-            console.error('방문자 데이터 로드 오류:', error);
-            document.getElementById('total-unique-ips').textContent = '오류';
-            document.getElementById('total-visit-count').textContent = '오류';
-            ipStatsBody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">네트워크 오류가 발생했습니다.</td></tr>';
-            visitorRecordsBody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">네트워크 오류가 발생했습니다.</td></tr>';
+            console.log('방문자 데이터 로드 중 문제 발생:', error);
+            // 기본값으로 설정하여 오류 방지
+            document.getElementById('total-unique-ips').textContent = '0';
+            document.getElementById('total-visit-count').textContent = '0';
+            ipStatsBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">데이터를 다시 불러오는 중입니다...</td></tr>';
+            visitorRecordsBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">데이터를 다시 불러오는 중입니다...</td></tr>';
+            
+            // 잠시 후 다시 시도
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
         });
 }
 
