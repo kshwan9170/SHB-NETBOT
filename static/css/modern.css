@@ -2275,31 +2275,22 @@ img {
         font-size: 5.6rem;
     }
     
+    /* 모바일에서도 네비게이션 링크가 보이도록 수정 */
     .nav-links {
-        position: fixed;
-        top: 0;
-        right: -100%;
-        width: 70%;
-        height: 100vh;
-        background: var(--white);
-        flex-direction: column;
+        display: flex;
+        flex-direction: row;
+        gap: 1.5rem;
+        flex-wrap: wrap;
         justify-content: center;
-        gap: 2.4rem;
-        transition: all var(--transition-medium);
-        z-index: 1000;
-        box-shadow: var(--shadow-lg);
     }
     
-    [data-theme="dark"] .nav-links {
-        background: var(--light);
-    }
-    
-    .nav-links.active {
-        right: 0;
+    .nav-link {
+        font-size: 1.2rem;
+        padding: 0.5rem 1rem;
     }
     
     .mobile-menu-btn {
-        display: flex;
+        display: none;
     }
     
     .about-grid {
