@@ -1536,13 +1536,7 @@ def get_chatbot_response(
                     response += f"\n\n추가로 {len(matched_results)-1}개의 관련 정보가 있습니다."
                 
                 # 연결 상태 정보 추가
-                try:
-                    from app import get_connection_status
-                    is_online = get_connection_status()
-                    if is_online:
-                        response += "\n\n[🟢 온라인 모드] 인터넷 연결이 정상입니다."
-                except:
-                    pass
+                # business_guide_processor.py에서 이미 온라인 모드 표시를 추가하므로 여기서는 제거
                     
                 return response
         
@@ -1582,12 +1576,8 @@ def get_chatbot_response(
             
     # IP 주소 신청 방법에 대한 고정 응답 사용
     if is_ip_application_query:
-        # 오프라인 상태일 때 표시 추가
+        # business_guide_processor.py에서 이미 온라인 모드 표시를 추가하므로 여기서는 제거
         connection_status = ""
-        if not is_online:
-            connection_status = "\n\n[🔴 오프라인 모드] 현재 인터넷 연결이 제한되어 있습니다."
-        elif is_online:
-            connection_status = "\n\n[🟢 온라인 모드] 인터넷 연결이 정상입니다."
             
         return f"""
 # IP 주소 신청 절차 안내
