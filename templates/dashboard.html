@@ -748,10 +748,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         positivePercentageElement.textContent = `${satisfactionRate}%`;
                     }
                     
-                    // 사용자 만족도 건수 표시 추가
+                    // 전체 피드백 건수 표시 추가
                     const positiveCountDisplayElement = document.getElementById('positive-count-display');
                     if (positiveCountDisplayElement) {
-                        positiveCountDisplayElement.textContent = `${feedbackData.positive_count || 0}건 (클릭하여 상세보기)`;
+                        positiveCountDisplayElement.textContent = `${total}건 (클릭하여 상세보기)`;
                     }
                     
                     // 최근 방문자 수 업데이트 (방문자 API에서 실제 데이터 가져오기)
