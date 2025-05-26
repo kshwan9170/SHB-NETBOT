@@ -270,40 +270,6 @@
         </div>
     </div>
     
-    <!-- 부정 피드백 카드 -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm" style="border-color: #E6EBF4;">
-                <div class="card-body">
-                    <h5 class="card-title" style="color: #30507A; font-family: 'Inter', sans-serif; font-weight: 600;">
-                        개선필요 피드백 분석
-                    </h5>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <div class="text-center">
-                                <div class="display-6 fw-bold" style="color: #dc3545;" id="negative-feedback-count">0</div>
-                                <small class="text-muted" style="font-family: 'Inter', sans-serif; font-weight: 400;">개선필요 응답</small>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="text-center">
-                                <div class="display-6 fw-bold" style="color: #28a745;" id="positive-feedback-count">0</div>
-                                <small class="text-muted" style="font-family: 'Inter', sans-serif; font-weight: 400;">만족해요 응답</small>
-                            </div>
-                        </div>
-
-                    </div>
-                    <div class="mt-3">
-                        <h6 style="color: #30507A; font-family: 'Inter', sans-serif; font-weight: 600;">최근 개선필요 피드백</h6>
-                        <div id="recent-negative-feedback" class="list-group list-group-flush">
-                            <!-- 부정 피드백 목록이 여기에 동적으로 생성됩니다 -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
     <!-- 주요 문의 TOP 10 차트 -->
     <div class="row mb-4">
         <div class="col-12">
@@ -907,30 +873,18 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('total-queries').textContent = 
             data.top_queries.reduce((sum, query) => sum + query.count, 0);
         
-        // 부정 피드백 카드 업데이트 및 방문자 수 업데이트
-        updateNegativeFeedbackCard();
+        // 피드백 카드 업데이트 및 방문자 수 업데이트
+        updateFeedbackCard();
     }
     
-    // 부정 피드백 카드 업데이트 함수 (기존 기능에 영향 없음)
-    function updateNegativeFeedbackCard() {
+    // 피드백 카드 업데이트 함수 (간소화)
+    function updateFeedbackCard() {
         // 피드백 데이터 API 호출
         fetch('/api/feedback_stats')
             .then(response => response.json())
             .then(feedbackData => {
                 if (feedbackData.success) {
                     console.log('피드백 데이터 처리 중:', feedbackData);
-                    
-                    // 부정 피드백 수 - 요소 존재 확인
-                    const negativeCountElement = document.getElementById('negative-feedback-count');
-                    if (negativeCountElement) {
-                        negativeCountElement.textContent = feedbackData.negative_count || 0;
-                    }
-                    
-                    // 긍정 피드백 수 (사용자 만족도) - 요소 존재 확인
-                    const positiveCountElement = document.getElementById('positive-feedback-count');
-                    if (positiveCountElement) {
-                        positiveCountElement.textContent = feedbackData.positive_count || 0;
-                    }
                     
                     // 상단 카드의 사용자 만족도 업데이트
                     const total = (feedbackData.positive_count || 0) + (feedbackData.negative_count || 0);
@@ -945,7 +899,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 사용자 만족도 건수 표시 추가
                     const positiveCountDisplayElement = document.getElementById('positive-count-display');
                     if (positiveCountDisplayElement) {
-                        positiveCountDisplayElement.textContent = `${feedbackData.positive_count || 0}건`;
+                        positiveCountDisplayElement.textContent = `${feedbackData.positive_count || 0}건 (클릭하여 상세보기)`;
                     }
                     
                     // 최근 방문자 수 업데이트 (실제 API 값 사용)
@@ -966,105 +920,16 @@ document.addEventListener('DOMContentLoaded', function() {
                             visitorsDescription.textContent = '지난 24시간';
                         }
                     }
-                    
-                    // 하단 피드백 분석의 만족도 업데이트
-                    const rateElement = document.getElementById('feedback-improvement-rate');
-                    if (rateElement) {
-                        rateElement.textContent = `${satisfactionRate}%`;
-                    }
-                    
-                    // 최근 부정 피드백 목록 업데이트
-                    updateRecentNegativeFeedback(feedbackData.recent_negative || []);
                 } else {
                     console.log('피드백 데이터 로딩 실패:', feedbackData);
                 }
             })
             .catch(error => {
                 console.log('피드백 데이터 로딩 중 오류:', error);
-                // 오류 시 기본값 설정 - 요소 존재 확인
-                const negativeElement = document.getElementById('negative-feedback-count');
-                const positiveElement = document.getElementById('positive-feedback-count');
-                const rateElement = document.getElementById('feedback-improvement-rate');
-                
-                if (negativeElement) negativeElement.textContent = '0';
-                if (positiveElement) positiveElement.textContent = '0';
-                if (rateElement) rateElement.textContent = '0%';
             });
     }
     
-    // 최근 부정 피드백 목록 업데이트 함수
-    function updateRecentNegativeFeedback(recentFeedback) {
-        const container = document.getElementById('recent-negative-feedback');
-        container.innerHTML = '';
-        
-        if (recentFeedback.length === 0) {
-            container.innerHTML = '<div class="text-muted text-center py-3">최근 개선필요 피드백이 없습니다.</div>';
-            return;
-        }
-        
-        recentFeedback.slice(0, 5).forEach((feedback, index) => {
-            const feedbackItem = document.createElement('div');
-            feedbackItem.className = 'list-group-item border-0 px-0';
-            feedbackItem.innerHTML = `
-                <div class="d-flex justify-content-between align-items-start">
-                    <div class="flex-grow-1">
-                        <p class="mb-1 text-truncate" style="max-width: 350px;">${feedback.question || '질문 내용 없음'}</p>
-                        <small class="text-muted">${feedback.timestamp || '시간 정보 없음'}</small>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-danger">개선필요</span>
-                        <button class="btn btn-sm btn-outline-danger delete-feedback-btn" 
-                                data-question="${feedback.question}" 
-                                data-timestamp="${feedback.timestamp}"
-                                title="이 피드백 삭제">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            container.appendChild(feedbackItem);
-        });
-        
-        // 삭제 버튼 이벤트 리스너 추가
-        document.querySelectorAll('.delete-feedback-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                const question = this.getAttribute('data-question');
-                const timestamp = this.getAttribute('data-timestamp');
-                deleteFeedback(question, timestamp);
-            });
-        });
-    }
-    
-    // 피드백 삭제 함수
-    function deleteFeedback(question, timestamp) {
-        if (!confirm('이 피드백을 삭제하시겠습니까?')) {
-            return;
-        }
-        
-        fetch('/api/feedback/delete', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                question: question,
-                timestamp: timestamp
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // 성공시 피드백 목록 새로고침
-                updateNegativeFeedbackCard();
-            } else {
-                alert('피드백 삭제에 실패했습니다: ' + (data.error || '알 수 없는 오류'));
-            }
-        })
-        .catch(error => {
-            console.error('피드백 삭제 오류:', error);
-            alert('피드백 삭제 중 오류가 발생했습니다.');
-        });
-    }
+
     
     // Top 쿼리 차트 업데이트
     function updateTopQueriesChart(topQueries) {
