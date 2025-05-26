@@ -20,7 +20,7 @@ class SuggestedQuestions {
     async findContainer() {
         // 최대 10초 동안 컨테이너를 찾는다
         for (let i = 0; i < 20; i++) {
-            this.container = document.getElementById('suggestedQuestions');
+            this.container = document.getElementById('suggestedQuestionsContainer');
             if (this.container) {
                 console.log('추천 질문 컨테이너를 찾았습니다.');
                 return;
@@ -59,7 +59,7 @@ class SuggestedQuestions {
         ).join('');
 
         // 컨테이너 표시
-        if (this.container.style.display === 'none') {
+        if (this.container && this.container.style.display === 'none') {
             this.container.style.display = 'block';
         }
     }

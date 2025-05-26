@@ -1597,6 +1597,100 @@ img {
     box-shadow: var(--shadow-lg);
 }
 
+/* Top 5 추천 질문 스타일 */
+.suggested-questions-container {
+    margin: 1rem 0;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .suggested-questions-container {
+    background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+    border-color: #4b5563;
+}
+
+.suggested-questions-header h4 {
+    margin: 0 0 1rem 0;
+    color: #30507A;
+    font-size: 1.4rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+[data-theme="dark"] .suggested-questions-header h4 {
+    color: #e2e8f0;
+}
+
+.suggested-questions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.question-button {
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.4rem;
+    color: #374151;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .question-button {
+    background: #4b5563;
+    border-color: #6b7280;
+    color: #f3f4f6;
+}
+
+.question-button:hover {
+    background: #f3f4f6;
+    border-color: #30507A;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(48, 80, 122, 0.15);
+}
+
+[data-theme="dark"] .question-button:hover {
+    background: #6b7280;
+    border-color: #93c5fd;
+}
+
+.question-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.error-message {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #dc2626;
+    font-size: 1.3rem;
+    padding: 1rem;
+    background: #fef2f2;
+    border-radius: 8px;
+    border: 1px solid #fecaca;
+}
+
+[data-theme="dark"] .error-message {
+    background: #7f1d1d;
+    border-color: #991b1b;
+    color: #fca5a5;
+}
+
+.error-icon {
+    font-size: 1.6rem;
+}
+
 #sendButton:active {
     transform: translateY(1px);
     box-shadow: var(--shadow-sm);
