@@ -255,6 +255,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // 페이지 로드시 데이터 조회
     refreshDashboard();
     
+    // 부정 피드백 카드 초기화
+    updateNegativeFeedbackCard();
+    
     // 새로고침 버튼 클릭 이벤트
     document.getElementById('refresh-button').addEventListener('click', refreshDashboard);
     
@@ -300,6 +303,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 테이블 업데이트
         updateQueryTable(data.top_queries);
+        
+        // 부정 피드백 카드 업데이트 (새로운 기능)
+        updateNegativeFeedbackCard();
     }
     
     // 카테고리 옵션 업데이트
