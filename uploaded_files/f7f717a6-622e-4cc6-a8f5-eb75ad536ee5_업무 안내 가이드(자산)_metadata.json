@@ -1,0 +1,102 @@
+{
+  "file_name": "f7f717a6-622e-4cc6-a8f5-eb75ad536ee5_업무 안내 가이드(자산).csv",
+  "file_path": "uploaded_files/f7f717a6-622e-4cc6-a8f5-eb75ad536ee5_업무 안내 가이드(자산).csv",
+  "encoding": "utf-8",
+  "row_count": 9,
+  "column_count": 10,
+  "columns": [
+    {
+      "name": "자산",
+      "type": "UNKNOWN",
+      "sample_values": [
+        "신한은행",
+        "신한은행",
+        "신한은행"
+      ]
+    },
+    {
+      "name": "벤더",
+      "type": "UNKNOWN",
+      "sample_values": [
+        "포티게이트",
+        "넥스지",
+        "엑스게이트"
+      ]
+    },
+    {
+      "name": "벤더(영문)",
+      "type": "UNKNOWN",
+      "sample_values": [
+        "Fortinet",
+        "NexG",
+        "Axgate"
+      ]
+    },
+    {
+      "name": "분류",
+      "type": "CATEGORY",
+      "sample_values": [
+        "VPN",
+        "VPN",
+        "VPN"
+      ]
+    },
+    {
+      "name": "장비 모델명",
+      "type": "SYSTEM",
+      "sample_values": [
+        "FortiGate 200F",
+        "VForce 4500",
+        "AXGATE 5000X"
+      ]
+    },
+    {
+      "name": "현재 OS 버전",
+      "type": "UNKNOWN",
+      "sample_values": [
+        "7.2.5",
+        "5.1.2",
+        "4.3.7"
+      ]
+    },
+    {
+      "name": "현재 OS EOS(기술 지원 종료)",
+      "type": "UNKNOWN",
+      "sample_values": [
+        "2027-12-31",
+        "2026-06-30",
+        "2025-12-31"
+      ]
+    },
+    {
+      "name": "권고 OS",
+      "type": "UNKNOWN",
+      "sample_values": [
+        "7.4.2",
+        "5.2.0",
+        "4.4.1"
+      ]
+    },
+    {
+      "name": "용도",
+      "type": "UNKNOWN",
+      "sample_values": [
+        "대외계",
+        "대외계",
+        "대외계"
+      ]
+    },
+    {
+      "name": "수량",
+      "type": "UNKNOWN",
+      "sample_values": [
+        "2.0",
+        "2.0",
+        "2.0"
+      ]
+    }
+  ],
+  "common_prefix": "",
+  "generated_at": "2025-05-26T16:03:44.283655",
+  "suggestions": []
+}

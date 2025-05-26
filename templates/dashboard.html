@@ -1387,10 +1387,24 @@ function showQueriesDetails() {
                         }
                     }
                     
-                    // 카테고리 추출 (업무 안내 가이드 파일명의 괄호 내용 기반)
+                    // 카테고리 추출 및 질문 내용 기반 스마트 매핑
                     let category = query.category || '일반';
                     let categoryBadgeClass = 'bg-secondary';
                     let categoryDisplay = category;
+                    
+                    // 질문 내용을 기반으로 카테고리 스마트 매핑
+                    const queryText = query.query_text.toLowerCase();
+                    if (queryText.includes('ip주소') || queryText.includes('ip 주소') || queryText.includes('아이피')) {
+                        category = 'IP_사용자_조회';
+                    } else if (queryText.includes('포티게이트') || queryText.includes('os 버전') || queryText.includes('장비') || queryText.includes('자산') || queryText.includes('모델명') || queryText.includes('벤더')) {
+                        category = '자산';
+                    } else if (queryText.includes('대외기관') || queryText.includes('대외계') || queryText.includes('연동') || queryText.includes('회선')) {
+                        category = '대외계_연동';
+                    } else if (queryText.includes('절차') || queryText.includes('등록') || queryText.includes('신청') || queryText.includes('승인')) {
+                        category = '절차_안내';
+                    } else if (queryText.includes('장애') || queryText.includes('오류') || queryText.includes('문제') || queryText.includes('안됨') || queryText.includes('보이지 않') || queryText.includes('접속 불가')) {
+                        category = '장애_문의';
+                    }
                     
                     // 카테고리별 표시 스타일 및 한글명 매핑
                     switch(category) {
