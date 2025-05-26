@@ -2026,6 +2026,7 @@ def satisfaction_details():
         formatted_negative = []
         for record in negative_feedback:
             formatted_negative.append({
+                'id': record['id'],
                 'query': record['question'] or '질문 없음',
                 'timestamp': record['timestamp']
             })
