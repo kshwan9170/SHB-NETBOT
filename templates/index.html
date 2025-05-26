@@ -807,26 +807,38 @@
         const toggleIcon = document.getElementById('toggleIcon');
         let questionsLoaded = false;
         
-        if (toggleButton && questionsList && toggleIcon) {
+        if (toggleButton && questionsList) {
+            console.log('FAQ 토글 요소 발견, 이벤트 바인딩 시작');
+            
             // 토글 버튼 클릭 이벤트
-            toggleButton.addEventListener('click', async function() {
-                const isExpanded = questionsList.style.display !== 'none';
+            toggleButton.addEventListener('click', async function(e) {
+                console.log('FAQ 토글 클릭됨');
+                e.preventDefault();
+                
+                const isExpanded = questionsList.style.display === 'block';
                 
                 if (isExpanded) {
                     // 접기
+                    console.log('FAQ 목록 접기');
                     questionsList.style.display = 'none';
-                    toggleIcon.textContent = '▼';
-                    toggleIcon.style.transform = 'rotate(0deg)';
+                    if (toggleIcon) {
+                        toggleIcon.textContent = '▼';
+                        toggleIcon.style.transform = 'rotate(0deg)';
+                    }
                     toggleButton.style.backgroundColor = 'rgba(48, 80, 122, 0.05)';
                 } else {
                     // 펼치기 - 질문이 로드되지 않았다면 먼저 로드
+                    console.log('FAQ 목록 펼치기');
                     if (!questionsLoaded) {
+                        console.log('질문 데이터 로딩 중...');
                         await loadSuggestedQuestions();
                     }
                     
                     questionsList.style.display = 'block';
-                    toggleIcon.textContent = '▲';
-                    toggleIcon.style.transform = 'rotate(180deg)';
+                    if (toggleIcon) {
+                        toggleIcon.textContent = '▲';
+                        toggleIcon.style.transform = 'rotate(180deg)';
+                    }
                     toggleButton.style.backgroundColor = 'rgba(48, 80, 122, 0.1)';
                 }
             });
