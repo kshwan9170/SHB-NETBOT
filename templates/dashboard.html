@@ -791,6 +791,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 피드백 카드 업데이트 및 방문자 수 업데이트
         updateFeedbackCard();
+        
+        // 방문자 카드도 별도로 업데이트
+        updateVisitorCard();
     }
     
     // 방문자 카드 업데이트 함수 (실제 API 데이터 사용)
@@ -851,7 +854,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     
                     // 최근 방문자 수 업데이트 (방문자 API에서 실제 데이터 가져오기)
-                    updateVisitorCard();
+                    // updateVisitorCard(); // 중복 제거 - updateSummaryStats에서 이미 호출함
                 } else {
                     console.log('피드백 데이터 로딩 실패:', feedbackData);
                 }
@@ -1418,7 +1421,12 @@ function showQueriesDetails() {
 // 페이지 로드 시 방문자 카드 초기화
 document.addEventListener('DOMContentLoaded', function() {
     // 방문자 카드 즉시 업데이트
-    updateVisitorCard();
+    setTimeout(updateVisitorCard, 1000); // 1초 후 실행
+});
+
+// 페이지가 완전히 로드된 후에도 실행
+window.addEventListener('load', function() {
+    setTimeout(updateVisitorCard, 500); // 0.5초 후 실행
 });
 
 // 네비게이션 링크 클릭 시 모바일 메뉴 닫기
