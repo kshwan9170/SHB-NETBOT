@@ -1764,41 +1764,44 @@ def feedback_stats():
     """피드백 통계 API - 대시보드용 실제 피드백 데이터 제공"""
     try:
         conn = get_db_connection()
+        if conn is None:
+            raise Exception("데이터베이스 연결 실패")
         
         # 긍정 피드백 수
         positive_count = conn.execute(
-            "SELECT COUNT(*) as count FROM feedback WHERE feedback_type = '만족'"
-        ).fetchone()['count']
+            "SELECT COUNT(*) FROM chat_feedback WHERE feedback_type = '만족'"
+        ).fetchone()[0]
         
         # 부정 피드백 수
         negative_count = conn.execute(
-            "SELECT COUNT(*) as count FROM feedback WHERE feedback_type = '개선필요'"
-        ).fetchone()['count']
+            "SELECT COUNT(*) FROM chat_feedback WHERE feedback_type = '개선필요'"
+        ).fetchone()[0]
         
         # 최근 부정 피드백 목록 (최신 5개)
-        recent_negative = conn.execute("""
-            SELECT question, created_at as timestamp 
-            FROM feedback 
+        recent_negative_rows = conn.execute("""
+            SELECT question, created_at 
+            FROM chat_feedback 
             WHERE feedback_type = '개선필요' 
             ORDER BY created_at DESC 
             LIMIT 5
         """).fetchall()
         
-        conn.close()
-        
-        # 결과 포맷팅
-        recent_negative_list = [
+        # 부정 피드백 목록 포맷팅
+        recent_negative = [
             {
-                'question': row['question'], 
-                'timestamp': row['timestamp']
-            } for row in recent_negative
+                'question': row[0],
+                'timestamp': row[1]
+            }
+            for row in recent_negative_rows
         ]
+        
+        conn.close()
         
         return jsonify({
             'success': True,
             'positive_count': positive_count,
             'negative_count': negative_count,
-            'recent_negative': recent_negative_list
+            'recent_negative': recent_negative
         })
             
     except Exception as e:
