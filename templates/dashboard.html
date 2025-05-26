@@ -793,6 +793,38 @@ document.addEventListener('DOMContentLoaded', function() {
         updateFeedbackCard();
     }
     
+    // 방문자 카드 업데이트 함수 (실제 API 데이터 사용)
+    function updateVisitorCard() {
+        fetch('/api/visitor_details')
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.success) {
+                    const visitorsText = document.getElementById('recent-visitors');
+                    const visitorsIcon = document.getElementById('visitors-icon');
+                    const visitorsDescription = document.getElementById('visitors-description');
+                    
+                    if (visitorsText) {
+                        // 실제 고유 IP 수 표시
+                        const actualUniqueIPs = data.ip_statistics ? data.ip_statistics.length : 0;
+                        visitorsText.textContent = actualUniqueIPs;
+                        console.log('방문자 카드 업데이트 완료:', actualUniqueIPs);
+                        
+                        if (visitorsIcon) {
+                            visitorsIcon.style.color = '#17a2b8'; // 방문자는 청록색
+                        }
+                        if (visitorsDescription) {
+                            visitorsDescription.textContent = '지난 24시간';
+                        }
+                    }
+                } else {
+                    console.log('방문자 데이터 로딩 실패');
+                }
+            })
+            .catch(error => {
+                console.log('방문자 데이터 로딩 중 오류:', error);
+            });
+    }
+    
     // 피드백 카드 업데이트 함수 (간소화)
     function updateFeedbackCard() {
         // 피드백 데이터 API 호출
@@ -818,24 +850,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         positiveCountDisplayElement.textContent = `${feedbackData.positive_count || 0}건 (클릭하여 상세보기)`;
                     }
                     
-                    // 최근 방문자 수 업데이트 (실제 API 값 사용)
-                    const visitorsText = document.getElementById('recent-visitors');
-                    const visitorsIcon = document.getElementById('visitors-icon');
-                    const visitorsDescription = document.getElementById('visitors-description');
-                    
-                    if (visitorsText) {
-                        // API에서 받은 실제 방문자 수 표시
-                        const uniqueVisitors = feedbackData.unique_visitors_24h || 0;
-                        visitorsText.textContent = uniqueVisitors;
-                        console.log('방문자 수 업데이트 완료:', uniqueVisitors);
-                        
-                        if (visitorsIcon) {
-                            visitorsIcon.style.color = '#17a2b8'; // 방문자는 청록색
-                        }
-                        if (visitorsDescription) {
-                            visitorsDescription.textContent = '지난 24시간';
-                        }
-                    }
+                    // 최근 방문자 수 업데이트 (방문자 API에서 실제 데이터 가져오기)
+                    updateVisitorCard();
                 } else {
                     console.log('피드백 데이터 로딩 실패:', feedbackData);
                 }
