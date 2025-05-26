@@ -1970,6 +1970,109 @@ def visitor_details():
         print(f"방문자 상세 정보 API 오류: {e}")
         return jsonify({'success': False, 'error': '서버 오류가 발생했습니다.'})
 
+@app.route('/api/satisfaction_details')
+def satisfaction_details():
+    """사용자 만족도 상세 정보 API - 개선필요/만족 응답 분석"""
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return jsonify({'success': False, 'error': '데이터베이스 연결 실패'})
+        
+        # 개선필요 피드백 상세 조회 (최근 30일)
+        negative_feedback = conn.execute("""
+            SELECT query_text, feedback, timestamp
+            FROM chat_logs 
+            WHERE feedback = 'negative' 
+            AND timestamp >= datetime('now', '-30 days')
+            ORDER BY timestamp DESC
+            LIMIT 20
+        """).fetchall()
+        
+        # 만족 피드백 상세 조회 (최근 30일)
+        positive_feedback = conn.execute("""
+            SELECT query_text, feedback, timestamp
+            FROM chat_logs 
+            WHERE feedback = 'positive' 
+            AND timestamp >= datetime('now', '-30 days')
+            ORDER BY timestamp DESC
+            LIMIT 20
+        """).fetchall()
+        
+        # 전체 통계 계산
+        total_feedback = conn.execute("""
+            SELECT 
+                COUNT(CASE WHEN feedback = 'positive' THEN 1 END) as positive_count,
+                COUNT(CASE WHEN feedback = 'negative' THEN 1 END) as negative_count,
+                COUNT(*) as total_count
+            FROM chat_logs 
+            WHERE feedback IN ('positive', 'negative')
+            AND timestamp >= datetime('now', '-30 days')
+        """).fetchone()
+        
+        # 일별 피드백 추이 (최근 7일)
+        daily_trends = conn.execute("""
+            SELECT 
+                DATE(timestamp) as date,
+                COUNT(CASE WHEN feedback = 'positive' THEN 1 END) as positive_count,
+                COUNT(CASE WHEN feedback = 'negative' THEN 1 END) as negative_count
+            FROM chat_logs 
+            WHERE feedback IN ('positive', 'negative')
+            AND timestamp >= datetime('now', '-7 days')
+            GROUP BY DATE(timestamp)
+            ORDER BY date ASC
+        """).fetchall()
+        
+        # 포맷팅
+        formatted_negative = []
+        for record in negative_feedback:
+            formatted_negative.append({
+                'query': record['query_text'] or '질문 없음',
+                'timestamp': record['timestamp']
+            })
+        
+        formatted_positive = []
+        for record in positive_feedback:
+            formatted_positive.append({
+                'query': record['query_text'] or '질문 없음', 
+                'timestamp': record['timestamp']
+            })
+        
+        formatted_trends = []
+        for record in daily_trends:
+            formatted_trends.append({
+                'date': record['date'],
+                'positive': record['positive_count'],
+                'negative': record['negative_count']
+            })
+        
+        # 만족도 계산
+        positive_count = total_feedback['positive_count'] or 0
+        negative_count = total_feedback['negative_count'] or 0
+        total_count = total_feedback['total_count'] or 0
+        
+        satisfaction_rate = 0
+        if total_count > 0:
+            satisfaction_rate = round((positive_count / total_count) * 100, 1)
+        
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'statistics': {
+                'positive_count': positive_count,
+                'negative_count': negative_count,
+                'total_count': total_count,
+                'satisfaction_rate': satisfaction_rate
+            },
+            'negative_feedback': formatted_negative,
+            'positive_feedback': formatted_positive,
+            'daily_trends': formatted_trends
+        })
+        
+    except Exception as e:
+        print(f"만족도 상세 정보 API 오류: {e}")
+        return jsonify({'success': False, 'error': '서버 오류가 발생했습니다.'})
+
 @app.route('/api/feedback/delete', methods=['POST'])
 def delete_feedback():
     """피드백 삭제 API - 대시보드에서 개선필요 피드백 삭제"""

@@ -255,14 +255,14 @@
         
         <!-- 사용자 만족도 -->
         <div class="col-md-4 mb-3">
-            <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
+            <div class="card h-100 shadow-sm satisfaction-card" style="border-color: #E6EBF4; cursor: pointer; transition: all 0.3s ease;" onclick="showSatisfactionDetails()" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 20px rgba(255, 193, 7, 0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''">
                 <div class="card-body text-center">
                     <h5 class="card-title" style="color: #30507A;">사용자 만족도</h5>
                     <div class="d-flex align-items-center justify-content-center">
                         <i class="fas fa-smile fa-3x me-3" style="color: #ffc107;"></i>
                         <div>
                             <div class="display-4 fw-bold" id="positive-percentage">0%</div>
-                            <small class="text-muted" id="positive-count-display">0건</small>
+                            <small class="text-muted" id="positive-count-display">0건 (클릭하여 상세보기)</small>
                         </div>
                     </div>
                 </div>
@@ -565,6 +565,138 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
                 <button type="button" class="btn btn-primary" onclick="refreshVisitorData()" style="background-color: #30507A; border-color: #30507A;">
+                    <i class="fas fa-sync-alt me-2"></i>새로고침
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 사용자 만족도 상세 정보 모달 -->
+<div class="modal fade" id="satisfactionDetailsModal" tabindex="-1" aria-labelledby="satisfactionDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #ffc107;">
+                <h5 class="modal-title text-white" id="satisfactionDetailsModalLabel">
+                    <i class="fas fa-chart-pie me-2"></i>사용자 만족도 상세 분석
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 통계 요약 -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card text-center" style="border-color: #E6EBF4;">
+                            <div class="card-body">
+                                <h6 class="card-title" style="color: #30507A;">전체 피드백</h6>
+                                <div class="h4 mb-0" id="total-feedback-count">-</div>
+                                <small class="text-muted">최근 30일</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center" style="border-color: #E6EBF4; border-left: 4px solid #28a745;">
+                            <div class="card-body">
+                                <h6 class="card-title" style="color: #28a745;">만족해요</h6>
+                                <div class="h4 mb-0" id="positive-feedback-count">-</div>
+                                <small class="text-muted" id="positive-percentage-detail">0%</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center" style="border-color: #E6EBF4; border-left: 4px solid #dc3545;">
+                            <div class="card-body">
+                                <h6 class="card-title" style="color: #dc3545;">개선필요</h6>
+                                <div class="h4 mb-0" id="negative-feedback-count">-</div>
+                                <small class="text-muted" id="negative-percentage-detail">0%</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-center" style="border-color: #E6EBF4;">
+                            <div class="card-body">
+                                <h6 class="card-title" style="color: #30507A;">만족도</h6>
+                                <div class="h4 mb-0" id="satisfaction-rate-detail">-</div>
+                                <small class="text-muted">전체 평균</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 일별 추이 차트 -->
+                <div class="card mb-4" style="border-color: #E6EBF4;">
+                    <div class="card-header" style="background-color: #F8F9FA;">
+                        <h6 class="mb-0" style="color: #30507A;">
+                            <i class="fas fa-chart-line me-2"></i>일별 피드백 추이 (최근 7일)
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="feedbackTrendChart" height="100"></canvas>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- 개선필요 피드백 -->
+                    <div class="col-md-6">
+                        <div class="card h-100" style="border-color: #E6EBF4; border-left: 4px solid #dc3545;">
+                            <div class="card-header" style="background-color: #F8F9FA;">
+                                <h6 class="mb-0" style="color: #dc3545;">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>최근 개선필요 피드백 (최대 20개)
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                    <table class="table table-sm table-hover">
+                                        <thead style="background-color: #F8F9FA; position: sticky; top: 0;">
+                                            <tr>
+                                                <th style="color: #30507A;">시간</th>
+                                                <th style="color: #30507A;">질문 내용</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="negative-feedback-tbody">
+                                            <tr>
+                                                <td colspan="2" class="text-center">
+                                                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                                                    데이터 로딩 중...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 만족 피드백 -->
+                    <div class="col-md-6">
+                        <div class="card h-100" style="border-color: #E6EBF4; border-left: 4px solid #28a745;">
+                            <div class="card-header" style="background-color: #F8F9FA;">
+                                <h6 class="mb-0" style="color: #28a745;">
+                                    <i class="fas fa-thumbs-up me-2"></i>최근 만족 피드백 (최대 20개)
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                    <table class="table table-sm table-hover">
+                                        <thead style="background-color: #F8F9FA; position: sticky; top: 0;">
+                                            <tr>
+                                                <th style="color: #30507A;">시간</th>
+                                                <th style="color: #30507A;">질문 내용</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="positive-feedback-tbody">
+                                            <!-- JavaScript로 채워짐 -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                <button type="button" class="btn btn-primary" onclick="refreshSatisfactionData()" style="background-color: #ffc107; border-color: #ffc107; color: #000;">
                     <i class="fas fa-sync-alt me-2"></i>새로고침
                 </button>
             </div>
@@ -1088,6 +1220,196 @@ function updateThemeIcon(theme) {
 const savedTheme = localStorage.getItem('theme') || 'light';
 document.documentElement.setAttribute('data-theme', savedTheme);
 updateThemeIcon(savedTheme);
+
+// 방문자 상세 정보 모달 함수
+function showVisitorDetails() {
+    fetch('/api/visitor_details')
+        .then(response => response.json())
+        .then(data => {
+            console.log('방문자 상세 데이터:', data);
+            
+            if (data.success) {
+                const tbody = document.getElementById('visitor-details-tbody');
+                tbody.innerHTML = '';
+                
+                if (data.visitors && data.visitors.length > 0) {
+                    data.visitors.forEach((visitor, index) => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td><code>${visitor.ip}</code></td>
+                            <td><span class="badge bg-primary">${visitor.visit_count}회</span></td>
+                            <td><small class="text-muted">${visitor.first_visit}</small></td>
+                            <td><small class="text-muted">${visitor.last_visit}</small></td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">방문자 기록이 없습니다.</td></tr>';
+                }
+                
+                // 모달 표시
+                const modal = new bootstrap.Modal(document.getElementById('visitorDetailsModal'));
+                modal.show();
+            } else {
+                console.error('방문자 상세 정보 로드 실패:', data.error);
+                alert('방문자 상세 정보를 불러오는데 실패했습니다.');
+            }
+        })
+        .catch(error => {
+            console.error('API 호출 오류:', error);
+            alert('서버 연결에 문제가 발생했습니다.');
+        });
+}
+
+// 사용자 만족도 상세 정보 모달 함수
+function showSatisfactionDetails() {
+    fetch('/api/satisfaction_details')
+        .then(response => response.json())
+        .then(data => {
+            console.log('만족도 상세 데이터:', data);
+            
+            if (data.success) {
+                // 통계 업데이트
+                document.getElementById('total-feedback-count').textContent = data.statistics.total_count;
+                document.getElementById('positive-feedback-count').textContent = data.statistics.positive_count;
+                document.getElementById('negative-feedback-count').textContent = data.statistics.negative_count;
+                document.getElementById('satisfaction-rate-detail').textContent = data.statistics.satisfaction_rate + '%';
+                
+                const totalCount = data.statistics.total_count;
+                if (totalCount > 0) {
+                    const positivePercent = Math.round((data.statistics.positive_count / totalCount) * 100);
+                    const negativePercent = Math.round((data.statistics.negative_count / totalCount) * 100);
+                    document.getElementById('positive-percentage-detail').textContent = `${positivePercent}%`;
+                    document.getElementById('negative-percentage-detail').textContent = `${negativePercent}%`;
+                }
+                
+                // 개선필요 피드백 테이블 업데이트
+                const negativeTbody = document.getElementById('negative-feedback-tbody');
+                negativeTbody.innerHTML = '';
+                
+                if (data.negative_feedback && data.negative_feedback.length > 0) {
+                    data.negative_feedback.forEach(feedback => {
+                        const row = document.createElement('tr');
+                        const shortQuery = feedback.query.length > 50 ? 
+                            feedback.query.substring(0, 50) + '...' : feedback.query;
+                        const date = new Date(feedback.timestamp);
+                        const formattedTime = date.toLocaleDateString('ko-KR') + ' ' + 
+                            date.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
+                        
+                        row.innerHTML = `
+                            <td><small>${formattedTime}</small></td>
+                            <td title="${feedback.query}">${shortQuery}</td>
+                        `;
+                        negativeTbody.appendChild(row);
+                    });
+                } else {
+                    negativeTbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">개선필요 피드백이 없습니다.</td></tr>';
+                }
+                
+                // 만족 피드백 테이블 업데이트  
+                const positiveTbody = document.getElementById('positive-feedback-tbody');
+                positiveTbody.innerHTML = '';
+                
+                if (data.positive_feedback && data.positive_feedback.length > 0) {
+                    data.positive_feedback.forEach(feedback => {
+                        const row = document.createElement('tr');
+                        const shortQuery = feedback.query.length > 50 ? 
+                            feedback.query.substring(0, 50) + '...' : feedback.query;
+                        const date = new Date(feedback.timestamp);
+                        const formattedTime = date.toLocaleDateString('ko-KR') + ' ' + 
+                            date.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
+                        
+                        row.innerHTML = `
+                            <td><small>${formattedTime}</small></td>
+                            <td title="${feedback.query}">${shortQuery}</td>
+                        `;
+                        positiveTbody.appendChild(row);
+                    });
+                } else {
+                    positiveTbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">만족 피드백이 없습니다.</td></tr>';
+                }
+                
+                // 차트 생성
+                createFeedbackTrendChart(data.daily_trends);
+                
+                // 모달 표시
+                const modal = new bootstrap.Modal(document.getElementById('satisfactionDetailsModal'));
+                modal.show();
+            } else {
+                console.error('만족도 상세 정보 로드 실패:', data.error);
+                alert('만족도 상세 정보를 불러오는데 실패했습니다.');
+            }
+        })
+        .catch(error => {
+            console.error('API 호출 오류:', error);
+            alert('서버 연결에 문제가 발생했습니다.');
+        });
+}
+
+// 피드백 추이 차트 생성
+let feedbackChart = null;
+function createFeedbackTrendChart(dailyTrends) {
+    const ctx = document.getElementById('feedbackTrendChart').getContext('2d');
+    
+    // 기존 차트가 있으면 제거
+    if (feedbackChart) {
+        feedbackChart.destroy();
+    }
+    
+    const labels = dailyTrends.map(trend => {
+        const date = new Date(trend.date);
+        return date.toLocaleDateString('ko-KR', {month: 'short', day: 'numeric'});
+    });
+    
+    feedbackChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '만족해요',
+                data: dailyTrends.map(trend => trend.positive),
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                tension: 0.4,
+                fill: true
+            }, {
+                label: '개선필요',
+                data: dailyTrends.map(trend => trend.negative),
+                borderColor: '#dc3545',
+                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            }
+        }
+    });
+}
+
+// 만족도 데이터 새로고침
+function refreshSatisfactionData() {
+    showSatisfactionDetails();
+}
 
 // 네비게이션 링크 클릭 시 모바일 메뉴 닫기
 document.querySelectorAll('.nav-link').forEach(link => {
