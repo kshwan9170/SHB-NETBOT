@@ -346,7 +346,14 @@ class BusinessGuideProcessor:
             response_parts.append(f"💡 **요약**: {row_data['요약 응답']}")
         
         if '상세 안내' in row_data and pd.notna(row_data['상세 안내']):
-            response_parts.append(f"📋 **상세 안내**:\n{row_data['상세 안내']}")
+            # 상세 안내 텍스트를 정리하여 가독성 향상
+            detailed_info = str(row_data['상세 안내'])
+            # 숫자로 시작하는 단계들을 구분
+            formatted_info = detailed_info.replace('1. ', '\n\n**1.** ').replace('2. ', '\n\n**2.** ').replace('3. ', '\n\n**3.** ')
+            formatted_info = formatted_info.replace('4. ', '\n\n**4.** ').replace('5. ', '\n\n**5.** ')
+            # ?? 기호를 이모지로 변경
+            formatted_info = formatted_info.replace('??', '📱')
+            response_parts.append(f"📋 **상세 안내**:{formatted_info}")
         
         if '담당 부서' in row_data and pd.notna(row_data['담당 부서']):
             response_parts.append(f"🏢 **담당 부서**: {row_data['담당 부서']}")
@@ -354,10 +361,8 @@ class BusinessGuideProcessor:
         if '관련 문서/링크' in row_data and pd.notna(row_data['관련 문서/링크']):
             response_parts.append(f"🔗 **관련 문서**: {row_data['관련 문서/링크']}")
         
-        response = "\n".join(response_parts)
-        
-        # 출처 정보 제거 - 사용자가 요청함
-        # response += f"\n\n📋 **출처**: {clean_source_file}"
+        # 각 항목 사이에 공백 라인 추가하여 시각적 분리 강화
+        response = "\n\n".join(response_parts)
         
         return response
     
@@ -372,7 +377,14 @@ class BusinessGuideProcessor:
             response_parts.append(f"💡 **요약**: {row_data['요약 응답']}")
         
         if '상세 안내' in row_data and pd.notna(row_data['상세 안내']):
-            response_parts.append(f"📝 **상세 안내**:\n{row_data['상세 안내']}")
+            # 상세 안내 텍스트를 정리하여 가독성 향상
+            detailed_info = str(row_data['상세 안내'])
+            # 숫자로 시작하는 단계들을 구분
+            formatted_info = detailed_info.replace('1. ', '\n\n**1.** ').replace('2. ', '\n\n**2.** ').replace('3. ', '\n\n**3.** ')
+            formatted_info = formatted_info.replace('4. ', '\n\n**4.** ').replace('5. ', '\n\n**5.** ')
+            # ?? 기호를 이모지로 변경
+            formatted_info = formatted_info.replace('??', '📱')
+            response_parts.append(f"📝 **상세 안내**:{formatted_info}")
         
         if '담당 부서' in row_data and pd.notna(row_data['담당 부서']):
             response_parts.append(f"🏢 **담당 부서**: {row_data['담당 부서']}")
@@ -380,10 +392,8 @@ class BusinessGuideProcessor:
         if '관련 문서/링크' in row_data and pd.notna(row_data['관련 문서/링크']):
             response_parts.append(f"🔗 **관련 문서**: {row_data['관련 문서/링크']}")
         
-        response = "\n".join(response_parts)
-        
-        # 출처 정보 제거 - 사용자가 요청함
-        # response += f"\n\n📋 **출처**: {clean_source_file}"
+        # 각 항목 사이에 공백 라인 추가하여 시각적 분리 강화
+        response = "\n\n".join(response_parts)
         
         return response
     
