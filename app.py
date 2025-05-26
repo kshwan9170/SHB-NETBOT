@@ -1761,18 +1761,44 @@ def get_db_connection():
 
 @app.route('/api/feedback_stats', methods=['GET'])
 def feedback_stats():
-    """피드백 통계 API - 대시보드용 부정 피드백 데이터 제공"""
+    """피드백 통계 API - 대시보드용 실제 피드백 데이터 제공"""
     try:
-        # 임시로 더미 데이터로 응답 (테스트용)
+        conn = get_db_connection()
+        
+        # 긍정 피드백 수
+        positive_count = conn.execute(
+            "SELECT COUNT(*) as count FROM feedback WHERE feedback_type = '만족'"
+        ).fetchone()['count']
+        
+        # 부정 피드백 수
+        negative_count = conn.execute(
+            "SELECT COUNT(*) as count FROM feedback WHERE feedback_type = '개선필요'"
+        ).fetchone()['count']
+        
+        # 최근 부정 피드백 목록 (최신 5개)
+        recent_negative = conn.execute("""
+            SELECT question, created_at as timestamp 
+            FROM feedback 
+            WHERE feedback_type = '개선필요' 
+            ORDER BY created_at DESC 
+            LIMIT 5
+        """).fetchall()
+        
+        conn.close()
+        
+        # 결과 포맷팅
+        recent_negative_list = [
+            {
+                'question': row['question'], 
+                'timestamp': row['timestamp']
+            } for row in recent_negative
+        ]
+        
         return jsonify({
             'success': True,
-            'positive_count': 15,
-            'negative_count': 3,
-            'recent_negative': [
-                {'question': '무선 DGW가 안돼요', 'timestamp': '2025-05-26 17:30:00'},
-                {'question': 'VPN 연결이 끊어져요', 'timestamp': '2025-05-26 16:45:00'},
-                {'question': '포티게이트 접속 불가', 'timestamp': '2025-05-26 15:20:00'}
-            ]
+            'positive_count': positive_count,
+            'negative_count': negative_count,
+            'recent_negative': recent_negative_list
         })
             
     except Exception as e:
