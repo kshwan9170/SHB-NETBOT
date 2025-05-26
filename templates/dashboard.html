@@ -68,7 +68,7 @@
             <div class="row align-items-end">
                 <div class="col-md-4 mb-3">
                     <label for="period-select" class="form-label" style="font-family: 'Inter', sans-serif; font-weight: 500;">기간</label>
-                    <select id="period-select" class="form-select">
+                    <select id="period-select" class="form-select" style="font-family: 'Inter', sans-serif; font-weight: 400;">
                         <option value="all" selected>전체 기간</option>
                         <option value="day">오늘</option>
                         <option value="week">최근 7일</option>
@@ -77,13 +77,13 @@
                 </div>
                 <div class="col-md-4 mb-3">
                     <label for="category-select" class="form-label" style="font-family: 'Inter', sans-serif; font-weight: 500;">카테고리</label>
-                    <select id="category-select" class="form-select">
+                    <select id="category-select" class="form-select" style="font-family: 'Inter', sans-serif; font-weight: 400;">
                         <option value="" selected>전체 카테고리</option>
                         <!-- 카테고리 옵션은 JavaScript로 동적 생성 -->
                     </select>
                 </div>
                 <div class="col-md-4 mb-3">
-                    <button id="refresh-button" class="btn btn-primary w-100" style="background-color: #30507A; border-color: #30507A;">
+                    <button id="refresh-button" class="btn btn-primary w-100" style="background-color: #30507A; border-color: #30507A; font-family: 'Inter', sans-serif; font-weight: 500;">
                         <i class="fas fa-sync-alt me-2"></i> 새로고침
                     </button>
                 </div>
@@ -207,7 +207,7 @@
                 </table>
             </div>
             <div id="no-data-message" class="text-center py-4 d-none">
-                <p class="text-muted">조회된 데이터가 없습니다.</p>
+                <p class="text-muted" style="font-family: 'Inter', sans-serif; font-weight: 400;">조회된 데이터가 없습니다.</p>
             </div>
         </div>
     </div>
@@ -218,7 +218,7 @@
     <div class="footer-content">
         <div class="footer-logo">
             <img src="{{ url_for('static', filename='images/shinhan_logo_new.png') }}" alt="신한은행 로고" class="footer-logo-img shinhan-logo-white">
-            <span>SHB-NetBot</span>
+            <span style="font-family: 'Inter', sans-serif; font-weight: 600;">SHB-NetBot</span>
         </div>
         <div class="footer-links">
             <a href="#">서비스 약관</a>
@@ -227,7 +227,7 @@
             <a href="#">문의하기</a>
         </div>
         <div class="footer-info">
-            <p>&copy; 2025 신한은행 네트워크 서비스. All rights reserved.</p>
+            <p style="font-family: 'Inter', sans-serif; font-weight: 400;">&copy; 2025 신한은행 네트워크 서비스. All rights reserved.</p>
         </div>
     </div>
 </footer>
@@ -599,12 +599,12 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             
             row.innerHTML = `
-                <td>${index + 1}</td>
-                <td>${query.query_text}</td>
-                <td>${query.category || '미분류'}</td>
-                <td>${query.count}</td>
-                <td>${formatDate(query.first_asked)}</td>
-                <td>${formatDate(query.last_asked)}</td>
+                <td style="font-family: 'Inter', sans-serif; font-weight: 400;">${index + 1}</td>
+                <td style="font-family: 'Inter', sans-serif; font-weight: 400;">${query.query_text}</td>
+                <td style="font-family: 'Inter', sans-serif; font-weight: 400;">${query.category || '미분류'}</td>
+                <td style="font-family: 'Inter', sans-serif; font-weight: 400;">${query.count}</td>
+                <td style="font-family: 'Inter', sans-serif; font-weight: 400;">${formatDate(query.first_asked)}</td>
+                <td style="font-family: 'Inter', sans-serif; font-weight: 400;">${formatDate(query.last_asked)}</td>
             `;
             
             tableBody.appendChild(row);
