@@ -1042,20 +1042,22 @@ function showVisitorDetails() {
                 const tbody = document.getElementById('visitor-details-tbody');
                 tbody.innerHTML = '';
                 
-                if (data.visitors && data.visitors.length > 0) {
-                    data.visitors.forEach((visitor, index) => {
+                if (data.visitor_records && data.visitor_records.length > 0) {
+                    data.visitor_records.forEach((visitor, index) => {
                         const row = document.createElement('tr');
+                        const date = new Date(visitor.timestamp);
+                        const formattedTime = date.toLocaleDateString('ko-KR') + ' ' + 
+                            date.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
+                        
                         row.innerHTML = `
-                            <td>${index + 1}</td>
+                            <td>${formattedTime}</td>
                             <td><code>${visitor.ip}</code></td>
-                            <td><span class="badge bg-primary">${visitor.visit_count}회</span></td>
-                            <td><small class="text-muted">${visitor.first_visit}</small></td>
-                            <td><small class="text-muted">${visitor.last_visit}</small></td>
+                            <td>${visitor.page}</td>
                         `;
                         tbody.appendChild(row);
                     });
                 } else {
-                    tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">방문자 기록이 없습니다.</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">방문자 기록이 없습니다.</td></tr>';
                 }
                 
                 // 모달 표시
@@ -1273,8 +1275,8 @@ function showQueriesDetails() {
         })
         .then(data => {
             console.log('질문 데이터:', data); // 디버깅용
-            if (data.success && data.queries) {
-                const queries = data.queries;
+            if (data.success && data.top_queries) {
+                const queries = data.top_queries;
                 let modalContent = `
                     <div class="modal fade" id="queriesModal" tabindex="-1">
                         <div class="modal-dialog modal-lg">
