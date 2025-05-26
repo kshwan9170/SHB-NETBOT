@@ -1322,6 +1322,66 @@ function showQueriesDetails() {
             console.log('질문 데이터:', data); // 디버깅용
             if (data.success && data.top_queries) {
                 const queries = data.top_queries;
+                
+                // 카테고리별 통계 계산
+                const categoryStats = {};
+                queries.forEach(query => {
+                    // 질문 내용을 기반으로 카테고리 스마트 매핑
+                    let category = query.category || '일반';
+                    const queryText = query.query_text.toLowerCase();
+                    
+                    if (queryText.includes('ip주소') || queryText.includes('ip 주소') || queryText.includes('아이피')) {
+                        category = 'IP사용자조회';
+                    } else if (queryText.includes('포티게이트') || queryText.includes('os 버전') || queryText.includes('장비') || queryText.includes('자산') || queryText.includes('모델명') || queryText.includes('벤더')) {
+                        category = '자산관리';
+                    } else if (queryText.includes('대외기관') || queryText.includes('대외계') || queryText.includes('연동') || queryText.includes('회선')) {
+                        category = '대외계연동';
+                    } else if (queryText.includes('장애') || queryText.includes('오류') || queryText.includes('문제') || queryText.includes('안됨') || queryText.includes('실패')) {
+                        category = '장애문의';
+                    } else if (queryText.includes('절차') || queryText.includes('방법') || queryText.includes('어떻게') || queryText.includes('프로세스')) {
+                        category = '절차안내';
+                    } else {
+                        category = '일반문의';
+                    }
+                    
+                    if (!categoryStats[category]) {
+                        categoryStats[category] = { count: 0, totalQueries: 0 };
+                    }
+                    categoryStats[category].count += 1;
+                    categoryStats[category].totalQueries += query.count;
+                });
+                
+                // 카테고리별 통계 HTML 생성
+                const categoryStatsHtml = Object.entries(categoryStats)
+                    .sort((a, b) => b[1].totalQueries - a[1].totalQueries)
+                    .map(([category, stats]) => {
+                        const percentage = ((stats.totalQueries / queries.reduce((sum, q) => sum + q.count, 0)) * 100).toFixed(1);
+                        let badgeClass = 'bg-secondary';
+                        
+                        switch(category) {
+                            case 'IP사용자조회': badgeClass = 'bg-info'; break;
+                            case '자산관리': badgeClass = 'bg-success'; break;
+                            case '대외계연동': badgeClass = 'bg-warning'; break;
+                            case '장애문의': badgeClass = 'bg-danger'; break;
+                            case '절차안내': badgeClass = 'bg-primary'; break;
+                            default: badgeClass = 'bg-secondary';
+                        }
+                        
+                        return `
+                            <div class="col-md-4 mb-2">
+                                <div class="d-flex justify-content-between align-items-center p-2 rounded" style="background-color: #f8f9fa;">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge ${badgeClass} me-2">${category}</span>
+                                        <small>${stats.count}개 질문</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <small class="text-muted">${stats.totalQueries}회 (${percentage}%)</small>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                
                 let modalContent = `
                     <div class="modal fade" id="queriesModal" tabindex="-1">
                         <div class="modal-dialog modal-lg">
@@ -1333,21 +1393,40 @@ function showQueriesDetails() {
                                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                 </div>
                                 <div class="modal-body">
-                                    <div class="row mb-3">
-                                        <div class="col-md-6">
+                                    <!-- 통계 요약 -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-4">
                                             <div class="card text-center border-0" style="background-color: #f8f9fa;">
-                                                <div class="card-body">
-                                                    <h6 class="card-title text-primary">총 질문 수</h6>
-                                                    <h4 class="text-primary">${queries.length}건</h4>
+                                                <div class="card-body py-3">
+                                                    <h6 class="card-title text-primary mb-1">총 질문 수</h6>
+                                                    <h4 class="text-primary mb-0">${queries.length}건</h4>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-md-4">
                                             <div class="card text-center border-0" style="background-color: #f8f9fa;">
-                                                <div class="card-body">
-                                                    <h6 class="card-title text-success">최다 질문</h6>
-                                                    <small class="text-success">${queries.length > 0 ? queries[0].query_text.substring(0, 25) + (queries[0].query_text.length > 25 ? '...' : '') + ' (' + queries[0].count + '회)' : '데이터 없음'}</small>
+                                                <div class="card-body py-3">
+                                                    <h6 class="card-title text-success mb-1">총 질문 횟수</h6>
+                                                    <h4 class="text-success mb-0">${queries.reduce((sum, q) => sum + q.count, 0)}회</h4>
                                                 </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card text-center border-0" style="background-color: #f8f9fa;">
+                                                <div class="card-body py-3">
+                                                    <h6 class="card-title text-warning mb-1">최다 질문</h6>
+                                                    <small class="text-warning">${queries.length > 0 ? queries[0].query_text.substring(0, 20) + (queries[0].query_text.length > 20 ? '...' : '') + ' (' + queries[0].count + '회)' : '데이터 없음'}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 카테고리별 통계 -->
+                                    <div class="row mb-4">
+                                        <div class="col-12">
+                                            <h6 class="mb-3">📊 카테고리별 질문 현황</h6>
+                                            <div id="category-stats-container" class="row">
+                                                ${categoryStatsHtml}
                                             </div>
                                         </div>
                                     </div>
