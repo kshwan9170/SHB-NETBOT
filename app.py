@@ -127,6 +127,8 @@ def dashboard():
     unique_visitors_24h = cursor.fetchone()[0]
     conn.close()
     
+    print(f"대시보드 방문자 수 계산: {unique_visitors_24h}")
+    
     return render_template('dashboard.html', unique_visitors_24h=unique_visitors_24h)
     
 
