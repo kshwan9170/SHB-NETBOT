@@ -1499,14 +1499,46 @@ window.addEventListener('load', function() {
 }
 </style>
 
-<!-- 메인 페이지와 동일한 네비게이션 스크립트 -->
+<!-- 메인 페이지와 동일한 모바일 메뉴 JavaScript -->
 <script>
-// 기본 앱 초기화 시 실행 (메인 페이지 modern.js와 동일 로직)
 document.addEventListener('DOMContentLoaded', function() {
     console.log('대시보드 모바일 네비게이션 초기화');
     
-    // 대시보드에서는 모바일 메뉴가 modern.css의 기본 동작을 사용
-    // 메인 페이지와 동일한 스타일과 동작이 적용됨
+    // 모바일 메뉴 토글 기능 (modern.js와 동일)
+    const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+    const navLinks = document.querySelector('.nav-links');
+    
+    if (mobileMenuBtn && navLinks) {
+        console.log('모바일 메뉴 요소 발견, 이벤트 리스너 추가');
+        
+        mobileMenuBtn.addEventListener('click', function() {
+            console.log('모바일 햄버거 메뉴 클릭됨');
+            mobileMenuBtn.classList.toggle('active');
+            navLinks.classList.toggle('active');
+        });
+        
+        // 메뉴 링크 클릭 시 메뉴 닫기
+        const menuLinks = navLinks.querySelectorAll('.nav-link');
+        menuLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenuBtn.classList.remove('active');
+                navLinks.classList.remove('active');
+            });
+        });
+        
+        // 외부 클릭 시 메뉴 닫기
+        document.addEventListener('click', function(e) {
+            if (!mobileMenuBtn.contains(e.target) && !navLinks.contains(e.target)) {
+                mobileMenuBtn.classList.remove('active');
+                navLinks.classList.remove('active');
+            }
+        });
+    } else {
+        console.log('모바일 메뉴 요소를 찾을 수 없음:', {
+            mobileMenuBtn: !!mobileMenuBtn,
+            navLinks: !!navLinks
+        });
+    }
 });
 </script>
 </body>
