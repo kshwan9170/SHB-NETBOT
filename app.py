@@ -1906,15 +1906,6 @@ def visitor_details():
         if conn is None:
             return jsonify({'success': False, 'error': '데이터베이스 연결 실패'})
         
-        # visitors 테이블에서 24시간 내 방문 기록 조회
-        visitor_records = conn.execute("""
-            SELECT ip_address, page_visited, visit_time
-            FROM visitors 
-            WHERE visit_time >= datetime('now', '-1 day')
-            ORDER BY visit_time DESC
-            LIMIT 50
-        """).fetchall()
-        
         # 24시간 내 고유 IP 수 계산
         unique_ips_24h = conn.execute("""
             SELECT COUNT(DISTINCT ip_address) as count
@@ -1922,43 +1913,66 @@ def visitor_details():
             WHERE visit_time >= datetime('now', '-1 day')
         """).fetchone()['count']
         
-        # IP별 통계 계산 (24시간 내 데이터만)
+        # IP별 통계 계산 (24시간 내, IP별로 요약)
+        ip_stats_raw = conn.execute("""
+            SELECT 
+                ip_address,
+                COUNT(*) as visit_count,
+                MIN(visit_time) as first_visit,
+                MAX(visit_time) as last_visit,
+                GROUP_CONCAT(DISTINCT page_visited) as pages
+            FROM visitors 
+            WHERE visit_time >= datetime('now', '-1 day')
+            GROUP BY ip_address
+            ORDER BY MAX(visit_time) DESC
+        """).fetchall()
+        
+        # 각 IP별 최근 방문 기록 (최대 5개씩)
+        visitor_records = []
         ip_stats = {}
-        for record in visitor_records:
-            ip = record['ip_address']
-            page_name = record['page_visited'] or '알 수 없음'
-            
-            if ip not in ip_stats:
-                ip_stats[ip] = {
-                    'ip': ip,
-                    'visit_count': 0,
-                    'pages': set(),
-                    'first_visit': record['visit_time'],
-                    'last_visit': record['visit_time']
-                }
-            
-            ip_stats[ip]['visit_count'] += 1
-            ip_stats[ip]['pages'].add(page_name)
-            if record['visit_time'] > ip_stats[ip]['last_visit']:
-                ip_stats[ip]['last_visit'] = record['visit_time']
-            if record['visit_time'] < ip_stats[ip]['first_visit']:
-                ip_stats[ip]['first_visit'] = record['visit_time']
         
-        # 결과 포맷팅
-        formatted_records = []
-        for record in visitor_records:
-            formatted_records.append({
-                'ip': record['ip_address'],
-                'page': record['page_visited'] or '알 수 없음',
-                'timestamp': record['visit_time']
-            })
+        print(f"디버깅: ip_stats_raw 개수: {len(ip_stats_raw)}")
+        for i, ip_stat in enumerate(ip_stats_raw):
+            ip = ip_stat['ip_address']
+            pages_str = ip_stat['pages'] or 'dashboard'
+            pages_list = pages_str.split(',') if pages_str else ['dashboard']
+            
+            print(f"디버깅 {i}: IP {ip}, 방문 수 {ip_stat['visit_count']}")
+            
+            # IP별 통계 저장
+            ip_stats[ip] = {
+                'ip': ip,
+                'visit_count': ip_stat['visit_count'],
+                'pages': list(set(pages_list)),
+                'first_visit': ip_stat['first_visit'],
+                'last_visit': ip_stat['last_visit']
+            }
+            
+            # 각 IP별 최근 방문 기록 5개씩 가져오기
+            recent_visits = conn.execute("""
+                SELECT ip_address, page_visited, visit_time
+                FROM visitors 
+                WHERE ip_address = ? AND visit_time >= datetime('now', '-1 day')
+                ORDER BY visit_time DESC
+                LIMIT 5
+            """, (ip,)).fetchall()
+            
+            for visit in recent_visits:
+                visitor_records.append({
+                    'ip': visit['ip_address'],
+                    'page': visit['page_visited'] or '알 수 없음',
+                    'timestamp': visit['visit_time']
+                })
         
+        print(f"디버깅: ip_stats 개수: {len(ip_stats)}, visitor_records 개수: {len(visitor_records)}")
+        
+        # IP별 통계 포맷팅
         formatted_ip_stats = []
         for ip, stats in ip_stats.items():
             formatted_ip_stats.append({
                 'ip': ip,
                 'visit_count': stats['visit_count'],
-                'pages': list(stats['pages']),
+                'pages': stats['pages'],
                 'first_visit': stats['first_visit'],
                 'last_visit': stats['last_visit']
             })
@@ -1967,7 +1981,7 @@ def visitor_details():
         
         return jsonify({
             'success': True,
-            'visitor_records': formatted_records,
+            'visitor_records': visitor_records,
             'ip_statistics': formatted_ip_stats,
             'total_unique_ips': unique_ips_24h
         })
