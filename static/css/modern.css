@@ -1065,6 +1065,55 @@ img {
     color: #333;
 }
 
+[data-theme="dark"] .file-name {
+    color: var(--text-primary);
+}
+
+/* 업로드 가이드 리스트 스타일 */
+.upload-guide-list {
+    margin: 0;
+    padding-left: 20px;
+    color: #5A6373;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+[data-theme="dark"] .upload-guide-list {
+    color: var(--text-secondary);
+}
+
+/* 업로드 텍스트 스타일 */
+.upload-main-text {
+    margin: 0 0 8px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+[data-theme="dark"] .upload-main-text {
+    color: var(--text-primary);
+}
+
+.upload-browse {
+    color: #30507A;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+[data-theme="dark"] .upload-browse {
+    color: var(--primary);
+}
+
+.upload-status-text {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+[data-theme="dark"] .upload-status-text {
+    color: var(--text-secondary);
+}
+
 .file-meta {
     margin: 0;
     font-size: 14px;
