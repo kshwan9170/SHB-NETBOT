@@ -287,6 +287,68 @@ def top_queries():
             'error': f'통계 조회 중 오류가 발생했습니다: {str(e)}'
         }), 500
 
+@app.route('/api/suggested_questions')
+def suggested_questions():
+    """챗봇 화면용 Top 5 추천 질문 API"""
+    try:
+        from models import QueryStatisticsModel
+        
+        query_stats = QueryStatisticsModel()
+        # 최근 1주일간 인기 질문 상위 5개 조회
+        top_questions = query_stats.get_top_queries(limit=5, period='week')
+        
+        # 기본 추천 질문 (데이터가 부족할 경우)
+        default_questions = [
+            "IP 주소를 신청하고 싶어요",
+            "네트워크 연결이 안 돼요", 
+            "VPN 설정 방법을 알려주세요",
+            "서버 장애 문의",
+            "방화벽 정책 확인"
+        ]
+        
+        # 실제 데이터가 5개 미만이면 기본 질문으로 보완
+        suggested = []
+        for query in top_questions:
+            if len(suggested) < 5:
+                suggested.append({
+                    'question': query['query_text'],
+                    'count': query['count'],
+                    'type': 'popular'
+                })
+        
+        # 부족한 만큼 기본 질문으로 채우기
+        while len(suggested) < 5:
+            remaining_defaults = [q for q in default_questions if q not in [s['question'] for s in suggested]]
+            if remaining_defaults:
+                suggested.append({
+                    'question': remaining_defaults[0],
+                    'count': 0,
+                    'type': 'default'
+                })
+                default_questions.remove(remaining_defaults[0])
+            else:
+                break
+        
+        return jsonify({
+            'success': True,
+            'questions': suggested[:5]
+        })
+        
+    except Exception as e:
+        print(f"추천 질문 API 오류: {str(e)}")
+        # 오류 발생시 기본 질문 반환
+        default_questions = [
+            {"question": "IP 주소를 신청하고 싶어요", "count": 0, "type": "default"},
+            {"question": "네트워크 연결이 안 돼요", "count": 0, "type": "default"},
+            {"question": "VPN 설정 방법을 알려주세요", "count": 0, "type": "default"},
+            {"question": "서버 장애 문의", "count": 0, "type": "default"},
+            {"question": "방화벽 정책 확인", "count": 0, "type": "default"}
+        ]
+        return jsonify({
+            'success': True,
+            'questions': default_questions
+        })
+
 @app.route('/api/chat/feedback', methods=['POST'])
 def chat_feedback():
     """채팅 피드백 API"""
