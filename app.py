@@ -13,7 +13,7 @@ import openai
 from openai import OpenAI
 
 # 게시판 모델 임포트
-from models import init_db, get_db, close_db, InquiryBoard, FeedbackBoard, ReportBoard, ChatFeedbackModel
+from models import init_db, get_db, close_db, InquiryBoard, FeedbackBoard, ReportBoard, ChatFeedbackModel, VisitorStatsModel
 
 # Custom modules
 import database
@@ -29,6 +29,22 @@ app = Flask(__name__)
 
 # 데이터베이스 초기화
 init_db()
+
+# 방문자 통계 모델 인스턴스
+visitor_stats = VisitorStatsModel()
+
+# 방문자 추적 미들웨어
+@app.before_request
+def track_visitor():
+    """모든 요청에서 방문자 추적"""
+    # API 요청이나 정적 파일 요청은 제외
+    if request.endpoint and not request.endpoint.startswith('static'):
+        client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.environ.get('REMOTE_ADDR', 'unknown'))
+        if ',' in client_ip:
+            client_ip = client_ip.split(',')[0].strip()
+        
+        user_agent = request.headers.get('User-Agent', '')
+        visitor_stats.track_visitor(client_ip, user_agent)
 
 # 데이터베이스 연결 종료
 @app.teardown_appcontext
