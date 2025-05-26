@@ -29,12 +29,12 @@
                 <span class="bot-name">SHB-NetBot</span>
             </div>
             <div class="nav-links">
-                <a href="/#home" class="nav-link" style="color: #ffffff !important; font-weight: 600; font-size: 1rem;">Home</a>
-                <a href="/#about" class="nav-link" style="color: #ffffff !important; font-weight: 600; font-size: 1rem;">About</a>
-                <a href="/#chat" class="nav-link" style="color: #ffffff !important; font-weight: 600; font-size: 1rem;">Chat</a>
-                <a href="/#documents" class="nav-link" style="color: #ffffff !important; font-weight: 600; font-size: 1rem;">Documents</a>
-                <a href="/dashboard" class="nav-link active" style="color: #ffffff !important; font-weight: 700; font-size: 1rem; background-color: rgba(255,255,255,0.2); border-radius: 6px; padding: 8px 16px;">Dashboard</a>
-                <a href="/#support" class="nav-link" style="color: #ffffff !important; font-weight: 600; font-size: 1rem;">Support</a>
+                <a href="/#home" class="nav-link">Home</a>
+                <a href="/#about" class="nav-link">About</a>
+                <a href="/#chat" class="nav-link">Chat</a>
+                <a href="/#documents" class="nav-link">Documents</a>
+                <a href="/dashboard" class="nav-link active">Dashboard</a>
+                <a href="/#support" class="nav-link">Support</a>
                 <button id="theme-toggle" class="theme-toggle">
                     <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="5"></circle>
@@ -52,12 +52,11 @@
                     </svg>
                 </button>
             </div>
-            <!-- 메인 페이지와 동일한 모바일 햄버거 버튼 -->
-            <button class="mobile-menu-btn">
+            <div class="mobile-menu-btn" id="mobile-menu-btn">
                 <div class="bar"></div>
                 <div class="bar"></div>
                 <div class="bar"></div>
-            </button>
+            </div>
         </div>
     </nav>
 
@@ -1482,63 +1481,25 @@ window.addEventListener('load', function() {
 <!-- Bootstrap JS 추가 -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- 메인 페이지와 완전히 동일한 모바일 네비게이션 스타일 -->
-<style>
-/* PC용 네비게이션 - 기존 유지 */
-.nav-links {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-}
-
-/* 모바일에서 PC 네비게이션 숨김 */
-@media (max-width: 768px) {
-    .nav-links {
-        display: none !important;
-    }
-}
-</style>
-
-<!-- 메인 페이지와 동일한 모바일 메뉴 JavaScript -->
+<!-- 네비게이션 토글만 포함 -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('대시보드 모바일 네비게이션 초기화');
+    // 네비게이션 토글 기능
+    const navbarToggler = document.querySelector('.navbar-toggler');
+    const navbarNav = document.querySelector('.navbar-nav');
     
-    // 모바일 메뉴 토글 기능 (modern.js와 동일)
-    const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
-    const navLinks = document.querySelector('.nav-links');
-    
-    if (mobileMenuBtn && navLinks) {
-        console.log('모바일 메뉴 요소 발견, 이벤트 리스너 추가');
-        
-        mobileMenuBtn.addEventListener('click', function() {
-            console.log('모바일 햄버거 메뉴 클릭됨');
-            mobileMenuBtn.classList.toggle('active');
-            navLinks.classList.toggle('active');
-        });
-        
-        // 메뉴 링크 클릭 시 메뉴 닫기
-        const menuLinks = navLinks.querySelectorAll('.nav-link');
-        menuLinks.forEach(link => {
-            link.addEventListener('click', () => {
-                mobileMenuBtn.classList.remove('active');
-                navLinks.classList.remove('active');
-            });
-        });
-        
-        // 외부 클릭 시 메뉴 닫기
-        document.addEventListener('click', function(e) {
-            if (!mobileMenuBtn.contains(e.target) && !navLinks.contains(e.target)) {
-                mobileMenuBtn.classList.remove('active');
-                navLinks.classList.remove('active');
-            }
-        });
-    } else {
-        console.log('모바일 메뉴 요소를 찾을 수 없음:', {
-            mobileMenuBtn: !!mobileMenuBtn,
-            navLinks: !!navLinks
+    if (navbarToggler && navbarNav) {
+        navbarToggler.addEventListener('click', function() {
+            navbarNav.classList.toggle('show');
         });
     }
+    
+    // 메뉴 링크 클릭 시 메뉴 닫기
+    document.querySelectorAll('.navbar-nav .nav-link').forEach(link => {
+        link.addEventListener('click', () => {
+            navbarNav.classList.remove('show');
+        });
+    });
 });
 </script>
 </body>
