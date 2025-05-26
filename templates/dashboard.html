@@ -41,6 +41,7 @@
             align-items: center !important;
             gap: 0.75rem !important;
             height: 3.2rem !important;
+            margin-right: 3rem !important; /* 로고와 네비게이션 간 여백 추가 */
         }
         
         .logo span {
@@ -850,19 +851,36 @@ document.querySelector('.mobile-menu-btn').addEventListener('click', function() 
     this.classList.toggle('active');
 });
 
-// 테마 토글 기능
+// 테마 토글 기능 (메인 페이지와 동일한 방식으로 수정)
 document.getElementById('theme-toggle').addEventListener('click', function() {
-    document.body.classList.toggle('dark-theme');
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     
-    // 테마 상태를 로컬 스토리지에 저장
-    const isDark = document.body.classList.contains('dark-theme');
-    localStorage.setItem('darkMode', isDark);
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    // 아이콘 업데이트
+    updateThemeIcon(newTheme);
 });
 
-// 페이지 로드 시 저장된 테마 적용
-if (localStorage.getItem('darkMode') === 'true') {
-    document.body.classList.add('dark-theme');
+// 테마 아이콘 업데이트 함수
+function updateThemeIcon(theme) {
+    const sunIcon = document.querySelector('.sun-icon');
+    const moonIcon = document.querySelector('.moon-icon');
+    
+    if (theme === 'dark') {
+        sunIcon.style.display = 'block';
+        moonIcon.style.display = 'none';
+    } else {
+        sunIcon.style.display = 'none';
+        moonIcon.style.display = 'block';
+    }
 }
+
+// 페이지 로드 시 저장된 테마 적용
+const savedTheme = localStorage.getItem('theme') || 'light';
+document.documentElement.setAttribute('data-theme', savedTheme);
+updateThemeIcon(savedTheme);
 
 // 네비게이션 링크 클릭 시 모바일 메뉴 닫기
 document.querySelectorAll('.nav-link').forEach(link => {
