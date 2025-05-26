@@ -2200,9 +2200,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 스타일 추가 (애니메이션)
             if (!document.querySelector('#flow-notification-styles')) {
-                const style = document.createElement('style');
-                style.id = 'flow-notification-styles';
-                style.textContent = `
+                const styleElement = document.createElement('style');
+                styleElement.id = 'flow-notification-styles';
+                styleElement.textContent = `
                     @keyframes slideInFromRight {
                         from {
                             transform: translateX(100%);
@@ -2224,7 +2224,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         }
                     }
                 `;
-                document.head.appendChild(style);
+                document.head.appendChild(styleElement);
             }
             
             document.body.appendChild(notification);
