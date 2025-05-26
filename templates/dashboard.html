@@ -12,190 +12,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- Bootstrap CSS 추가 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- 네비게이션 스타일 강화 -->
     <style>
-        /* 네비게이션 스타일 강화 - 메인 페이지와 동일하게 */
-        .navbar {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            z-index: 1000 !important;
-            background-color: #1A2B4C !important;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-            padding: 1rem 0 !important;
-        }
-        
-        .navbar-container {
-            display: flex !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            max-width: 1200px !important;
-            margin: 0 auto !important;
-            padding: 0 2rem !important;
-            height: 70px !important;
-        }
-        
-        .logo {
-            display: flex !important;
-            align-items: center !important;
-            gap: 0.75rem !important;
-            height: 3.2rem !important;
-            margin-right: 3rem !important; /* 로고와 네비게이션 간 여백 추가 */
-        }
-        
-        .logo span {
-            font-size: 1.8rem !important;
-            font-weight: 600 !important;
-            color: #FFFFFF !important;
-            letter-spacing: -0.5px !important;
-            line-height: 3.2rem !important;
-            display: flex !important;
-            align-items: center !important;
-        }
-        
-        .bot-name {
-            font-size: 1.8rem !important;
-            font-weight: 600 !important;
-            color: #FFFFFF !important;
-            line-height: 3.2rem !important;
-            display: flex !important;
-            align-items: center !important;
-            margin-left: 0.75rem !important;
-        }
-        
-        .nav-links {
-            display: flex !important;
-            align-items: center !important;
-            gap: 3rem !important;
-        }
-        
-        .nav-link {
-            color: #FFFFFF !important;
-            font-weight: 550 !important; /* 글자 굵기 550으로 설정 */
-            font-size: 1.5rem !important; /* 크기는 원래대로 */
-            position: relative !important;
-            transition: all 0.2s !important;
-            text-decoration: none !important;
-        }
-        
-        .nav-link:hover,
-        .nav-link.active {
-            color: #BFD7FF !important;
-        }
-        
-        .nav-link::after {
-            content: '' !important;
-            position: absolute !important;
-            bottom: -0.8rem !important;
-            left: 0 !important;
-            width: 0 !important;
-            height: 2px !important;
-            background-color: #BFD7FF !important;
-            transition: width 0.3s !important;
-        }
-        
-        .nav-link:hover::after,
-        .nav-link.active::after {
-            width: 100% !important;
-        }
-        
-        .theme-toggle {
-            background: none !important;
-            border: none !important;
-            color: #FFFFFF !important;
-            cursor: pointer !important;
-            padding: 0.5rem !important;
-            border-radius: 50% !important;
-            transition: background-color 0.2s !important;
-        }
-        
-        .theme-toggle:hover {
-            background-color: rgba(255, 255, 255, 0.1) !important;
-        }
-        
-        /* 모바일 메뉴 버튼 */
-        .mobile-menu-btn {
-            display: none !important;
-            flex-direction: column !important;
-            cursor: pointer !important;
-            gap: 0.3rem !important;
-        }
-        
-        .mobile-menu-btn .bar {
-            width: 2.5rem !important;
-            height: 0.3rem !important;
-            background-color: #FFFFFF !important;
-            transition: all 0.3s !important;
-        }
-        
         /* 메인 콘텐츠 상단 여백 조정 */
         .container.my-5 {
             margin-top: 100px !important;
-        }
-        
-        /* 모바일 메뉴 오버레이 */
-        .mobile-nav-overlay {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100% !important;
-            height: 100% !important;
-            background-color: rgba(26, 43, 76, 0.95) !important;
-            z-index: 1001 !important;
-            display: none !important;
-            flex-direction: column !important;
-            justify-content: center !important;
-            align-items: center !important;
-        }
-        
-        .mobile-nav-overlay.active {
-            display: flex !important;
-        }
-        
-        .mobile-nav-links {
-            display: flex !important;
-            flex-direction: column !important;
-            gap: 2rem !important;
-            text-align: center !important;
-        }
-        
-        .mobile-nav-links .nav-link {
-            color: #FFFFFF !important;
-            font-size: 1.5rem !important;
-            font-weight: 500 !important;
-            text-decoration: none !important;
-            padding: 1rem !important;
-            border-radius: 8px !important;
-            transition: all 0.3s !important;
-        }
-        
-        .mobile-nav-links .nav-link:hover,
-        .mobile-nav-links .nav-link.active {
-            background-color: rgba(255, 255, 255, 0.1) !important;
-            color: #BFD7FF !important;
-        }
-        
-        .mobile-close-btn {
-            position: absolute !important;
-            top: 2rem !important;
-            right: 2rem !important;
-            background: none !important;
-            border: none !important;
-            color: #FFFFFF !important;
-            font-size: 2rem !important;
-            cursor: pointer !important;
-        }
-        
-        /* 반응형 처리 */
-        @media (max-width: 768px) {
-            .nav-links {
-                display: none !important;
-            }
-            
-            .mobile-menu-btn {
-                display: flex !important;
-            }
         }
     </style>
 </head>
@@ -240,18 +60,7 @@
         </div>
     </nav>
 
-    <!-- 모바일 메뉴 오버레이 -->
-    <div class="mobile-nav-overlay" id="mobile-nav-overlay">
-        <button class="mobile-close-btn" id="mobile-close-btn">×</button>
-        <div class="mobile-nav-links">
-            <a href="/#home" class="nav-link">Home</a>
-            <a href="/#about" class="nav-link">About</a>
-            <a href="/#chat" class="nav-link">Chat</a>
-            <a href="/#documents" class="nav-link">Documents</a>
-            <a href="/dashboard" class="nav-link active">Dashboard</a>
-            <a href="/#support" class="nav-link">Support</a>
-        </div>
-    </div>
+
 
     <div class="container my-5">
         <!-- 헤더 영역 -->
@@ -1666,45 +1475,16 @@ window.addEventListener('load', function() {
     setTimeout(updateVisitorCard, 500); // 0.5초 후 실행
 });
 
-// 모바일 햄버거 버튼 기능 추가
-document.addEventListener('DOMContentLoaded', function() {
-    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
-    const mobileNavOverlay = document.getElementById('mobile-nav-overlay');
-    const mobileCloseBtn = document.getElementById('mobile-close-btn');
-    
-    // 햄버거 버튼 클릭 시 메뉴 열기
-    if (mobileMenuBtn) {
-        mobileMenuBtn.addEventListener('click', function() {
-            mobileNavOverlay.classList.add('active');
-        });
-    }
-    
-    // 닫기 버튼 클릭 시 메뉴 닫기
-    if (mobileCloseBtn) {
-        mobileCloseBtn.addEventListener('click', function() {
-            mobileNavOverlay.classList.remove('active');
-        });
-    }
-    
-    // 오버레이 배경 클릭 시 메뉴 닫기
-    if (mobileNavOverlay) {
-        mobileNavOverlay.addEventListener('click', function(e) {
-            if (e.target === mobileNavOverlay) {
-                mobileNavOverlay.classList.remove('active');
-            }
-        });
-    }
-    
-    // 메뉴 링크 클릭 시 메뉴 닫기
-    document.querySelectorAll('.mobile-nav-links .nav-link').forEach(link => {
-        link.addEventListener('click', () => {
-            mobileNavOverlay.classList.remove('active');
-        });
-    });
-});
+
 </script>
 
 <!-- Bootstrap JS 추가 -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- AOS 애니메이션 라이브러리 -->
+<script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+
+<!-- 메인 페이지와 동일한 JavaScript 포함 -->
+<script src="{{ url_for('static', filename='js/modern.js') }}"></script>
 </body>
 </html>
