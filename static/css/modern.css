@@ -200,8 +200,9 @@ img {
     align-items: center;
     max-width: var(--container-width);
     margin: 0 auto;
-    padding: 0 2rem;
+    padding: 0 3rem;
     height: var(--header-height);
+    gap: 4rem;
 }
 
 .navbar-scrolled {
@@ -281,12 +282,13 @@ img {
 .nav-links {
     display: flex !important;
     align-items: center;
-    gap: 3rem;
+    gap: 2.5rem;
     visibility: visible !important;
     opacity: 1 !important;
     position: relative !important;
     right: auto !important;
     transform: none !important;
+    margin-left: auto;
 }
 
 .nav-link {
