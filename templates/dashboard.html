@@ -1285,7 +1285,7 @@ function refreshSatisfactionData() {
 // 피드백 삭제 함수
 function deleteFeedback(feedbackId) {
     if (confirm('이 피드백을 삭제하시겠습니까?')) {
-        fetch('/api/feedback/delete', {
+        fetch('/api/delete_feedback', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
