@@ -279,9 +279,14 @@ img {
 /* 제거된 연결 상태 표시기 스타일 */
 
 .nav-links {
-    display: flex;
+    display: flex !important;
     align-items: center;
     gap: 3rem;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    right: auto !important;
+    transform: none !important;
 }
 
 .nav-link {
@@ -2277,16 +2282,24 @@ img {
     
     /* 모바일에서도 네비게이션 링크가 보이도록 수정 */
     .nav-links {
-        display: flex;
-        flex-direction: row;
+        display: flex !important;
+        flex-direction: row !important;
         gap: 1.5rem;
         flex-wrap: wrap;
         justify-content: center;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+        right: auto !important;
+        transform: none !important;
     }
     
     .nav-link {
         font-size: 1.2rem;
         padding: 0.5rem 1rem;
+        color: #FFFFFF !important;
+        display: inline-block !important;
+        visibility: visible !important;
     }
     
     .mobile-menu-btn {
@@ -3136,5 +3149,49 @@ textarea.form-control {
     .suggested-question-btn {
         padding: 0.8rem 1rem;
         font-size: 1.3rem;
+    }
+}
+
+/* 🔧 네비게이션 바 강제 표시 - 모든 화면 크기에서 작동 */
+.nav-links {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    right: auto !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    transition: none !important;
+}
+
+.nav-link {
+    display: inline-block !important;
+    visibility: visible !important;
+    color: #FFFFFF !important;
+    opacity: 1 !important;
+}
+
+/* 모든 미디어 쿼리에서 네비게이션 강제 표시 */
+@media (max-width: 768px) {
+    .nav-links {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: relative !important;
+        right: auto !important;
+        transform: none !important;
+        flex-direction: row !important;
+        gap: 1.5rem !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+    }
+    
+    .nav-link {
+        display: inline-block !important;
+        visibility: visible !important;
+        color: #FFFFFF !important;
+        font-size: 1.2rem !important;
+        padding: 0.5rem 1rem !important;
     }
 }
