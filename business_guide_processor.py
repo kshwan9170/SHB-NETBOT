@@ -330,15 +330,8 @@ class BusinessGuideProcessor:
         if '기관 주소' in row_data and pd.notna(row_data['기관 주소']):
             response += f"### 📍 기관 주소\n{row_data['기관 주소']}\n\n"
         
-        # 출처 정보 (시스템 파일명 접두사 제거)
-        clean_source_file = source_file
-        if '_' in source_file and len(source_file.split('_')[0]) > 20:
-            # UUID 형태의 접두사가 있으면 제거
-            parts = source_file.split('_', 1)
-            if len(parts) > 1:
-                clean_source_file = parts[1]
-        
-        response += f"---\n📋 **출처**: {clean_source_file}"
+        # 출처 정보 제거 - 사용자가 요청함
+        # response += f"---\n📋 **출처**: {clean_source_file}"
         
         return response
     
@@ -363,15 +356,8 @@ class BusinessGuideProcessor:
         
         response = "\n".join(response_parts)
         
-        # 출처 정보 (시스템 파일명 접두사 제거)
-        clean_source_file = source_file
-        if '_' in source_file and len(source_file.split('_')[0]) > 20:
-            # UUID 형태의 접두사가 있으면 제거
-            parts = source_file.split('_', 1)
-            if len(parts) > 1:
-                clean_source_file = parts[1]
-        
-        response += f"\n\n📋 **출처**: {clean_source_file}"
+        # 출처 정보 제거 - 사용자가 요청함
+        # response += f"\n\n📋 **출처**: {clean_source_file}"
         
         return response
     
@@ -396,15 +382,8 @@ class BusinessGuideProcessor:
         
         response = "\n".join(response_parts)
         
-        # 출처 정보 (시스템 파일명 접두사 제거)
-        clean_source_file = source_file
-        if '_' in source_file and len(source_file.split('_')[0]) > 20:
-            # UUID 형태의 접두사가 있으면 제거
-            parts = source_file.split('_', 1)
-            if len(parts) > 1:
-                clean_source_file = parts[1]
-        
-        response += f"\n\n📋 **출처**: {clean_source_file}"
+        # 출처 정보 제거 - 사용자가 요청함
+        # response += f"\n\n📋 **출처**: {clean_source_file}"
         
         return response
     
@@ -427,15 +406,8 @@ class BusinessGuideProcessor:
         
         response = "\n".join(response_parts)
         
-        # 출처 정보 (시스템 파일명 접두사 제거)
-        clean_source_file = source_file
-        if '_' in source_file and len(source_file.split('_')[0]) > 20:
-            # UUID 형태의 접두사가 있으면 제거
-            parts = source_file.split('_', 1)
-            if len(parts) > 1:
-                clean_source_file = parts[1]
-        
-        response += f"\n\n📋 **출처**: {clean_source_file}"
+        # 출처 정보 제거 - 사용자가 요청함
+        # response += f"\n\n📋 **출처**: {clean_source_file}"
         
         return response
     
