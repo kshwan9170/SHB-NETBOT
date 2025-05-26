@@ -194,7 +194,41 @@
             <p class="lead" style="color: #5A6373; font-family: 'Inter', sans-serif; font-weight: 400;">실시간 사용자 문의 및 통계 분석</p>
         </div>
     
-
+    <!-- 필터 영역 -->
+    <div class="card mb-4 shadow-sm filter-card" style="border-color: #E6EBF4;">
+        <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+                <i class="fas fa-filter fa-2x me-3" style="color: #30507A;"></i>
+                <div>
+                    <h5 class="card-title mb-1" style="color: #30507A; font-family: 'Inter', sans-serif; font-weight: 600;">조회 필터</h5>
+                    <small class="text-muted">기간 및 카테고리 설정</small>
+                </div>
+            </div>
+            <div class="row align-items-end">
+                <div class="col-md-4 mb-3">
+                    <label for="period-select" class="form-label filter-label" style="font-family: 'Inter', sans-serif; font-weight: 500;">기간</label>
+                    <select id="period-select" class="form-select filter-select" style="font-family: 'Inter', sans-serif; font-weight: 400;">
+                        <option value="all" selected>전체 기간</option>
+                        <option value="day">오늘</option>
+                        <option value="week">최근 7일</option>
+                        <option value="month">최근 30일</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label for="category-select" class="form-label filter-label" style="font-family: 'Inter', sans-serif; font-weight: 500;">카테고리</label>
+                    <select id="category-select" class="form-select filter-select" style="font-family: 'Inter', sans-serif; font-weight: 400;">
+                        <option value="" selected>전체 카테고리</option>
+                        <!-- 카테고리 옵션은 JavaScript로 동적 생성 -->
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button id="refresh-button" class="btn btn-primary w-100 filter-button" style="background-color: #30507A; border-color: #30507A; font-family: 'Inter', sans-serif; font-weight: 500;">
+                        <i class="fas fa-sync-alt me-2"></i> 새로고침
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- 통계 요약 카드 -->
     <div class="row mb-4">
@@ -633,11 +667,7 @@
 <!-- AOS 애니메이션 -->
 <script defer src="https://unpkg.com/aos@next/dist/aos.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    if (typeof AOS !== 'undefined') {
-      AOS.init();
-    }
-  });
+  AOS.init();
 </script>
 
 <script>
@@ -648,26 +678,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // 페이지 로드시 데이터 조회
     refreshDashboard();
     
-    // 부정 피드백 카드 초기화 (안전하게)
+    // 부정 피드백 카드 초기화
     updateNegativeFeedbackCard();
     
 
 
 
 
-    // 부정 피드백 카드 업데이트 함수 추가
-    function updateNegativeFeedbackCard() {
-        fetch('/api/feedback_stats')
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.recent_negative) {
-                    console.log('부정 피드백 데이터:', data.recent_negative);
-                }
-            })
-            .catch(error => {
-                console.log('부정 피드백 데이터 로딩 실패:', error);
-            });
-    }
+    // 함수는 전역으로 이동됨
 
     // 호환성을 위한 showVisitorModal 함수 (openVisitorModal로 리다이렉트)
     function showVisitorModal() {
@@ -697,13 +715,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     })();
     
+    // 새로고침 버튼 클릭 이벤트
+    document.getElementById('refresh-button').addEventListener('click', refreshDashboard);
+    
+    // 필터 변경 이벤트
+    document.getElementById('period-select').addEventListener('change', refreshDashboard);
+    document.getElementById('category-select').addEventListener('change', refreshDashboard);
+    
     // 대시보드 데이터 조회 및 업데이트 함수
     function refreshDashboard() {
         // 로딩 표시 (필요시 구현)
         
-        // 기본 필터 값 (필터 카드 제거됨)
-        const period = 'all';
-        const category = '';
+        // 필터 값 가져오기
+        const period = document.getElementById('period-select').value;
+        const category = document.getElementById('category-select').value;
         
         // API 호출
         fetch(`/api/top_queries?period=${period}&category=${category}&limit=10`)
