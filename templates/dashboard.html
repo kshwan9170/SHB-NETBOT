@@ -1070,12 +1070,32 @@ function showVisitorDetails() {
                 modal.show();
             } else {
                 console.log('방문자 데이터 오류:', data);
-                alert('방문자 상세 정보를 불러오는데 실패했습니다: ' + (data.message || '알 수 없는 오류'));
+                // 기본 데이터로 모달 표시
+                document.getElementById('total-unique-ips').textContent = '0';
+                document.getElementById('total-visit-count').textContent = '0';
+                document.getElementById('visitor-period').textContent = '지난 24시간';
+                
+                const tbody = document.getElementById('visitor-records-tbody');
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">방문자 데이터를 불러올 수 없습니다.</td></tr>';
+                
+                // 모달 표시
+                const modal = new bootstrap.Modal(document.getElementById('visitorDetailsModal'));
+                modal.show();
             }
         })
         .catch(error => {
-            console.error('API 호출 오류:', error);
-            alert('서버 연결에 문제가 발생했습니다.');
+            console.error('방문자 데이터 로드 오류:', error);
+            // 에러 발생 시에도 모달 표시
+            document.getElementById('total-unique-ips').textContent = '0';
+            document.getElementById('total-visit-count').textContent = '0';
+            document.getElementById('visitor-period').textContent = '지난 24시간';
+            
+            const tbody = document.getElementById('visitor-records-tbody');
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">서버 연결 오류로 데이터를 불러올 수 없습니다.</td></tr>';
+            
+            // 모달 표시
+            const modal = new bootstrap.Modal(document.getElementById('visitorDetailsModal'));
+            modal.show();
         });
 }
 
