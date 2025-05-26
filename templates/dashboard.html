@@ -1003,7 +1003,13 @@ function openVisitorModal() {
     
     // API 호출
     fetch('/api/visitor_details')
-        .then(response => response.json())
+        .then(response => {
+            console.log('API 응답 상태:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             console.log('방문자 데이터 수신:', data);
             
