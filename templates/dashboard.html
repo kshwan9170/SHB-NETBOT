@@ -617,11 +617,12 @@
                                             <tr>
                                                 <th style="color: #30507A;">시간</th>
                                                 <th style="color: #30507A;">질문 내용</th>
+                                                <th style="color: #30507A; width: 80px;">작업</th>
                                             </tr>
                                         </thead>
                                         <tbody id="negative-feedback-tbody">
                                             <tr>
-                                                <td colspan="2" class="text-center">
+                                                <td colspan="3" class="text-center">
                                                     <div class="spinner-border spinner-border-sm" role="status"></div>
                                                     데이터 로딩 중...
                                                 </td>
@@ -1165,11 +1166,16 @@ function showSatisfactionDetails() {
                         row.innerHTML = `
                             <td><small>${formattedTime}</small></td>
                             <td title="${feedback.query}">${shortQuery}</td>
+                            <td>
+                                <button class="btn btn-outline-danger btn-sm" onclick="deleteFeedback(${feedback.id})" title="삭제">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
                         `;
                         negativeTbody.appendChild(row);
                     });
                 } else {
-                    negativeTbody.innerHTML = '<tr><td colspan="2" class="text-center text-muted">개선필요 피드백이 없습니다.</td></tr>';
+                    negativeTbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">개선필요 피드백이 없습니다.</td></tr>';
                 }
                 
                 // 만족 피드백 테이블 업데이트  
@@ -1274,6 +1280,37 @@ function createFeedbackTrendChart(dailyTrends) {
 // 만족도 데이터 새로고침
 function refreshSatisfactionData() {
     showSatisfactionDetails();
+}
+
+// 피드백 삭제 함수
+function deleteFeedback(feedbackId) {
+    if (confirm('이 피드백을 삭제하시겠습니까?')) {
+        fetch('/api/delete_feedback', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                feedback_id: feedbackId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('피드백이 성공적으로 삭제되었습니다.');
+                // 만족도 상세 정보 다시 로드
+                showSatisfactionDetails();
+                // 대시보드 메인 카드도 업데이트
+                updateFeedbackCard();
+            } else {
+                alert('피드백 삭제에 실패했습니다: ' + (data.error || '알 수 없는 오류'));
+            }
+        })
+        .catch(error => {
+            console.error('피드백 삭제 오류:', error);
+            alert('서버 연결에 문제가 발생했습니다.');
+        });
+    }
 }
 
 // 네비게이션 링크 클릭 시 모바일 메뉴 닫기

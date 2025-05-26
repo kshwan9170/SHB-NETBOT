@@ -1980,7 +1980,7 @@ def satisfaction_details():
         
         # 개선필요 피드백 상세 조회 (최근 30일) - chat_feedback 테이블 사용
         negative_feedback = conn.execute("""
-            SELECT question, created_at as timestamp
+            SELECT id, question, created_at as timestamp
             FROM chat_feedback 
             WHERE feedback_type IN ('개선필요', '👎 부족함') 
             AND created_at >= datetime('now', '-30 days')
