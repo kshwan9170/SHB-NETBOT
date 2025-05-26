@@ -1500,12 +1500,7 @@ def get_chatbot_response(
             if template_response:
                 logger.info(f"업무 안내 가이드 매칭 성공 - 파일: {guide_match.get('source_file', 'unknown')}, 점수: {guide_match.get('score', 0)}")
                 
-                # 연결 상태 정보 추가
-                if is_online:
-                    template_response += "\n\n[🟢 온라인 모드] 내부 업무 가이드 기반 응답"
-                else:
-                    template_response += "\n\n[🔴 오프라인 모드] 로컬 업무 가이드 기반 응답"
-                
+                # business_guide_processor.py에서 이미 온라인 모드 표시를 추가하므로 여기서는 제거
                 return template_response
     
     except Exception as e:
