@@ -1039,7 +1039,7 @@ function showVisitorDetails() {
         .then(data => {
             console.log('방문자 데이터:', data); // 디버깅용
             if (data.success && data.ip_statistics) {
-                const tbody = document.getElementById('visitor-details-tbody');
+                const tbody = document.getElementById('visitor-records-tbody');
                 tbody.innerHTML = '';
                 
                 if (data.visitor_records && data.visitor_records.length > 0) {
