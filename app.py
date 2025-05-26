@@ -1904,18 +1904,10 @@ def visitor_details():
         if conn is None:
             return jsonify({'success': False, 'error': '데이터베이스 연결 실패'})
         
-        # 지난 25시간 방문 기록 조회 (여유있게)
+        # visitors 테이블에서 방문 기록 조회
         visitor_records = conn.execute("""
-            SELECT user_ip, query_text, timestamp,
-                   CASE 
-                       WHEN query_text LIKE 'PAGE_VISIT:dashboard' THEN '대시보드'
-                       WHEN query_text LIKE 'PAGE_VISIT:main' THEN '메인 페이지'
-                       WHEN query_text LIKE 'PAGE_VISIT:%' THEN REPLACE(query_text, 'PAGE_VISIT:', '')
-                       ELSE '채팅'
-                   END as page_name
-            FROM chat_logs 
-            WHERE timestamp >= datetime('now', '-25 hours')
-            AND (query_text LIKE 'PAGE_VISIT:%' OR query_text IS NOT NULL)
+            SELECT ip_address, page_visited, timestamp
+            FROM visitors 
             ORDER BY timestamp DESC
             LIMIT 50
         """).fetchall()
@@ -1923,7 +1915,9 @@ def visitor_details():
         # IP별 통계 계산
         ip_stats = {}
         for record in visitor_records:
-            ip = record['user_ip']
+            ip = record['ip_address']
+            page_name = record['page_visited'] or '알 수 없음'
+            
             if ip not in ip_stats:
                 ip_stats[ip] = {
                     'ip': ip,
@@ -1934,7 +1928,7 @@ def visitor_details():
                 }
             
             ip_stats[ip]['visit_count'] += 1
-            ip_stats[ip]['pages'].add(record['page_name'])
+            ip_stats[ip]['pages'].add(page_name)
             if record['timestamp'] > ip_stats[ip]['last_visit']:
                 ip_stats[ip]['last_visit'] = record['timestamp']
             if record['timestamp'] < ip_stats[ip]['first_visit']:
@@ -1944,8 +1938,8 @@ def visitor_details():
         formatted_records = []
         for record in visitor_records:
             formatted_records.append({
-                'ip': record['user_ip'],
-                'page': record['page_name'],
+                'ip': record['ip_address'],
+                'page': record['page_visited'] or '알 수 없음',
                 'timestamp': record['timestamp']
             })
         
