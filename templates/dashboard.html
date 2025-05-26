@@ -37,7 +37,7 @@
             align-items: center !important;
             max-width: var(--container-width) !important;
             margin: 0 auto !important;
-            padding: 0 3rem !important;
+            padding: 0 2rem !important;
             height: var(--header-height) !important;
         }
         
@@ -45,9 +45,8 @@
             display: flex !important;
             align-items: center !important;
             position: relative !important;
-            gap: 1rem !important;
+            gap: 0.75rem !important;
             height: 3.2rem !important;
-            margin-right: 4rem !important;
         }
         
         .logo img {
@@ -179,55 +178,6 @@
         /* Ensure dark mode compatibility */
         [data-theme="dark"] .navbar {
             background-color: #1A2B4C !important;
-        }
-        
-        /* Dashboard loading and error states */
-        .loading-message {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: #6c757d;
-            font-size: 1.1rem;
-        }
-        
-        .loading-message i {
-            margin-right: 0.5rem;
-            color: #1A2B4C;
-        }
-        
-        .alert {
-            margin: 1rem 0;
-            padding: 0.75rem 1rem;
-            border-radius: 8px;
-            border: 1px solid transparent;
-        }
-        
-        .alert-warning {
-            background-color: #fff3cd;
-            border-color: #ffecb3;
-            color: #856404;
-        }
-        
-        .btn-close {
-            background: none;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            color: inherit;
-            opacity: 0.7;
-            float: right;
-        }
-        
-        .btn-close:hover {
-            opacity: 1;
-        }
-        
-        .text-center {
-            text-align: center;
-        }
-        
-        .chart-container {
-            min-height: 400px;
-            position: relative;
         }
     </style>
 </head>
@@ -419,144 +369,27 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 대시보드 데이터 조회 및 업데이트 함수
     function refreshDashboard() {
-        // 로딩 표시
-        showLoading(true);
+        // 로딩 표시 (필요시 구현)
         
         // 필터 값 가져오기
-        const periodSelect = document.getElementById('period-select');
-        const categorySelect = document.getElementById('category-select');
-        
-        if (!periodSelect || !categorySelect) {
-            console.error('필터 요소를 찾을 수 없습니다.');
-            showLoading(false);
-            return;
-        }
-        
-        const period = periodSelect.value || 'all';
-        const category = categorySelect.value || '';
-        
-        // URL 파라미터 구성
-        const params = new URLSearchParams({
-            period: period,
-            limit: '10'
-        });
-        
-        if (category) {
-            params.append('category', category);
-        }
-        
-        const apiUrl = `/api/top_queries?${params.toString()}`;
-        console.log('API 호출 URL:', apiUrl);
+        const period = document.getElementById('period-select').value;
+        const category = document.getElementById('category-select').value;
         
         // API 호출
-        fetch(apiUrl)
-            .then(response => {
-                console.log('응답 상태:', response.status, response.statusText);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
+        fetch(`/api/top_queries?period=${period}&category=${category}&limit=10`)
+            .then(response => response.json())
             .then(data => {
-                console.log('API 응답 데이터:', data);
-                showLoading(false);
-                
-                // 성공적으로 데이터를 받았을 때 처리
-                if (data && data.success) {
+                if (data.success) {
                     updateDashboard(data);
                 } else {
-                    console.log('API 응답 성공하지만 데이터 없음:', data);
-                    // 빈 데이터 구조로 UI 업데이트
-                    updateDashboard({
-                        success: true,
-                        top_queries: [],
-                        category_stats: [],
-                        total_count: 0
-                    });
+                    console.error('데이터 조회 오류:', data.error);
+                    // 에러 메시지 표시 (필요시 구현)
                 }
             })
             .catch(error => {
-                showLoading(false);
-                console.error('API 호출 완전 실패:', error);
-                
-                // 실제 데이터로 대체 (fallback 데이터 사용 안 함)
-                // 서버가 응답하지 않을 때만 빈 상태로 표시
-                updateDashboard({
-                    success: false,
-                    top_queries: [],
-                    category_stats: [],
-                    total_count: 0
-                });
-                
-                showErrorMessage('서버에서 데이터를 불러올 수 없습니다. 잠시 후 다시 시도해주세요.');
+                console.error('API 호출 오류:', error);
+                // 에러 메시지 표시 (필요시 구현)
             });
-    }
-    
-    // 로딩 상태 표시
-    function showLoading(show) {
-        const chartContainer = document.querySelector('.chart-container');
-        const tableBody = document.getElementById('query-table-body');
-        
-        if (show) {
-            if (chartContainer) {
-                chartContainer.innerHTML = '<div class="loading-message"><i class="fas fa-spinner fa-spin"></i> 데이터를 불러오는 중...</div>';
-            }
-            if (tableBody) {
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center"><i class="fas fa-spinner fa-spin"></i> 로딩 중...</td></tr>';
-            }
-        }
-    }
-    
-    // 에러 메시지 표시
-    function showErrorMessage(message) {
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert alert-warning alert-dismissible fade show';
-        alertDiv.innerHTML = `
-            <i class="fas fa-exclamation-triangle"></i> ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        `;
-        
-        const container = document.querySelector('.dashboard-header');
-        if (container) {
-            container.appendChild(alertDiv);
-            
-            // 5초 후 자동 제거
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
-            }, 5000);
-        }
-    }
-    
-    // 기본 데이터 표시 (실제 데이터 기반)
-    function showFallbackData() {
-        const fallbackData = {
-            success: true,
-            top_queries: [
-                { query_text: "무선 DGW가 안돼요", count: 70, category: "장애 문의", created_at: "2025-01-15", last_asked: "2025-05-26" },
-                { query_text: "대외기관 기관C 연결정보 알려줘", count: 41, category: "대외계 연동", created_at: "2025-01-20", last_asked: "2025-05-25" },
-                { query_text: "IP신청방법", count: 30, category: "IP 관리", created_at: "2025-02-01", last_asked: "2025-05-25" },
-                { query_text: "대외기관 기관C와 연결된 회선번호 알려줘", count: 16, category: "대외계 연동", created_at: "2025-02-10", last_asked: "2025-05-24" },
-                { query_text: "신한은행 포티게이트 os 버전", count: 15, category: "시스템 정보", created_at: "2025-02-15", last_asked: "2025-05-24" },
-                { query_text: "네트워크 장애 신고 방법", count: 12, category: "장애 문의", created_at: "2025-03-01", last_asked: "2025-05-23" },
-                { query_text: "VPN 연결 문제", count: 10, category: "네트워크", created_at: "2025-03-05", last_asked: "2025-05-23" },
-                { query_text: "방화벽 정책 문의", count: 8, category: "보안", created_at: "2025-03-10", last_asked: "2025-05-22" },
-                { query_text: "대역폭 사용량 조회", count: 6, category: "모니터링", created_at: "2025-03-15", last_asked: "2025-05-22" },
-                { query_text: "라우팅 테이블 확인", count: 5, category: "네트워크", created_at: "2025-03-20", last_asked: "2025-05-21" }
-            ],
-            category_stats: [
-                { category: "장애 문의", total_count: 82 },
-                { category: "대외계 연동", total_count: 57 },
-                { category: "IP 관리", total_count: 30 },
-                { category: "시스템 정보", total_count: 15 },
-                { category: "네트워크", total_count: 15 },
-                { category: "보안", total_count: 8 },
-                { category: "모니터링", total_count: 6 }
-            ]
-        };
-        
-        updateDashboard(fallbackData);
     }
     
     // 대시보드 UI 업데이트 함수
@@ -577,8 +410,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // 카테고리 옵션 업데이트
     function updateCategoryOptions(categoryStats) {
         const categorySelect = document.getElementById('category-select');
-        if (!categorySelect) return;
-        
         const currentValue = categorySelect.value;
         
         // 현재 카테고리 옵션 유지하면서 목록 업데이트
@@ -587,15 +418,13 @@ document.addEventListener('DOMContentLoaded', function() {
             categorySelect.remove(1);
         }
         
-        // 카테고리 옵션 추가 (categoryStats가 존재하는 경우에만)
-        if (categoryStats && Array.isArray(categoryStats)) {
-            categoryStats.forEach(stat => {
-                const option = document.createElement('option');
-                option.value = stat.category || '';
-                option.textContent = `${stat.category || '기타'} (${stat.total_count || stat.query_count || 0})`;
-                categorySelect.appendChild(option);
-            });
-        }
+        // 카테고리 옵션 추가
+        categoryStats.forEach(stat => {
+            const option = document.createElement('option');
+            option.value = stat.category;
+            option.textContent = `${stat.category} (${stat.total_count})`;
+            categorySelect.appendChild(option);
+        });
         
         // 이전 선택 값 복원 (존재하는 경우)
         if (currentValue) {
@@ -611,47 +440,34 @@ document.addEventListener('DOMContentLoaded', function() {
     // 통계 요약 업데이트
     function updateSummaryStats(data) {
         // 전체 질문 수
-        const totalQueriesElement = document.getElementById('total-queries');
-        if (totalQueriesElement && data.top_queries && Array.isArray(data.top_queries)) {
-            const totalQueries = data.top_queries.reduce((sum, query) => sum + (query.count || 0), 0);
-            totalQueriesElement.textContent = totalQueries;
-        }
+        document.getElementById('total-queries').textContent = 
+            data.top_queries.reduce((sum, query) => sum + query.count, 0);
         
-        // 최근 방문자
-        const visitorsText = document.getElementById('recent-visitors');
+        // 최근 방문자 (실제 데이터는 서버에서 받아옴)
+        const recentVisitors = data.top_queries.reduce((sum, query) => sum + query.count, 0) + Math.floor(Math.random() * 20);
         const visitorsIcon = document.getElementById('visitors-icon');
+        const visitorsText = document.getElementById('recent-visitors');
         const visitorsDescription = document.getElementById('visitors-description');
         
-        if (visitorsText && data.top_queries && Array.isArray(data.top_queries)) {
-            const recentVisitors = data.top_queries.reduce((sum, query) => sum + (query.count || 0), 0) + Math.floor(Math.random() * 20);
-            visitorsText.textContent = recentVisitors;
-            if (visitorsIcon) visitorsIcon.style.color = '#17a2b8';
-            if (visitorsDescription) visitorsDescription.textContent = '지난 24시간';
-        }
+        visitorsText.textContent = recentVisitors;
+        visitorsIcon.style.color = '#17a2b8'; // 방문자는 청록색
+        visitorsDescription.textContent = '지난 24시간';
         
-        // 긍정 피드백 (기본값 표시)
-        const positiveElement = document.getElementById('positive-percentage');
-        if (positiveElement) {
-            positiveElement.textContent = '85%'; // 기본값
-        }
+        // TODO: 긍정 피드백 데이터는 실제 API 응답에 추가 필요
+        // document.getElementById('positive-percentage').textContent = `${data.positive_percentage}%`;
     }
     
     // Top 쿼리 차트 업데이트
     function updateTopQueriesChart(topQueries) {
-        const chartElement = document.getElementById('top-queries-chart');
-        if (!chartElement) return;
-        
-        const ctx = chartElement.getContext('2d');
+        const ctx = document.getElementById('top-queries-chart').getContext('2d');
         
         // 데이터 없음 처리
-        if (!topQueries || !Array.isArray(topQueries) || topQueries.length === 0) {
+        if (topQueries.length === 0) {
             if (topQueriesChart) {
                 topQueriesChart.destroy();
                 topQueriesChart = null;
             }
-            // 차트 영역에 '데이터 없음' 메시지 표시
-            const container = chartElement.parentNode;
-            container.innerHTML = '<div class="no-data-message"><i class="fas fa-chart-bar"></i><p>표시할 데이터가 없습니다.</p></div>';
+            // 차트 영역에 '데이터 없음' 메시지 표시 (필요시 구현)
             return;
         }
         
@@ -725,23 +541,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const tableBody = document.getElementById('query-table-body');
         const noDataMessage = document.getElementById('no-data-message');
         
-        if (!tableBody) return;
-        
         // 테이블 내용 초기화
         tableBody.innerHTML = '';
         
         // 데이터 없음 처리
-        if (!topQueries || !Array.isArray(topQueries) || topQueries.length === 0) {
-            if (noDataMessage) {
-                noDataMessage.style.display = 'block';
-            } else {
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">조회된 데이터가 없습니다.</td></tr>';
-            }
+        if (topQueries.length === 0) {
+            noDataMessage.classList.remove('d-none');
             return;
         } else {
-            if (noDataMessage) {
-                noDataMessage.style.display = 'none';
-            }
+            noDataMessage.classList.add('d-none');
         }
         
         // 테이블 행 생성
@@ -749,20 +557,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const row = document.createElement('tr');
             
             const formatDate = (dateString) => {
-                if (!dateString) return '날짜 정보 없음';
-                try {
-                    const date = new Date(dateString);
-                    return date.toLocaleString('ko-KR');
-                } catch (e) {
-                    return dateString;
-                }
+                const date = new Date(dateString);
+                return date.toLocaleString('ko-KR');
             };
             
             row.innerHTML = `
                 <td>${index + 1}</td>
-                <td>${query.query_text || '질문 내용 없음'}</td>
+                <td>${query.query_text}</td>
                 <td>${query.category || '미분류'}</td>
-                <td>${query.count || 0}</td>
+                <td>${query.count}</td>
                 <td>${formatDate(query.first_asked)}</td>
                 <td>${formatDate(query.last_asked)}</td>
             `;
