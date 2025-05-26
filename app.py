@@ -715,55 +715,87 @@ def view_document(system_filename):
         # CSV 파일 처리
         elif file_extension == 'csv':
             import pandas as pd
+            import chardet
             from csv_editor import generate_csv_metadata, save_csv_metadata, get_csv_preview_html
             
             try:
-                # CSV 파일 읽기 시도 (다양한 인코딩 순차적으로 시도)
-                encodings = ['utf-8', 'cp949', 'latin1']
+                # 1. 먼저 파일의 실제 인코딩을 자동 감지
+                with open(file_path, 'rb') as f:
+                    raw_data = f.read()
+                    detected = chardet.detect(raw_data)
+                    detected_encoding = detected.get('encoding', 'utf-8')
+                    confidence = detected.get('confidence', 0)
+                    print(f"자동 감지된 인코딩: {detected_encoding} (신뢰도: {confidence:.2f})")
+                
+                # 2. 인코딩 목록 (감지된 인코딩을 우선적으로 시도)
+                encodings = [detected_encoding, 'utf-8', 'cp949', 'euc-kr', 'latin1', 'utf-16', 'utf-8-sig']
+                # 중복 제거
+                encodings = list(dict.fromkeys(filter(None, encodings)))
+                
                 df = None
                 used_encoding = None
                 
                 for encoding in encodings:
                     try:
-                        # 먼저 첫 줄만 읽어서 헤더 확인
-                        header_check = pd.read_csv(file_path, dtype=str, nrows=1, encoding=encoding)
-                        header_count = len(header_check.columns)
+                        print(f"{encoding} 인코딩 시도 중...")
                         
-                        # 헤더가 1개만 있는 경우 (인코딩이 잘못 인식되었을 가능성)
-                        if header_count <= 1:
-                            print(f"{encoding} 인코딩으로 헤더를 읽었으나 열이 {header_count}개밖에 없습니다. 다른 방법 시도...")
-                            # 헤더 없이 읽기
-                            df_raw = pd.read_csv(file_path, header=None, encoding=encoding)
-                            if len(df_raw) > 0 and len(df_raw.columns) > 1:
-                                # 첫 번째 행을 헤더로 사용
-                                df = pd.DataFrame(df_raw.values[1:], columns=df_raw.iloc[0])
-                                print(f"헤더 없이 읽었을 때 열 개수: {len(df.columns)}")
-                            else:
-                                # 첫 번째 행 포함해서 데이터로 사용 (열 구분 문제인 경우)
-                                try:
-                                    sep_options = [',', ';', '\t', '|']
-                                    for sep in sep_options:
-                                        try:
-                                            df_test = pd.read_csv(file_path, sep=sep, encoding=encoding)
-                                            if len(df_test.columns) > 1:
-                                                df = df_test
-                                                print(f"구분자 '{sep}'로 성공적으로 {len(df.columns)}개 열 읽음")
-                                                break
-                                        except:
-                                            continue
-                                except:
-                                    # 모든 방법 실패 시 기본으로 돌아가기
-                                    pass
-                        else:
-                            # 정상적으로 헤더가 여러 개 인식됨
-                            df = pd.read_csv(file_path, dtype=str, na_filter=False, encoding=encoding)
+                        # 3. 다양한 구분자로 시도
+                        separators = [',', ';', '\t', '|']
                         
-                        used_encoding = encoding
-                        print(f"CSV 파일 '{original_filename}' {encoding} 인코딩으로 성공적으로 읽음, 열 개수: {len(df.columns if df is not None else header_check.columns)}")
-                        break
+                        for sep in separators:
+                            try:
+                                # 먼저 첫 줄만 읽어서 헤더 확인
+                                header_check = pd.read_csv(file_path, dtype=str, nrows=1, encoding=encoding, sep=sep)
+                                header_count = len(header_check.columns)
+                                
+                                if header_count > 1:
+                                    # 정상적으로 여러 열이 인식됨
+                                    df = pd.read_csv(file_path, dtype=str, na_filter=False, encoding=encoding, sep=sep)
+                                    used_encoding = encoding
+                                    print(f"CSV 파일 '{original_filename}' {encoding} 인코딩, '{sep}' 구분자로 성공적으로 읽음, 열 개수: {len(df.columns)}")
+                                    break
+                                elif sep == ',' and header_count == 1:
+                                    # 콤마 구분자인데 열이 1개인 경우, 다른 구분자 시도
+                                    continue
+                                
+                            except Exception as sep_e:
+                                continue
+                        
+                        if df is not None:
+                            break
+                            
                     except Exception as e:
                         print(f"{encoding} 인코딩으로 읽기 실패: {str(e)}")
                         continue
+                
+                # 4. 모든 방법이 실패한 경우, 바이너리 모드로 안전하게 읽기 시도
+                if df is None:
+                    try:
+                        print("모든 일반적인 방법 실패, 바이너리 모드로 시도...")
+                        # 바이너리로 읽어서 라인별 처리
+                        with open(file_path, 'rb') as f:
+                            lines = f.readlines()
+                        
+                        # 각 라인을 다양한 인코딩으로 디코딩 시도
+                        decoded_lines = []
+                        for line in lines[:10]:  # 처음 10라인만 시도
+                            for enc in ['utf-8', 'cp949', 'latin1']:
+                                try:
+                                    decoded_line = line.decode(enc).strip()
+                                    if decoded_line and ',' in decoded_line:
+                                        decoded_lines.append(decoded_line.split(','))
+                                        break
+                                except:
+                                    continue
+                        
+                        if decoded_lines and len(decoded_lines) > 1:
+                            df = pd.DataFrame(decoded_lines[1:], columns=decoded_lines[0])
+                            df = df.astype(str)
+                            used_encoding = "binary-fallback"
+                            print(f"바이너리 모드로 {len(df.columns)}개 열, {len(df)}개 행 읽기 성공")
+                        
+                    except Exception as binary_e:
+                        print(f"바이너리 모드 읽기도 실패: {str(binary_e)}")
                 
                 # 모든 인코딩 시도 후에도 실패한 경우
                 if df is None:
