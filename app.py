@@ -109,27 +109,13 @@ def log_visitor(ip_address, page_visited=None):
 @app.route('/dashboard')
 def dashboard():
     """실시간 문의 Top 10 대시보드"""
-    # 방문자 IP 기록
-    user_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
-    if user_ip:
-        # 첫 번째 IP만 사용 (프록시를 통한 경우)
-        user_ip = user_ip.split(',')[0].strip()
-        log_visitor(user_ip, 'dashboard')
+    # 방문자 IP 기록 (일시적으로 비활성화)
+    # user_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+    # if user_ip:
+    #     user_ip = user_ip.split(',')[0].strip()
+    #     log_visitor(user_ip, 'dashboard')
     
-    # 24시간 내 고유 방문자 수 계산
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT COUNT(DISTINCT ip_address) 
-        FROM visitors 
-        WHERE visit_time >= datetime('now', '-24 hours')
-    """)
-    unique_visitors_24h = cursor.fetchone()[0]
-    conn.close()
-    
-    print(f"대시보드 방문자 수 계산: {unique_visitors_24h}")
-    
-    return render_template('dashboard.html', unique_visitors_24h=unique_visitors_24h)
+    return render_template('dashboard.html')
     
 
 
@@ -1812,6 +1798,19 @@ def get_db_connection():
         import sqlite3
         conn = sqlite3.connect('shinhan_netbot.db')
         conn.row_factory = sqlite3.Row  # 딕셔너리 형태로 결과 반환
+        
+        # 방문자 테이블이 없으면 생성
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS visitors (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ip_address TEXT NOT NULL,
+                visit_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+                page_visited TEXT
+            )
+        ''')
+        conn.commit()
+        
         return conn
     except Exception as e:
         print(f"데이터베이스 연결 오류: {e}")
