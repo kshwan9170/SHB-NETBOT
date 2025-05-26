@@ -1045,10 +1045,11 @@ function showSatisfactionDetails() {
                         const row = document.createElement('tr');
                         const shortQuery = feedback.query.length > 50 ? 
                             feedback.query.substring(0, 50) + '...' : feedback.query;
-                        // KST 시간으로 변환
-                        const date = new Date(feedback.timestamp + '+09:00');
-                        const formattedTime = date.toLocaleDateString('ko-KR', {timeZone: 'Asia/Seoul'}) + ' ' + 
-                            date.toLocaleTimeString('ko-KR', {timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit'});
+                        // KST 시간으로 변환 (서버에서 받은 UTC 시간을 KST로 변환)
+                        const utcDate = new Date(feedback.timestamp);
+                        const kstDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000)); // UTC + 9시간
+                        const formattedTime = kstDate.toLocaleDateString('ko-KR') + ' ' + 
+                            kstDate.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
                         
                         row.innerHTML = `
                             <td><small>${formattedTime}</small></td>
@@ -1074,10 +1075,11 @@ function showSatisfactionDetails() {
                         const row = document.createElement('tr');
                         const shortQuery = feedback.query.length > 50 ? 
                             feedback.query.substring(0, 50) + '...' : feedback.query;
-                        // KST 시간으로 변환
-                        const date = new Date(feedback.timestamp + '+09:00');
-                        const formattedTime = date.toLocaleDateString('ko-KR', {timeZone: 'Asia/Seoul'}) + ' ' + 
-                            date.toLocaleTimeString('ko-KR', {timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit'});
+                        // KST 시간으로 변환 (서버에서 받은 UTC 시간을 KST로 변환)
+                        const utcDate = new Date(feedback.timestamp);
+                        const kstDate = new Date(utcDate.getTime() + (9 * 60 * 60 * 1000)); // UTC + 9시간
+                        const formattedTime = kstDate.toLocaleDateString('ko-KR') + ' ' + 
+                            kstDate.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
                         
                         row.innerHTML = `
                             <td><small>${formattedTime}</small></td>
@@ -1456,15 +1458,15 @@ function showQueriesDetails() {
         });
 }
 
-// 페이지 로드 시 방문자 카드 초기화
+// 페이지 로드 시 대시보드 초기화
 document.addEventListener('DOMContentLoaded', function() {
-    // 방문자 카드 즉시 업데이트
-    setTimeout(updateVisitorCard, 1000); // 1초 후 실행
+    // 모든 카드 데이터 로딩은 updateSummaryStats()에서 처리됨
+    console.log('대시보드 초기화 완료');
 });
 
 // 페이지가 완전히 로드된 후에도 실행
 window.addEventListener('load', function() {
-    setTimeout(updateVisitorCard, 500); // 0.5초 후 실행
+    console.log('페이지 로딩 완료');
 });
 
 
