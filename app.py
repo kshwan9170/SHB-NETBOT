@@ -308,6 +308,9 @@ def top_queries():
         query_stats = QueryStatisticsModel()
         top_queries = query_stats.get_top_queries(limit=limit, period=period, category=category)
         
+        # 총 질문 횟수 조회 (한 달치)
+        total_query_count = query_stats.get_total_query_count(period='month')
+        
         # 카테고리별 통계 추가
         category_stats = query_stats.get_category_stats()
         
@@ -319,7 +322,7 @@ def top_queries():
             'top_queries': top_queries,
             'category_stats': category_stats,
             'period_comparison': period_comparison,
-            'total_count': len(top_queries),
+            'total_count': total_query_count,
             'filters': {
                 'period': period,
                 'category': category,

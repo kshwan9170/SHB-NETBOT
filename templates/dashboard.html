@@ -236,7 +236,7 @@
         <div class="col-md-4 mb-3">
             <div class="card h-100 shadow-sm queries-card" style="border-color: #E6EBF4; cursor: pointer; transition: all 0.3s ease;" onclick="showQueriesDetails()" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 20px rgba(48, 80, 122, 0.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''">
                 <div class="card-body text-center">
-                    <h5 class="card-title" style="color: #30507A;">고유 질문 수</h5>
+                    <h5 class="card-title" style="color: #30507A;">총 질문 횟수 (한 달)</h5>
                     <div class="d-flex align-items-center justify-content-center">
                         <i class="fas fa-comments fa-3x me-3" style="color: #30507A;"></i>
                         <div class="display-4 fw-bold" id="total-queries">0</div>
@@ -797,8 +797,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 통계 요약 업데이트
     function updateSummaryStats(data) {
-        // 전체 질문 수 (고유 질문 개수로 표시)
-        document.getElementById('total-queries').textContent = data.top_queries.length;
+        // 총 질문 횟수 (한 달치)
+        document.getElementById('total-queries').textContent = data.total_count || 0;
         
         // 피드백 카드 업데이트 및 방문자 수 업데이트
         updateFeedbackCard();
