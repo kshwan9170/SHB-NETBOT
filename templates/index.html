@@ -804,10 +804,10 @@
     // FAQ 토글 변수들
     let faqQuestionsLoaded = false;
     
-    // DOM이 로드된 후 실행
-    window.addEventListener('load', function() {
+    // DOM이 완전히 로드된 후 실행
+    document.addEventListener('DOMContentLoaded', function() {
         console.log('FAQ 시스템 초기화 시작');
-        initializeFAQToggle();
+        setTimeout(initializeFAQToggle, 100); // 약간의 지연을 두어 확실히 로드되도록
     });
     
     function initializeFAQToggle() {
@@ -818,19 +818,30 @@
         console.log('토글 버튼:', !!toggleButton, '질문 리스트:', !!questionsList, '아이콘:', !!toggleIcon);
         
         if (!toggleButton || !questionsList) {
-            console.error('FAQ 요소를 찾을 수 없습니다');
+            console.error('FAQ 요소를 찾을 수 없습니다. 재시도 중...');
+            setTimeout(initializeFAQToggle, 500); // 0.5초 후 재시도
             return;
         }
         
-        // 클릭 이벤트 바인딩
+        // 클릭 이벤트 바인딩 (다중 방식으로 보장)
+        toggleButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('FAQ 토글 버튼 클릭됨 (addEventListener)');
+            handleFAQToggle();
+        });
+        
         toggleButton.onclick = function(e) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('FAQ 토글 버튼 클릭됨');
+            console.log('FAQ 토글 버튼 클릭됨 (onclick)');
             handleFAQToggle();
         };
         
         console.log('FAQ 토글 시스템 초기화 완료');
+        
+        // 초기 질문 로드
+        loadFAQQuestions();
     }
     
     async function handleFAQToggle() {
@@ -890,9 +901,14 @@
     
     async function loadFAQQuestions() {
         try {
+            console.log('FAQ 질문 데이터 로딩 시작...');
             const response = await fetch('/api/suggested_questions');
-            const data = await response.json();
             
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
             console.log('FAQ API 응답:', data);
             
             if (data.success && data.questions && data.questions.length > 0) {
@@ -910,16 +926,35 @@
     
     function renderFAQQuestions(questions) {
         const questionsList = document.getElementById('suggestedQuestionsList');
-        if (!questionsList) return;
+        if (!questionsList) {
+            console.error('질문 목록 컨테이너를 찾을 수 없습니다');
+            return;
+        }
         
-        const questionsHTML = questions.map(item => 
-            `<button class="question-button" onclick="selectFAQQuestion('${item.question.replace(/'/g, "\\'")}')">
-                ${item.question}
-            </button>`
-        ).join('');
+        console.log('FAQ 질문 렌더링 시작:', questions);
         
-        questionsList.innerHTML = questionsHTML;
-        console.log('FAQ 질문 렌더링 완료');
+        let questionsHTML = '';
+        questions.forEach((item, index) => {
+            const question = typeof item === 'string' ? item : item.question || item;
+            const safeQuestion = question.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+            
+            questionsHTML += `
+                <div class="suggested-question-item" 
+                     onclick="selectFAQQuestion('${question.replace(/'/g, "\\'")}')"
+                     style="padding: 12px 16px; border-bottom: 1px solid rgba(48, 80, 122, 0.1); cursor: pointer; transition: all 0.3s ease; color: #30507A; background: rgba(255, 255, 255, 0.8);"
+                     onmouseover="this.style.backgroundColor='rgba(48, 80, 122, 0.1)'"
+                     onmouseout="this.style.backgroundColor='rgba(255, 255, 255, 0.8)'">
+                    <span style="font-size: 14px; line-height: 1.4;">${question}</span>
+                </div>
+            `;
+        });
+        
+        if (questionsHTML) {
+            questionsList.innerHTML = questionsHTML;
+            console.log('FAQ 질문 렌더링 완료:', questions.length, '개');
+        } else {
+            questionsList.innerHTML = '<div style="padding: 16px; text-align: center; color: #666;">질문을 불러올 수 없습니다.</div>';
+        }
     }
     
     // 질문 선택 함수
