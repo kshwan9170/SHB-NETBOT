@@ -7,6 +7,13 @@
     --secondary: #203659;
     --accent: #2F4466;
     
+    /* 대시보드 모던 컬러 */
+    --dashboard-bg: #fafbfc;
+    --dashboard-card-bg: #ffffff;
+    --dashboard-border: #e1e8ed;
+    --dashboard-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --dashboard-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
+    
     /* 중립 컬러 */
     --dark: #2C3E50;
     --dark-medium: #34495E;
@@ -3390,5 +3397,143 @@ textarea.form-control {
     .suggested-question-btn {
         padding: 0.8rem 1rem;
         font-size: 1.3rem;
+    }
+}
+
+/* 대시보드 모던 스타일 - 기능에 영향 없는 UI만 변경 */
+.dashboard-container {
+    background: var(--dashboard-bg);
+    min-height: 100vh;
+    padding: 24px;
+}
+
+.dashboard-header {
+    margin-bottom: 32px;
+}
+
+.dashboard-title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #1a202c;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.dashboard-subtitle {
+    color: #718096;
+    font-size: 16px;
+    margin-top: 8px;
+    font-weight: 400;
+}
+
+/* 메인 카드 그리드 모던 스타일 */
+.main-stats .row {
+    gap: 20px;
+}
+
+.main-stats .col-md-4 {
+    margin-bottom: 20px;
+}
+
+.main-stats .card {
+    background: var(--dashboard-card-bg);
+    border: 1px solid var(--dashboard-border);
+    border-radius: 12px;
+    box-shadow: var(--dashboard-shadow);
+    transition: all 0.2s ease;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.main-stats .card:hover {
+    box-shadow: var(--dashboard-shadow-hover);
+    transform: translateY(-2px);
+    border-color: #cbd5e0;
+}
+
+.main-stats .card-body {
+    padding: 24px;
+    text-align: center;
+}
+
+.main-stats .card-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #718096;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.main-stats .display-4 {
+    font-size: 36px;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0;
+    line-height: 1;
+}
+
+.main-stats .text-muted {
+    font-size: 13px;
+    color: #a0aec0 !important;
+    margin-top: 8px;
+    font-weight: 400;
+}
+
+/* 아이콘 모던 스타일 */
+.main-stats .card .fas,
+.main-stats .card .fa-solid {
+    font-size: 24px;
+    margin-bottom: 12px;
+    opacity: 0.8;
+}
+
+/* 하단 섹션 모던 스타일 */
+.dashboard-sections {
+    margin-top: 40px;
+}
+
+.dashboard-sections .card {
+    background: var(--dashboard-card-bg);
+    border: 1px solid var(--dashboard-border);
+    border-radius: 12px;
+    box-shadow: var(--dashboard-shadow);
+    margin-bottom: 24px;
+}
+
+.dashboard-sections .card-header {
+    background: #f7fafc;
+    border-bottom: 1px solid var(--dashboard-border);
+    padding: 20px 24px;
+    border-radius: 12px 12px 0 0 !important;
+}
+
+.dashboard-sections .card-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+}
+
+.dashboard-sections .card-body {
+    padding: 24px;
+}
+
+/* 대시보드 모바일 반응형 */
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 16px;
+    }
+    
+    .dashboard-title {
+        font-size: 24px;
+    }
+    
+    .main-stats .card-body {
+        padding: 20px;
+    }
+    
+    .main-stats .display-4 {
+        font-size: 32px;
     }
 }

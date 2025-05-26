@@ -187,11 +187,11 @@
         </div>
     </nav>
 
-    <div class="container my-5">
+    <div class="dashboard-container">
         <!-- 헤더 영역 -->
-        <div class="text-center mb-5">
-            <h1 class="display-4" style="color: #30507A; font-family: 'Inter', sans-serif; font-weight: 600;">SHB-NetBot 대시보드</h1>
-            <p class="lead" style="color: #5A6373; font-family: 'Inter', sans-serif; font-weight: 400;">실시간 사용자 문의 및 통계 분석</p>
+        <div class="dashboard-header text-center">
+            <h1 class="dashboard-title">SHB-NetBot 대시보드</h1>
+            <p class="dashboard-subtitle">실시간 사용자 문의 및 통계 분석</p>
         </div>
     
     <!-- 필터 영역 -->
@@ -271,20 +271,24 @@
         </div>
     </div>
     
-    <!-- 주요 문의 TOP 10 차트 -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm" style="border-color: #E6EBF4;">
-                <div class="card-body">
-                    <h5 class="card-title" style="color: #30507A; font-family: 'Inter', sans-serif; font-weight: 600;">주요 문의 TOP 10</h5>
-                    <div class="chart-container" style="position: relative; height:400px;">
-                        <canvas id="top-queries-chart"></canvas>
+    <!-- 하단 섹션들 -->
+    <div class="dashboard-sections">
+        <!-- 주요 문의 TOP 10 차트 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">주요 문의 TOP 10</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="position: relative; height:400px;">
+                            <canvas id="top-queries-chart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
 
 </div>
 
