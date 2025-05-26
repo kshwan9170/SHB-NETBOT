@@ -615,14 +615,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         positiveCountDisplayElement.textContent = `${feedbackData.positive_count || 0}건`;
                     }
                     
-                    // 최근 방문자 수를 0으로 강제 초기화
+                    // 최근 방문자 수 업데이트 (실제 API 값 사용)
                     const visitorsText = document.getElementById('recent-visitors');
                     const visitorsIcon = document.getElementById('visitors-icon');
                     const visitorsDescription = document.getElementById('visitors-description');
                     
                     if (visitorsText) {
-                        // 항상 0으로 설정 (IP 기준 고유 방문자 시스템 준비 완료 시까지)
-                        visitorsText.textContent = '0';
+                        // API에서 받은 실제 방문자 수 표시
+                        const uniqueVisitors = feedbackData.unique_visitors_24h || 0;
+                        visitorsText.textContent = uniqueVisitors;
                         
                         if (visitorsIcon) {
                             visitorsIcon.style.color = '#17a2b8'; // 방문자는 청록색
