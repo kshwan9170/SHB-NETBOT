@@ -423,11 +423,33 @@ document.addEventListener('DOMContentLoaded', function() {
         showLoading(true);
         
         // 필터 값 가져오기
-        const period = document.getElementById('period-select').value;
-        const category = document.getElementById('category-select').value;
+        const periodSelect = document.getElementById('period-select');
+        const categorySelect = document.getElementById('category-select');
+        
+        if (!periodSelect || !categorySelect) {
+            console.error('필터 요소를 찾을 수 없습니다.');
+            showLoading(false);
+            return;
+        }
+        
+        const period = periodSelect.value || 'all';
+        const category = categorySelect.value || '';
+        
+        // URL 파라미터 구성
+        const params = new URLSearchParams({
+            period: period,
+            limit: '10'
+        });
+        
+        if (category) {
+            params.append('category', category);
+        }
+        
+        const apiUrl = `/api/top_queries?${params.toString()}`;
+        console.log('API 호출 URL:', apiUrl);
         
         // API 호출
-        fetch(`/api/top_queries?period=${period}&category=${category}&limit=10`)
+        fetch(apiUrl)
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
