@@ -93,6 +93,59 @@
         .button-group button[type="reset"]:hover {
             background-color: #5a6268;
         }
+        
+        /* 성공 팝업 스타일 */
+        .success-popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .popup-content {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+        .success-icon {
+            font-size: 64px;
+            color: #28a745;
+            margin-bottom: 20px;
+        }
+        .popup-title {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .popup-message {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+        .popup-button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .popup-button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -169,11 +222,26 @@
         </form>
     </div>
 
+    <!-- 성공 팝업 -->
+    <div id="successPopup" class="success-popup">
+        <div class="popup-content">
+            <div class="success-icon">✅</div>
+            <div class="popup-title">신청이 완료되었습니다!</div>
+            <div class="popup-message">
+                IP 주소 신청이 성공적으로 접수되었습니다.<br>
+                담당자가 검토 후 연락드리겠습니다.
+            </div>
+            <button class="popup-button" onclick="closePopup()">확인</button>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const usagePurposeSelect = document.getElementById('usage_purpose');
             const otherPurposeField = document.getElementById('other_purpose_field');
+            const form = document.querySelector('form');
 
+            // 사용 목적 선택에 따른 추가 입력 필드 표시/숨김
             usagePurposeSelect.addEventListener('change', function() {
                 if (this.value === '기타') {
                     otherPurposeField.style.display = 'block';
@@ -181,6 +249,69 @@
                     otherPurposeField.style.display = 'none';
                 }
             });
+
+            // 폼 제출 이벤트 처리
+            form.addEventListener('submit', function(e) {
+                e.preventDefault(); // 기본 제출 동작 방지
+                
+                // 폼 유효성 검사
+                if (validateForm()) {
+                    // 성공 팝업 표시
+                    showSuccessPopup();
+                    
+                    // 폼 초기화 (선택사항)
+                    form.reset();
+                    otherPurposeField.style.display = 'none';
+                }
+            });
+        });
+
+        // 폼 유효성 검사 함수
+        function validateForm() {
+            const requiredFields = document.querySelectorAll('[required]');
+            let isValid = true;
+
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    field.focus();
+                    alert(`${field.previousElementSibling.textContent}을(를) 입력해주세요.`);
+                    isValid = false;
+                    return false;
+                }
+            });
+
+            return isValid;
+        }
+
+        // 성공 팝업 표시 함수
+        function showSuccessPopup() {
+            const popup = document.getElementById('successPopup');
+            popup.style.display = 'flex';
+            
+            // 페이지 스크롤 방지
+            document.body.style.overflow = 'hidden';
+        }
+
+        // 팝업 닫기 함수
+        function closePopup() {
+            const popup = document.getElementById('successPopup');
+            popup.style.display = 'none';
+            
+            // 페이지 스크롤 복원
+            document.body.style.overflow = 'auto';
+            
+            // 선택사항: 몇 초 후 원래 페이지로 돌아가기
+            setTimeout(() => {
+                window.history.back();
+            }, 1000);
+        }
+
+        // 팝업 배경 클릭 시 닫기
+        document.addEventListener('click', function(e) {
+            const popup = document.getElementById('successPopup');
+            if (e.target === popup) {
+                closePopup();
+            }
         });
     </script>
 </body>
