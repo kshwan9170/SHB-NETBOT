@@ -1906,15 +1906,23 @@ def visitor_details():
         if conn is None:
             return jsonify({'success': False, 'error': '데이터베이스 연결 실패'})
         
-        # visitors 테이블에서 방문 기록 조회
+        # visitors 테이블에서 24시간 내 방문 기록 조회
         visitor_records = conn.execute("""
             SELECT ip_address, page_visited, visit_time
             FROM visitors 
+            WHERE visit_time >= datetime('now', '-1 day')
             ORDER BY visit_time DESC
             LIMIT 50
         """).fetchall()
         
-        # IP별 통계 계산
+        # 24시간 내 고유 IP 수 계산
+        unique_ips_24h = conn.execute("""
+            SELECT COUNT(DISTINCT ip_address) as count
+            FROM visitors 
+            WHERE visit_time >= datetime('now', '-1 day')
+        """).fetchone()['count']
+        
+        # IP별 통계 계산 (24시간 내 데이터만)
         ip_stats = {}
         for record in visitor_records:
             ip = record['ip_address']
@@ -1961,7 +1969,7 @@ def visitor_details():
             'success': True,
             'visitor_records': formatted_records,
             'ip_statistics': formatted_ip_stats,
-            'total_unique_ips': len(ip_stats)
+            'total_unique_ips': unique_ips_24h
         })
         
     except Exception as e:
