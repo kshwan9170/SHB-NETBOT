@@ -851,7 +851,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     
                     // 최근 방문자 수 업데이트 (방문자 API에서 실제 데이터 가져오기)
-                    updateVisitorCard();
+                    // updateVisitorCard(); // 중복 호출 제거 - 이미 페이지 로드 시 한 번 호출됨
                 } else {
                     console.log('피드백 데이터 로딩 실패:', feedbackData);
                 }
