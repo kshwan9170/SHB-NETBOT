@@ -293,9 +293,13 @@ img {
     text-decoration: none !important;
 }
 
-.nav-link:hover,
-.nav-link.active {
+.nav-link:hover {
     color: #BFD7FF;
+}
+
+.nav-link.active {
+    color: #FFFFFF;
+    font-weight: 600;
 }
 
 .nav-link::after {
