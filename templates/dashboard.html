@@ -693,8 +693,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // 피드백 카드 업데이트 및 방문자 수 업데이트
         updateFeedbackCard();
         
-        // 방문자 카드도 별도로 업데이트
-        updateVisitorCard();
+        // 방문자 카드는 updateFeedbackCard()에서 함께 처리됨
     }
     
     // 방문자 카드 업데이트 함수 (실제 API 데이터 사용)
@@ -1046,9 +1045,10 @@ function showSatisfactionDetails() {
                         const row = document.createElement('tr');
                         const shortQuery = feedback.query.length > 50 ? 
                             feedback.query.substring(0, 50) + '...' : feedback.query;
-                        const date = new Date(feedback.timestamp);
-                        const formattedTime = date.toLocaleDateString('ko-KR') + ' ' + 
-                            date.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
+                        // KST 시간으로 변환
+                        const date = new Date(feedback.timestamp + '+09:00');
+                        const formattedTime = date.toLocaleDateString('ko-KR', {timeZone: 'Asia/Seoul'}) + ' ' + 
+                            date.toLocaleTimeString('ko-KR', {timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit'});
                         
                         row.innerHTML = `
                             <td><small>${formattedTime}</small></td>
@@ -1074,9 +1074,10 @@ function showSatisfactionDetails() {
                         const row = document.createElement('tr');
                         const shortQuery = feedback.query.length > 50 ? 
                             feedback.query.substring(0, 50) + '...' : feedback.query;
-                        const date = new Date(feedback.timestamp);
-                        const formattedTime = date.toLocaleDateString('ko-KR') + ' ' + 
-                            date.toLocaleTimeString('ko-KR', {hour: '2-digit', minute: '2-digit'});
+                        // KST 시간으로 변환
+                        const date = new Date(feedback.timestamp + '+09:00');
+                        const formattedTime = date.toLocaleDateString('ko-KR', {timeZone: 'Asia/Seoul'}) + ' ' + 
+                            date.toLocaleTimeString('ko-KR', {timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit'});
                         
                         row.innerHTML = `
                             <td><small>${formattedTime}</small></td>
