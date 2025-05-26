@@ -1978,47 +1978,47 @@ def satisfaction_details():
         if conn is None:
             return jsonify({'success': False, 'error': '데이터베이스 연결 실패'})
         
-        # 개선필요 피드백 상세 조회 (최근 30일)
+        # 개선필요 피드백 상세 조회 (최근 30일) - chat_feedback 테이블 사용
         negative_feedback = conn.execute("""
-            SELECT query_text, feedback, timestamp
-            FROM chat_logs 
-            WHERE feedback = 'negative' 
-            AND timestamp >= datetime('now', '-30 days')
-            ORDER BY timestamp DESC
+            SELECT question, created_at as timestamp
+            FROM chat_feedback 
+            WHERE feedback_type = '개선필요' 
+            AND created_at >= datetime('now', '-30 days')
+            ORDER BY created_at DESC
             LIMIT 20
         """).fetchall()
         
-        # 만족 피드백 상세 조회 (최근 30일)
+        # 만족 피드백 상세 조회 (최근 30일) - chat_feedback 테이블 사용
         positive_feedback = conn.execute("""
-            SELECT query_text, feedback, timestamp
-            FROM chat_logs 
-            WHERE feedback = 'positive' 
-            AND timestamp >= datetime('now', '-30 days')
-            ORDER BY timestamp DESC
+            SELECT question, created_at as timestamp
+            FROM chat_feedback 
+            WHERE feedback_type = '만족' 
+            AND created_at >= datetime('now', '-30 days')
+            ORDER BY created_at DESC
             LIMIT 20
         """).fetchall()
         
-        # 전체 통계 계산
+        # 전체 통계 계산 - chat_feedback 테이블 사용
         total_feedback = conn.execute("""
             SELECT 
-                COUNT(CASE WHEN feedback = 'positive' THEN 1 END) as positive_count,
-                COUNT(CASE WHEN feedback = 'negative' THEN 1 END) as negative_count,
+                COUNT(CASE WHEN feedback_type = '만족' THEN 1 END) as positive_count,
+                COUNT(CASE WHEN feedback_type = '개선필요' THEN 1 END) as negative_count,
                 COUNT(*) as total_count
-            FROM chat_logs 
-            WHERE feedback IN ('positive', 'negative')
-            AND timestamp >= datetime('now', '-30 days')
+            FROM chat_feedback 
+            WHERE feedback_type IN ('만족', '개선필요')
+            AND created_at >= datetime('now', '-30 days')
         """).fetchone()
         
-        # 일별 피드백 추이 (최근 7일)
+        # 일별 피드백 추이 (최근 7일) - chat_feedback 테이블 사용
         daily_trends = conn.execute("""
             SELECT 
-                DATE(timestamp) as date,
-                COUNT(CASE WHEN feedback = 'positive' THEN 1 END) as positive_count,
-                COUNT(CASE WHEN feedback = 'negative' THEN 1 END) as negative_count
-            FROM chat_logs 
-            WHERE feedback IN ('positive', 'negative')
-            AND timestamp >= datetime('now', '-7 days')
-            GROUP BY DATE(timestamp)
+                DATE(created_at) as date,
+                COUNT(CASE WHEN feedback_type = '만족' THEN 1 END) as positive_count,
+                COUNT(CASE WHEN feedback_type = '개선필요' THEN 1 END) as negative_count
+            FROM chat_feedback 
+            WHERE feedback_type IN ('만족', '개선필요')
+            AND created_at >= datetime('now', '-7 days')
+            GROUP BY DATE(created_at)
             ORDER BY date ASC
         """).fetchall()
         
@@ -2026,14 +2026,14 @@ def satisfaction_details():
         formatted_negative = []
         for record in negative_feedback:
             formatted_negative.append({
-                'query': record['query_text'] or '질문 없음',
+                'query': record['question'] or '질문 없음',
                 'timestamp': record['timestamp']
             })
         
         formatted_positive = []
         for record in positive_feedback:
             formatted_positive.append({
-                'query': record['query_text'] or '질문 없음', 
+                'query': record['question'] or '질문 없음', 
                 'timestamp': record['timestamp']
             })
         
