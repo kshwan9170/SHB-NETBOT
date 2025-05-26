@@ -1445,12 +1445,22 @@ document.addEventListener('DOMContentLoaded', function() {
     if (satisfactionModal) {
         satisfactionModal.addEventListener('hidden.bs.modal', function () {
             console.log('만족도 모달이 닫혔습니다. 대시보드를 새로고침합니다.');
-            // 대시보드 데이터 새로고침
-            try {
-                updateSummaryStats();
-            } catch (error) {
-                console.log('대시보드 새로고침 중 오류 (무시됨):', error);
-            }
+            
+            // 백드롭과 모달 완전 제거
+            setTimeout(() => {
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(backdrop => backdrop.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+                
+                // 대시보드 데이터 새로고침
+                try {
+                    updateSummaryStats();
+                } catch (error) {
+                    console.log('대시보드 새로고침 중 오류 (무시됨):', error);
+                }
+            }, 100);
         });
     }
     
@@ -1459,12 +1469,22 @@ document.addEventListener('DOMContentLoaded', function() {
     if (visitorModal) {
         visitorModal.addEventListener('hidden.bs.modal', function () {
             console.log('방문자 모달이 닫혔습니다. 대시보드를 새로고침합니다.');
-            // 대시보드 데이터 새로고침
-            try {
-                updateSummaryStats();
-            } catch (error) {
-                console.log('대시보드 새로고침 중 오류 (무시됨):', error);
-            }
+            
+            // 백드롭과 모달 완전 제거
+            setTimeout(() => {
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(backdrop => backdrop.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+                
+                // 대시보드 데이터 새로고침
+                try {
+                    updateSummaryStats();
+                } catch (error) {
+                    console.log('대시보드 새로고침 중 오류 (무시됨):', error);
+                }
+            }, 100);
         });
     }
 });
