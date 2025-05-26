@@ -67,11 +67,55 @@ def get_clean_filename(filename):
 
 @app.route('/')
 def index():
+    # 방문자 IP 기록
+    user_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+    if user_ip:
+        # 첫 번째 IP만 사용 (프록시를 통한 경우)
+        user_ip = user_ip.split(',')[0].strip()
+        log_visitor(user_ip, 'main')
+    
     return render_template('index.html')
     
+def log_visitor(ip_address, page_visited=None):
+    """방문자 IP 주소를 데이터베이스에 기록"""
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            return False
+        
+        # chat_logs 테이블이 존재하지 않으면 생성
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS chat_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_ip TEXT NOT NULL,
+                query_text TEXT,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        # 방문 기록 삽입
+        conn.execute("""
+            INSERT INTO chat_logs (user_ip, query_text) 
+            VALUES (?, ?)
+        """, (ip_address, f"PAGE_VISIT:{page_visited or 'dashboard'}"))
+        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"방문자 로그 기록 오류: {e}")
+        return False
+
 @app.route('/dashboard')
 def dashboard():
     """실시간 문의 Top 10 대시보드"""
+    # 방문자 IP 기록
+    user_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+    if user_ip:
+        # 첫 번째 IP만 사용 (프록시를 통한 경우)
+        user_ip = user_ip.split(',')[0].strip()
+        log_visitor(user_ip, 'dashboard')
+    
     return render_template('dashboard.html')
     
 
@@ -1796,8 +1840,29 @@ def feedback_stats():
             for row in recent_negative_rows
         ]
         
-        # 최근 방문자 수를 0으로 강제 초기화 (IP 기준 고유 방문자 시스템 준비 완료 시까지)
-        unique_visitors_24h = 0
+        # 최근 24시간 고유 방문자 수 (IP 주소 기준)
+        try:
+            # chat_logs 테이블이 존재하지 않으면 생성
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS chat_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_ip TEXT NOT NULL,
+                    query_text TEXT,
+                    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.commit()
+            
+            # 고유 방문자 수 계산
+            unique_visitors_24h = conn.execute("""
+                SELECT COUNT(DISTINCT user_ip) as count 
+                FROM chat_logs 
+                WHERE timestamp >= datetime('now', '-24 hours')
+            """).fetchone()['count']
+        except Exception as e:
+            print(f"chat_logs 테이블 오류: {e}")
+            # 테이블이 없거나 오류가 있으면 0으로 초기화
+            unique_visitors_24h = 0
         
         conn.close()
         
