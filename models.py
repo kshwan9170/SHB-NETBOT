@@ -285,6 +285,33 @@ class QueryStatisticsModel:
     def __init__(self):
         self.table_name = 'query_statistics'
     
+    def extract_category_from_filename(self, query_text):
+        """
+        업무 안내 가이드 파일명에서 괄호 안 카테고리 추출
+        
+        Args:
+            query_text: 사용자 질문
+            
+        Returns:
+            추출된 카테고리 (IP_사용자_조회, 대외계_연동, 장애_문의, 절차_안내, 자산 등)
+        """
+        # 파일명 기반 카테고리 매핑
+        category_keywords = {
+            'IP_사용자_조회': ['ip', 'IP', '아이피', '사용자', '조회'],
+            '대외계_연동': ['대외계', '연동', '기관', '외부', '시스템'],
+            '장애_문의': ['장애', '오류', '에러', '문제', '안돼', '안됨', '불가'],
+            '절차_안내': ['절차', '방법', '프로세스', '단계', '순서'],
+            '자산': ['자산', '장비', '하드웨어', '서버']
+        }
+        
+        query_lower = query_text.lower()
+        
+        for category, keywords in category_keywords.items():
+            if any(keyword.lower() in query_lower for keyword in keywords):
+                return category
+        
+        return '일반'
+    
     def record_query(self, query_text, category=None):
         """
         질문 기록 및 통계 업데이트
@@ -298,6 +325,10 @@ class QueryStatisticsModel:
         """
         db = get_db()
         
+        # 카테고리가 없으면 자동으로 추출
+        if not category:
+            category = self.extract_category_from_filename(query_text)
+        
         # 동일한 질문이 있는지 확인
         existing = db.execute(
             f'SELECT id, count FROM {self.table_name} WHERE query_text = ?', 
@@ -309,10 +340,10 @@ class QueryStatisticsModel:
             db.execute(
                 f'''
                 UPDATE {self.table_name} 
-                SET count = count + 1, last_asked = CURRENT_TIMESTAMP
+                SET count = count + 1, last_asked = CURRENT_TIMESTAMP, category = ?
                 WHERE id = ?
                 ''', 
-                (existing['id'],)
+                (category, existing['id'])
             )
             db.commit()
             return existing['id']
