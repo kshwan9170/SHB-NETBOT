@@ -1982,7 +1982,7 @@ def satisfaction_details():
         negative_feedback = conn.execute("""
             SELECT question, created_at as timestamp
             FROM chat_feedback 
-            WHERE feedback_type = '개선필요' 
+            WHERE feedback_type IN ('개선필요', '👎 부족함') 
             AND created_at >= datetime('now', '-30 days')
             ORDER BY created_at DESC
             LIMIT 20
@@ -1992,7 +1992,7 @@ def satisfaction_details():
         positive_feedback = conn.execute("""
             SELECT question, created_at as timestamp
             FROM chat_feedback 
-            WHERE feedback_type = '만족' 
+            WHERE feedback_type IN ('만족', '👍 도움 됨', 'positive') 
             AND created_at >= datetime('now', '-30 days')
             ORDER BY created_at DESC
             LIMIT 20
@@ -2001,11 +2001,11 @@ def satisfaction_details():
         # 전체 통계 계산 - chat_feedback 테이블 사용
         total_feedback = conn.execute("""
             SELECT 
-                COUNT(CASE WHEN feedback_type = '만족' THEN 1 END) as positive_count,
-                COUNT(CASE WHEN feedback_type = '개선필요' THEN 1 END) as negative_count,
+                COUNT(CASE WHEN feedback_type IN ('만족', '👍 도움 됨', 'positive') THEN 1 END) as positive_count,
+                COUNT(CASE WHEN feedback_type IN ('개선필요', '👎 부족함') THEN 1 END) as negative_count,
                 COUNT(*) as total_count
             FROM chat_feedback 
-            WHERE feedback_type IN ('만족', '개선필요')
+            WHERE feedback_type IN ('만족', '👍 도움 됨', 'positive', '개선필요', '👎 부족함')
             AND created_at >= datetime('now', '-30 days')
         """).fetchone()
         
@@ -2013,10 +2013,10 @@ def satisfaction_details():
         daily_trends = conn.execute("""
             SELECT 
                 DATE(created_at) as date,
-                COUNT(CASE WHEN feedback_type = '만족' THEN 1 END) as positive_count,
-                COUNT(CASE WHEN feedback_type = '개선필요' THEN 1 END) as negative_count
+                COUNT(CASE WHEN feedback_type IN ('만족', '👍 도움 됨', 'positive') THEN 1 END) as positive_count,
+                COUNT(CASE WHEN feedback_type IN ('개선필요', '👎 부족함') THEN 1 END) as negative_count
             FROM chat_feedback 
-            WHERE feedback_type IN ('만족', '개선필요')
+            WHERE feedback_type IN ('만족', '👍 도움 됨', 'positive', '개선필요', '👎 부족함')
             AND created_at >= datetime('now', '-7 days')
             GROUP BY DATE(created_at)
             ORDER BY date ASC
