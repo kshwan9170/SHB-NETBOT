@@ -636,20 +636,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     const visitorsDescription = document.getElementById('visitors-description');
                     
                     if (visitorsText) {
-                        // API에서 받은 실제 방문자 수 표시
-                        const uniqueVisitors = feedbackData.unique_visitors_24h || 0;
-                        console.log('🔔 방문자 수 업데이트 시작!');
-                        console.log('📊 API 데이터:', feedbackData);
-                        console.log('👥 방문자 수:', uniqueVisitors);
-                        console.log('🔍 요소 업데이트 전:', visitorsText.textContent);
-                        visitorsText.textContent = uniqueVisitors;
-                        console.log('✅ 요소 업데이트 후:', visitorsText.textContent);
-                        
-                        // 강제로 화면 갱신
-                        visitorsText.style.color = '#007bff';
-                        setTimeout(() => {
-                            visitorsText.style.color = '';
-                        }, 500);
+                        // 서버에서 이미 올바른 값이 설정되어 있으므로 덮어쓰지 않음
+                        // 대신 스타일만 업데이트
+                        console.log('방문자 수 현재 값:', visitorsText.textContent);
+                        console.log('API 데이터:', feedbackData);
                         
                         if (visitorsIcon) {
                             visitorsIcon.style.color = '#17a2b8'; // 방문자는 청록색
