@@ -148,6 +148,46 @@
         </div>
     </div>
     
+    <!-- 부정 피드백 카드 -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm" style="border-color: #E6EBF4;">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: #30507A;">
+                        <i class="fas fa-exclamation-triangle me-2" style="color: #dc3545;"></i>
+                        개선필요 피드백 분석
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <div class="display-6 fw-bold" style="color: #dc3545;" id="negative-feedback-count">0</div>
+                                <small class="text-muted">개선필요 응답</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <div class="display-6 fw-bold" style="color: #28a745;" id="positive-feedback-count">0</div>
+                                <small class="text-muted">만족해요 응답</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="text-center">
+                                <div class="display-6 fw-bold" style="color: #17a2b8;" id="feedback-improvement-rate">0%</div>
+                                <small class="text-muted">만족도</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h6 style="color: #30507A;">최근 개선필요 피드백</h6>
+                        <div id="recent-negative-feedback" class="list-group list-group-flush">
+                            <!-- 부정 피드백 목록이 여기에 동적으로 생성됩니다 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 상세 데이터 테이블 -->
     <div class="card shadow-sm" style="border-color: #E6EBF4;">
         <div class="card-body">
@@ -310,6 +350,66 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // TODO: 긍정 피드백 데이터는 실제 API 응답에 추가 필요
         // document.getElementById('positive-percentage').textContent = `${data.positive_percentage}%`;
+        
+        // 부정 피드백 카드 업데이트 (새로운 기능)
+        updateNegativeFeedbackCard();
+    }
+    
+    // 부정 피드백 카드 업데이트 함수 (기존 기능에 영향 없음)
+    function updateNegativeFeedbackCard() {
+        // 피드백 데이터 API 호출
+        fetch('/api/feedback_stats')
+            .then(response => response.json())
+            .then(feedbackData => {
+                if (feedbackData.success) {
+                    // 부정 피드백 수
+                    document.getElementById('negative-feedback-count').textContent = feedbackData.negative_count || 0;
+                    
+                    // 긍정 피드백 수
+                    document.getElementById('positive-feedback-count').textContent = feedbackData.positive_count || 0;
+                    
+                    // 만족도 계산
+                    const total = (feedbackData.positive_count || 0) + (feedbackData.negative_count || 0);
+                    const satisfactionRate = total > 0 ? Math.round((feedbackData.positive_count || 0) / total * 100) : 0;
+                    document.getElementById('feedback-improvement-rate').textContent = `${satisfactionRate}%`;
+                    
+                    // 최근 부정 피드백 목록 업데이트
+                    updateRecentNegativeFeedback(feedbackData.recent_negative || []);
+                }
+            })
+            .catch(error => {
+                console.log('피드백 데이터 로딩 중 오류:', error);
+                // 오류 시 기본값 설정
+                document.getElementById('negative-feedback-count').textContent = '0';
+                document.getElementById('positive-feedback-count').textContent = '0';
+                document.getElementById('feedback-improvement-rate').textContent = '0%';
+            });
+    }
+    
+    // 최근 부정 피드백 목록 업데이트 함수
+    function updateRecentNegativeFeedback(recentFeedback) {
+        const container = document.getElementById('recent-negative-feedback');
+        container.innerHTML = '';
+        
+        if (recentFeedback.length === 0) {
+            container.innerHTML = '<div class="text-muted text-center py-3">최근 개선필요 피드백이 없습니다.</div>';
+            return;
+        }
+        
+        recentFeedback.slice(0, 5).forEach((feedback, index) => {
+            const feedbackItem = document.createElement('div');
+            feedbackItem.className = 'list-group-item border-0 px-0';
+            feedbackItem.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                        <p class="mb-1 text-truncate" style="max-width: 400px;">${feedback.question || '질문 내용 없음'}</p>
+                        <small class="text-muted">${feedback.timestamp || '시간 정보 없음'}</small>
+                    </div>
+                    <span class="badge bg-danger">개선필요</span>
+                </div>
+            `;
+            container.appendChild(feedbackItem);
+        });
     }
     
     // Top 쿼리 차트 업데이트

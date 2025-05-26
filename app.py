@@ -1747,6 +1747,137 @@ def sync_documents():
         return jsonify({'error': str(e)}), 500
 
 # 데이터베이스 초기화 후 앱 실행
+# ========== 새로운 피드백 API (기존 기능에 영향 없음) ==========
+
+@app.route('/api/chat_feedback', methods=['POST'])
+def chat_feedback():
+    """채팅 피드백 API - 만족해요/개선필요 선택 시 호출"""
+    try:
+        data = request.get_json()
+        query_text = data.get('query', '')
+        feedback_type = data.get('feedback', '')  # 'positive' 또는 'negative'
+        
+        if not query_text or not feedback_type:
+            return jsonify({'success': False, 'error': '필수 파라미터가 누락되었습니다.'})
+        
+        # 피드백 데이터 저장 (데이터베이스 연결)
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                
+                # 테이블이 없는 경우 생성
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS chat_feedback (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        query_text TEXT NOT NULL,
+                        feedback_type TEXT NOT NULL,
+                        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                
+                cursor.execute("""
+                    INSERT INTO chat_feedback (query_text, feedback_type, timestamp)
+                    VALUES (?, ?, datetime('now'))
+                """, (query_text, feedback_type))
+                conn.commit()
+                conn.close()
+                
+                return jsonify({'success': True, 'message': '피드백이 저장되었습니다.'})
+            except Exception as e:
+                print(f"피드백 저장 오류: {e}")
+                if conn:
+                    conn.close()
+                return jsonify({'success': False, 'error': '피드백 저장 중 오류가 발생했습니다.'})
+        else:
+            return jsonify({'success': False, 'error': '데이터베이스 연결 오류'})
+            
+    except Exception as e:
+        print(f"피드백 API 오류: {e}")
+        return jsonify({'success': False, 'error': '서버 오류가 발생했습니다.'})
+
+@app.route('/api/feedback_stats', methods=['GET'])
+def feedback_stats():
+    """피드백 통계 API - 대시보드용 부정 피드백 데이터 제공"""
+    try:
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor()
+                
+                # 테이블이 없는 경우 빈 결과 반환
+                cursor.execute("""
+                    SELECT name FROM sqlite_master WHERE type='table' AND name='chat_feedback'
+                """)
+                table_exists = cursor.fetchone()
+                
+                if not table_exists:
+                    conn.close()
+                    return jsonify({
+                        'success': True,
+                        'positive_count': 0,
+                        'negative_count': 0,
+                        'recent_negative': []
+                    })
+                
+                # 긍정/부정 피드백 개수 조회
+                cursor.execute("""
+                    SELECT feedback_type, COUNT(*) as count
+                    FROM chat_feedback
+                    GROUP BY feedback_type
+                """)
+                feedback_counts = cursor.fetchall()
+                
+                # 최근 부정 피드백 목록 조회 (최근 10개)
+                cursor.execute("""
+                    SELECT query_text, timestamp
+                    FROM chat_feedback
+                    WHERE feedback_type = 'negative'
+                    ORDER BY timestamp DESC
+                    LIMIT 10
+                """)
+                recent_negative = cursor.fetchall()
+                
+                conn.close()
+                
+                # 데이터 정리
+                positive_count = 0
+                negative_count = 0
+                
+                for row in feedback_counts:
+                    if row[0] == 'positive':
+                        positive_count = row[1]
+                    elif row[0] == 'negative':
+                        negative_count = row[1]
+                
+                recent_negative_list = []
+                for row in recent_negative:
+                    recent_negative_list.append({
+                        'question': row[0],
+                        'timestamp': row[1]
+                    })
+                
+                return jsonify({
+                    'success': True,
+                    'positive_count': positive_count,
+                    'negative_count': negative_count,
+                    'recent_negative': recent_negative_list
+                })
+                
+            except Exception as e:
+                print(f"피드백 통계 조회 오류: {e}")
+                if conn:
+                    conn.close()
+                return jsonify({'success': False, 'error': '피드백 통계 조회 중 오류가 발생했습니다.'})
+        else:
+            return jsonify({'success': False, 'error': '데이터베이스 연결 오류'})
+            
+    except Exception as e:
+        print(f"피드백 통계 API 오류: {e}")
+        return jsonify({'success': False, 'error': '서버 오류가 발생했습니다.'})
+
+# ========== 기존 메인 실행 코드 ==========
+
 if __name__ == '__main__':
     # 데이터베이스 초기화
     init_db()
