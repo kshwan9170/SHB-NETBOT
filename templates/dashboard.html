@@ -12,309 +12,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <!-- Bootstrap CSS 추가 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <style>
-        /* 대시보드 전용 현대적 스타일 */
-        .dashboard-header {
-            position: relative;
-            margin-bottom: 40px;
-        }
-        
-        .header-background {
-            background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
-            color: white;
-            padding: 60px 40px;
-            border-radius: 25px;
-            box-shadow: 0 20px 40px rgba(0, 102, 204, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .header-background::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 300px;
-            height: 300px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            z-index: 1;
-        }
-        
-        .header-background h1 {
-            color: white !important;
-            position: relative;
-            z-index: 2;
-        }
-        
-        .header-background p {
-            color: rgba(255, 255, 255, 0.9) !important;
-            position: relative;
-            z-index: 2;
-        }
-        
-        .header-stats {
-            position: relative;
-            z-index: 2;
-        }
-        
-        .mini-stat {
-            background: rgba(255, 255, 255, 0.15);
-            padding: 15px 25px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
-        }
-        
-        .mini-stat:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-2px);
-        }
-        
-        .mini-stat i {
-            font-size: 1.2rem;
-            margin-right: 8px;
-        }
-        
-        .mini-stat span {
-            font-weight: 500;
-        }
-        
-        /* 현대적 통계 카드 */
-        .modern-stat-card {
-            background: white;
-            border-radius: 20px;
-            padding: 0;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            border: none;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-        
-        .modern-stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
-        }
-        
-        .stat-card-header {
-            padding: 25px 25px 15px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .stat-icon-wrapper {
-            width: 60px;
-            height: 60px;
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-            color: white;
-        }
-        
-        .questions-card .stat-icon-wrapper {
-            background: linear-gradient(135deg, #0066cc, #004499);
-        }
-        
-        .visitors-card .stat-icon-wrapper {
-            background: linear-gradient(135deg, #17a2b8, #138496);
-        }
-        
-        .satisfaction-card .stat-icon-wrapper {
-            background: linear-gradient(135deg, #ffc107, #e0a800);
-        }
-        
-        .stat-title {
-            margin: 0;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #495057;
-        }
-        
-        .stat-content {
-            padding: 0 25px 25px;
-        }
-        
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 800;
-            color: #1a1a1a;
-            margin-bottom: 10px;
-        }
-        
-        .stat-trend {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #6c757d;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        
-        .stat-trend i {
-            color: #28a745;
-        }
-        
-        /* 현대적 차트 카드 */
-        .modern-chart-card {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            border: none;
-            overflow: hidden;
-        }
-        
-        .chart-header {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            padding: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #e8ecef;
-        }
-        
-        .chart-title-section h5 {
-            margin: 0;
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: #1a1a1a;
-        }
-        
-        .chart-subtitle {
-            margin: 5px 0 0;
-            color: #6c757d;
-            font-size: 0.9rem;
-        }
-        
-        .chart-controls {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .chart-btn {
-            background: white;
-            border: 2px solid #e8ecef;
-            border-radius: 10px;
-            padding: 8px 16px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: #6c757d;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        }
-        
-        .chart-btn:hover {
-            border-color: #0066cc;
-            color: #0066cc;
-        }
-        
-        .chart-btn.active {
-            background: #0066cc;
-            border-color: #0066cc;
-            color: white;
-        }
-        
-        .chart-body {
-            padding: 25px;
-        }
-        
-        /* 필터 카드 개선 */
-        .card {
-            border-radius: 15px !important;
-            border: none !important;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08) !important;
-        }
-        
-        .card-body {
-            padding: 25px !important;
-        }
-        
-        .card-title {
-            font-weight: 700 !important;
-            font-size: 1.2rem !important;
-            margin-bottom: 20px !important;
-        }
-        
-        .form-select, .form-control {
-            border-radius: 10px !important;
-            border: 2px solid #e8ecef !important;
-            padding: 12px 16px !important;
-            font-weight: 500 !important;
-        }
-        
-        .form-select:focus, .form-control:focus {
-            border-color: #0066cc !important;
-            box-shadow: 0 0 0 0.2rem rgba(0, 102, 204, 0.25) !important;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #0066cc, #004499) !important;
-            border: none !important;
-            border-radius: 10px !important;
-            padding: 12px 20px !important;
-            font-weight: 600 !important;
-        }
-        
-        .btn-primary:hover {
-            background: linear-gradient(135deg, #004499, #003366) !important;
-            transform: translateY(-1px);
-        }
-        
-        /* 테이블 개선 */
-        .table {
-            border-radius: 10px !important;
-            overflow: hidden;
-        }
-        
-        .table thead th {
-            background: linear-gradient(135deg, #0066cc, #004499) !important;
-            color: white !important;
-            border: none !important;
-            font-weight: 600 !important;
-            padding: 15px !important;
-        }
-        
-        .table tbody tr:hover {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%) !important;
-        }
-        
-        .table td {
-            padding: 12px 15px !important;
-            border-color: #f1f3f4 !important;
-        }
-        
-        /* 반응형 개선 */
-        @media (max-width: 768px) {
-            .header-background {
-                padding: 40px 20px;
-            }
-            
-            .chart-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-            
-            .chart-controls {
-                width: 100%;
-                justify-content: flex-start;
-            }
-            
-            .mini-stat {
-                padding: 12px 20px;
-                margin: 5px 0;
-            }
-            
-            .stat-number {
-                font-size: 2rem;
-            }
-        }
-    </style>
 </head>
 <body>
     <!-- 고정 내비게이션 바 -->
@@ -359,25 +56,9 @@
 
     <div class="container my-5">
         <!-- 헤더 영역 -->
-        <div class="dashboard-header text-center mb-5">
-            <div class="header-background">
-                <h1 class="display-3 fw-bold mb-3">SHB-NetBot 대시보드</h1>
-                <p class="lead mb-4">실시간 사용자 문의 및 통계 분석</p>
-                <div class="header-stats d-flex justify-content-center gap-4">
-                    <div class="mini-stat">
-                        <i class="fas fa-robot"></i>
-                        <span>AI 챗봇</span>
-                    </div>
-                    <div class="mini-stat">
-                        <i class="fas fa-chart-line"></i>
-                        <span>실시간 분석</span>
-                    </div>
-                    <div class="mini-stat">
-                        <i class="fas fa-shield-alt"></i>
-                        <span>보안 관리</span>
-                    </div>
-                </div>
-            </div>
+        <div class="text-center mb-5">
+            <h1 class="display-4" style="color: #30507A;">SHB-NetBot 대시보드</h1>
+            <p class="lead" style="color: #5A6373;">실시간 사용자 문의 및 통계 분석</p>
         </div>
     
     <!-- 필터 영역 -->
@@ -414,18 +95,12 @@
     <div class="row mb-4">
         <!-- 전체 질문 수 -->
         <div class="col-md-4 mb-3">
-            <div class="modern-stat-card questions-card h-100">
-                <div class="stat-card-header">
-                    <div class="stat-icon-wrapper">
-                        <i class="fas fa-comments"></i>
-                    </div>
-                    <h5 class="stat-title">전체 질문 수</h5>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-number" id="total-queries">0</div>
-                    <div class="stat-trend">
-                        <i class="fas fa-arrow-up"></i>
-                        <span>24시간 내 문의</span>
+            <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
+                <div class="card-body text-center">
+                    <h5 class="card-title" style="color: #30507A;">전체 질문 수</h5>
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="fas fa-comments fa-3x me-3" style="color: #30507A;"></i>
+                        <div class="display-4 fw-bold" id="total-queries">0</div>
                     </div>
                 </div>
             </div>
@@ -433,37 +108,29 @@
         
         <!-- 최근 방문자 -->
         <div class="col-md-4 mb-3">
-            <div class="modern-stat-card visitors-card h-100">
-                <div class="stat-card-header">
-                    <div class="stat-icon-wrapper">
-                        <i class="fas fa-users"></i>
+            <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
+                <div class="card-body text-center">
+                    <h5 class="card-title" style="color: #30507A;">최근 방문자</h5>
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="fas fa-users fa-3x me-3" id="visitors-icon" style="color: #17a2b8;"></i>
+                        <div class="display-4 fw-bold" id="recent-visitors">0</div>
                     </div>
-                    <h5 class="stat-title">최근 방문자</h5>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-number" id="recent-visitors">0</div>
-                    <div class="stat-trend">
-                        <i class="fas fa-clock"></i>
-                        <span id="visitors-description">지난 24시간</span>
-                    </div>
+                    <div class="small text-muted" id="visitors-description">지난 24시간</div>
                 </div>
             </div>
         </div>
         
         <!-- 사용자 만족도 -->
         <div class="col-md-4 mb-3">
-            <div class="modern-stat-card satisfaction-card h-100">
-                <div class="stat-card-header">
-                    <div class="stat-icon-wrapper">
-                        <i class="fas fa-smile"></i>
-                    </div>
-                    <h5 class="stat-title">사용자 만족도</h5>
-                </div>
-                <div class="stat-content">
-                    <div class="stat-number" id="positive-percentage">0%</div>
-                    <div class="stat-trend">
-                        <i class="fas fa-thumbs-up"></i>
-                        <span id="positive-count-display">0건 긍정 피드백</span>
+            <div class="card h-100 shadow-sm" style="border-color: #E6EBF4;">
+                <div class="card-body text-center">
+                    <h5 class="card-title" style="color: #30507A;">사용자 만족도</h5>
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="fas fa-smile fa-3x me-3" style="color: #ffc107;"></i>
+                        <div>
+                            <div class="display-4 fw-bold" id="positive-percentage">0%</div>
+                            <small class="text-muted" id="positive-count-display">0건</small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -473,24 +140,9 @@
     <!-- 주요 문의 TOP 10 차트 -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="modern-chart-card">
-                <div class="chart-header">
-                    <div class="chart-title-section">
-                        <h5 class="chart-title">주요 문의 TOP 10</h5>
-                        <p class="chart-subtitle">가장 많이 접수된 문의 유형별 통계</p>
-                    </div>
-                    <div class="chart-controls">
-                        <button class="chart-btn active" data-view="chart">
-                            <i class="fas fa-chart-bar"></i>
-                            차트
-                        </button>
-                        <button class="chart-btn" data-view="table">
-                            <i class="fas fa-table"></i>
-                            테이블
-                        </button>
-                    </div>
-                </div>
-                <div class="chart-body">
+            <div class="card shadow-sm" style="border-color: #E6EBF4;">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: #30507A;">주요 문의 TOP 10</h5>
                     <div class="chart-container" style="position: relative; height:400px;">
                         <canvas id="top-queries-chart"></canvas>
                     </div>
