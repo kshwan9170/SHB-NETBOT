@@ -1189,9 +1189,9 @@ function deleteFeedback(feedbackId) {
     }
 }
 
-// 전체 질문 수 상세 정보 표시
+// 전체 질문 수 상세 정보 표시 - 최근 질문 목록 (최신 10개)
 function showQueriesDetails() {
-    fetch('/api/top_queries?period=all&category=&limit=10')
+    fetch('/api/top_queries?period=recent&category=&limit=10')
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -1199,9 +1199,9 @@ function showQueriesDetails() {
             return response.json();
         })
         .then(data => {
-            console.log('질문 데이터:', data); // 디버깅용
+            console.log('최근 질문 데이터:', data); // 디버깅용
             if (data.success && data.top_queries) {
-                const queries = data.top_queries.slice(0, 10); // TOP 10으로 제한
+                const queries = data.top_queries.slice(0, 10); // 최신 10개로 제한
                 
                 // 카테고리별 통계 계산
                 const categoryStats = {};
