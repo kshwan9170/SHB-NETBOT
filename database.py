@@ -7,7 +7,8 @@ import shutil
 # Vector database
 import chromadb
 from chromadb.config import Settings
-from chromadb.utils import embedding_functions
+#from chromadb.utils import embedding_functions
+from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 
 # OpenAI embedding model
 import openai
@@ -24,9 +25,9 @@ CHROMA_DB_DIRECTORY = "./chroma_db"
 COLLECTION_NAME = "uploaded_docs"  # 요구사항에 맞게 컬렉션명 변경
 
 # Create embedding function
-embedding_function = embedding_functions.OpenAIEmbeddingFunction(
+embedding_function = OpenAIEmbeddingFunction(
     api_key=OPENAI_API_KEY,
-    model_name="text-embedding-3-small"
+    model_name="text-embedding-ada-002"
 )
 
 # 마이그레이션 상태를 저장할 파일 경로
