@@ -11,11 +11,13 @@ from chromadb.utils import embedding_functions
 
 # OpenAI embedding model
 import openai
-from openai import OpenAI
+#from openai import OpenAI ##2025-05-29 12:58 수정 (##처리)
+
 
 # Initialize OpenAI client for embeddings
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-openai_client = OpenAI(api_key=OPENAI_API_KEY)
+#openai_client = OpenAI(api_key=OPENAI_API_KEY) ##2025-05-29 12:58 수정 (##처리)
+openai.api_key = OPENAI_API_KEY
 
 # ChromaDB configuration
 CHROMA_DB_DIRECTORY = "./chroma_db"
