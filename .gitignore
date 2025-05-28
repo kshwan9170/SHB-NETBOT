@@ -1,0 +1,2 @@
+"chroma_db/*.sqlite3"    # 추적할 건 LFS, 나머지는 무시
+"chroma_db/*.bin" 
