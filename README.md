@@ -55,7 +55,4 @@ export OPENAI_API_KEY=your_api_key
 python app.py
 ```
 
-## 개발자 정보
 
-- **버전**: 1.0.0
-- **개발팀**: SEUNGHWAN
