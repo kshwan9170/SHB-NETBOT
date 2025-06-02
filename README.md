@@ -1,40 +1,125 @@
-**SHB-NETBOT**
-SHB-NETBOT은 다양한 문서 유형을 처리하고, 사용자와의 대화형 상호작용을 통해 실시간으로 정보를 제공하는 지능형 문서 기반 챗봇 플랫폼입니다. 이 시스템은 기업 문서, 가이드라인, CSV 데이터 등을 효과적으로 분석하여 사용자에게 유의미한 답변을 제공합니다.
+# SHB-NetBot (신한은행 네트워크 지원 챗봇)
 
-**주요 기능**
-다양한 문서 형식 지원: PDF, Word, 텍스트 파일 등 다양한 문서를 업로드하여 처리할 수 있습니다.
-CSV 데이터 내러티브 생성: CSV 파일을 업로드하면 데이터를 분석하여 내러티브 형태로 요약합니다.
-대화형 인터페이스: Streamlit 기반의 웹 인터페이스를 통해 사용자와의 자연스러운 대화를 지원합니다.
-문서 기반 질의응답: 업로드된 문서를 기반으로 한 정확한 질의응답 기능을 제공합니다.
-데이터베이스 통합: ChromaDB를 활용하여 문서 임베딩 및 검색 기능을 강화하였습니다.
+**SHB-NetBot**은 신한은행 IT 운영팀을 위한 지능형 네트워크 지원 챗봇입니다.  
+VPN, 방화벽, IP 설정, 프린터, 전화기 등 자주 반복되는 네트워크 관련 질의에 대해 빠르고 정확한 자동 응답을 제공합니다.  
+OpenAI의 GPT 기반 Fine-tuned 모델과 RAG(Retrieval-Augmented Generation), 엑셀 기반의 흐름 처리 로직을 결합하여 다양한 유형의 질문에 대응합니다.
 
-**설치 및 실행 방법**
-1. 필수 패키지 설치:
+---
 
-bash
+## 📌 주요 기능 요약
+
+| 기능 구분               | 설명 |
+|------------------------|------|
+| 🔍 문서 기반 RAG       | ChromaDB를 통한 벡터 임베딩 검색 및 GPT 응답 생성 |
+| 🧠 Fine-tuned GPT 통합 | 사내 FAQ 질문을 학습한 모델로 빠른 응답 제공 |
+| 🔁 키워드 분기 처리    | 질문 내 키워드에 따라 적절한 응답 경로(RAG, Excel 등) 자동 선택 |
+| 📄 다중 문서 지원       | PDF, DOCX, PPTX, XLSX, TXT 문서 업로드 및 처리 |
+| 📊 엑셀 기반 프로세스   | 구조화된 데이터에서 조건 기반 응답 흐름 처리 |
+| 💬 웹 기반 UI          | Streamlit을 이용한 직관적인 대화형 사용자 인터페이스 |
+
+---
+
+## 🧱 아키텍처 개요
+
+```
+[사용자 질문 입력]
+        │
+        ▼
+  [질문 키워드 분류기]
+        │
+ ┌──────┴──────┐
+ ▼             ▼
+[Fine-tuned GPT]  [Excel 흐름 분석기]
+        │             │
+        ▼             ▼
+        └────[RAG 임베딩 검색]────┐
+                                 ▼
+                          [최종 응답 생성]
+                                 │
+                                 ▼
+                           [사용자에게 응답]
+```
+
+---
+
+## 📁 프로젝트 구조
+
+```
+SHB-NETBOT/
+├── app.py                  # 메인 실행 파일 (Streamlit 기반 UI)
+├── app_modern.py          # 향상된 모던 UI 버전
+├── chatbot.py             # Fine-tuned GPT 모델 인터페이스
+├── document_processor.py  # 문서 업로드 및 처리 유틸리티
+├── excel_flow_parser.py   # 엑셀 기반 응답 로직 처리
+├── csv_to_narrative.py    # CSV 데이터를 자연어로 요약하는 모듈
+├── templates/             # Streamlit 커스터마이징 템플릿
+├── uploaded_files/        # 업로드된 문서 저장 디렉토리
+├── chroma_db/             # Chroma 벡터 DB 저장소
+└── requirements.txt       # 의존성 패키지 목록
+```
+
+---
+
+## 🚀 설치 및 실행
+
+1. **Python 환경 준비**
+
+```bash
+python3 -m venv venv
+source venv/bin/activate   # Windows: venv\Scripts\activate
+```
+
+2. **패키지 설치**
+
+```bash
 pip install -r requirements.txt
+```
 
-2. 애플리케이션 실행:
+3. **환경 변수 설정**
 
-bash
+```bash
+export OPENAI_API_KEY=your_api_key_here
+```
+
+4. **앱 실행**
+
+```bash
+# 기본 UI
 streamlit run app.py
 
-또는 최신 UI를 사용하려면:
-
-bash
+# 모던 UI
 streamlit run app_modern.py
+```
 
-**디렉토리 구조**
-app.py: 메인 애플리케이션 파일
-app_modern.py: 최신 UI를 제공하는 애플리케이션 파일
-chatbot.py: 챗봇 로직 처리 모듈
-document_processor.py: 문서 처리 및 분석 모듈
-csv_to_narrative.py: CSV 데이터를 내러티브로 변환하는 모듈
-templates/: Streamlit UI 템플릿 파일
-uploaded_files/: 업로드된 파일 저장 디렉토리
-chroma_db/: ChromaDB 관련 데이터 저장 디렉토리
+---
 
-**사용 예시**
-웹 인터페이스를 통해 문서를 업로드합니다.
-업로드된 문서를 기반으로 질문을 입력하면, 챗봇이 해당 문서에서 관련 정보를 추출하여 답변합니다.
-CSV 파일을 업로드하면, 시스템이 데이터를 분석하여 요약된 내러티브를 제공합니다.
+## 💡 사용 예시
+
+- PDF 네트워크 가이드를 업로드한 후 “IP 충돌 해결 방법 알려줘”라고 입력하면 해당 문서 내 정보를 기반으로 요약 응답을 제공합니다.
+- “VPN 연결이 안 돼요”라고 질문하면, Fine-tuned 모델이 FAQ 학습 결과에 따라 해결 절차를 안내합니다.
+- “프린터 등록 절차 알려줘”처럼 Excel 기반 처리 흐름이 있는 항목은 구조화된 조건에 따라 단계별로 응답합니다.
+
+---
+
+## 🔐 기술 스택
+
+- **OpenAI GPT-3.5 (Fine-tuned)**
+- **ChromaDB (문서 임베딩 및 RAG 검색)**
+- **Streamlit (UI 구성)**
+- **Python + Pandas + LangChain**
+
+---
+
+## 📄 향후 개발 예정
+
+- 사용자별 세션 히스토리 관리 기능
+- 관리자용 문서 업로드 대시보드
+- 음성 질의 처리 기능 추가
+- SHB 내부 인증 연동 (SSO 연계)
+
+---
+
+## 🤝 기여 및 문의
+
+PR 및 이슈 등록을 통한 기능 제안 또는 개선 요청을 환영합니다.  
+사내 배포용으로 사용하는 경우 보안 정보가 포함되지 않도록 주의해주세요.
